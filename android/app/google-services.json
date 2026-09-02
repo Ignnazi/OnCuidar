@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "335519445973",
+    "project_id": "oncuidar-v1",
+    "storage_bucket": "oncuidar-v1.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:335519445973:android:bd51d48b3ad3a35c37835c",
+        "android_client_info": {
+          "package_name": "cl.zapataramirez.oncuidar"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBPB7ukh21JicyhiFh9xr_96jgTwIluN9U"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
