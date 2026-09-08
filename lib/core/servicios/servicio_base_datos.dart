@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:crypto/crypto.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../modelos/paciente.dart';
 import 'servicio_cifrado.dart';
@@ -52,6 +55,40 @@ class ServicioBaseDatos {
     );
     plano['version_encriptacion'] = 2;
     await _docUsuario.set(plano, SetOptions(merge: true));
+  }
+
+  /// Actualiza los campos personales del cuidador cifrando los sensibles.
+  /// Los parámetros nulos NO se tocan (se conservan los valores actuales);
+  /// un string vacío elimina el campo.
+  Future<void> actualizarCuidador({
+    String? nombre,
+    String? telefono,
+    String? relacion,
+    String? correoRespaldo,
+  }) async {
+    final updates = <String, dynamic>{};
+    if (nombre != null) {
+      updates['nombre_cifrado'] = nombre.isEmpty
+          ? FieldValue.delete()
+          : await _cifrado.cifrar(_uid, nombre);
+    }
+    if (telefono != null) {
+      updates['telefono_cifrado'] = telefono.isEmpty
+          ? FieldValue.delete()
+          : await _cifrado.cifrar(_uid, telefono);
+    }
+    if (relacion != null) {
+      updates['relacion_cifrada'] = relacion.isEmpty
+          ? FieldValue.delete()
+          : await _cifrado.cifrar(_uid, relacion);
+    }
+    if (correoRespaldo != null && correoRespaldo.isNotEmpty) {
+      updates['correo_respaldo_hash'] = sha256
+          .convert(utf8.encode(correoRespaldo.trim().toLowerCase()))
+          .toString();
+    }
+    if (updates.isEmpty) return;
+    await _docUsuario.set(updates, SetOptions(merge: true));
   }
 
   /// Devuelve los datos visibles del cuidador con sus campos personales ya

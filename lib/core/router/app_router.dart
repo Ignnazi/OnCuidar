@@ -5,6 +5,7 @@ import '../../caracteristicas/onboarding/iniciar_sesion.dart';
 import '../../caracteristicas/onboarding/proximamente.dart';
 import '../../caracteristicas/onboarding/registro.dart';
 import '../../caracteristicas/onboarding/splash.dart';
+import '../../caracteristicas/perfil/editar_perfil.dart';
 import '../../caracteristicas/perfil/perfil.dart';
 import '../../compartidos/widgets/navegacion_principal.dart';
 
@@ -31,6 +32,10 @@ final router = GoRouter(
     GoRoute(
       path: '/crear-cuenta',
       builder: (context, state) => const Registro(),
+    ),
+    GoRoute(
+      path: '/editar-perfil',
+      builder: (context, state) => const EditarPerfil(),
     ),
     ShellRoute(
       builder: (context, state, child) => NavegacionPrincipal(child: child),

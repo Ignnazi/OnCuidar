@@ -79,9 +79,11 @@ class _PerfilState extends ConsumerState<Perfil> {
 
   @override
   Widget build(BuildContext context) {
+    final user = ref.read(firebaseAuthProvider).currentUser;
     final email = _cuidador?['email'] ??
-        ref.read(firebaseAuthProvider).currentUser?.email ??
+        user?.email ??
         '';
+    final emailVerificado = user?.emailVerified ?? false;
     return Scaffold(
       backgroundColor: Paleta.crema,
       body: Column(
@@ -104,9 +106,35 @@ class _PerfilState extends ConsumerState<Perfil> {
                   else if (_error)
                     _mensajeError()
                   else
-                    _tarjetaPerfil(email),
+                    _tarjetaPerfil(email, emailVerificado),
                   if (!_cargando && !_error) ...[
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 16),
+                    // ── Botón Editar perfil ──
+                    SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: FilledButton.icon(
+                        onPressed: () async {
+                          await context.push('/editar-perfil');
+                          // Recargar datos al volver
+                          _cargar();
+                        },
+                        icon: const Icon(Icons.edit_outlined, size: 20),
+                        label: const Text('Editar perfil'),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: Paleta.doradoOscuro,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          textStyle: GoogleFonts.nunito(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    // ── Botón Cerrar sesión ──
                     SizedBox(
                       width: double.infinity,
                       height: 52,
@@ -146,7 +174,7 @@ class _PerfilState extends ConsumerState<Perfil> {
     );
   }
 
-  Widget _tarjetaPerfil(String email) {
+  Widget _tarjetaPerfil(String email, bool emailVerificado) {
     final nombre = _cuidador?['nombre'] ?? '';
     final telefono = _cuidador?['telefono'];
     final relacion = _cuidador?['relacion'];
@@ -230,13 +258,28 @@ class _PerfilState extends ConsumerState<Perfil> {
                 ),
                 if (email.isNotEmpty) ...[
                   const SizedBox(height: 4),
-                  Text(
-                    email,
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.nunito(
-                      fontSize: 14,
-                      color: Paleta.textoSecundario,
-                    ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Flexible(
+                        child: Text(
+                          email,
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.nunito(
+                            fontSize: 14,
+                            color: Paleta.textoSecundario,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Icon(
+                        emailVerificado
+                            ? Icons.verified
+                            : Icons.warning_amber_rounded,
+                        size: 14,
+                        color: emailVerificado ? Paleta.exito : Paleta.error,
+                      ),
+                    ],
                   ),
                 ],
                 if (relacion != null && relacion.isNotEmpty) ...[
