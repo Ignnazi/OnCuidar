@@ -1,0 +1,8 @@
+{
+  "functions": {
+    "region": "southamerica-west1"
+  },
+  "firestore": {
+    "rules": "firestore.rules"
+  }
+}

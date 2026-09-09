@@ -13,8 +13,29 @@ class ServicioCifrado {
   String? _uidActivo;
 
   Future<bool> restaurarClave(String uid) async {
-    final valor = _clavePrueba ?? await _almacen.read(key: 'oncuidar.data-key.$uid');
+    if (_clavePrueba != null) {
+      await fijarClave(uid, _clavePrueba);
+      return true;
+    }
+    // El read de FlutterSecureStorage puede lanzar BadPaddingException si el
+    // bytecode cifrado en el keystore de Android quedó corrupto (p. ej. tras
+    // reinstalar la app y restaurar datos). Devolvemos false y dejamos que
+    // asegurarClave borre la copia y pida una clave nueva al servidor.
+    String? valor;
+    try {
+      valor = await _almacen.read(key: 'oncuidar.data-key.$uid');
+    } catch (_) {
+      return false;
+    }
     if (valor == null) return false;
+    // Validación: si la clave guardada está corrupta, se descarta para
+    // recrearla en el servidor (getOrCreateDataKey) en lugar de fallar.
+    try {
+      final bytes = base64.decode(valor);
+      if (bytes.length != 32) return false;
+    } catch (_) {
+      return false;
+    }
     await fijarClave(uid, valor);
     return true;
   }
@@ -24,6 +45,12 @@ class ServicioCifrado {
   Future<void> asegurarClave(String uid) async {
     final local = await restaurarClave(uid);
     if (local) return;
+    // Descarta cualquier copia local corrupta antes de pedir una nueva.
+    // Un delete puede fallar igual si el keystore está dañado; lo ignoramos y
+    // seguimos con getOrCreateDataKey (el write posterior sobrescribirá).
+    try {
+      await _almacen.delete(key: 'oncuidar.data-key.$uid');
+    } catch (_) {}
     final resultado = await FirebaseFunctions.instanceFor(
       region: 'southamerica-west1',
     ).httpsCallable('getOrCreateDataKey').call();
@@ -32,7 +59,9 @@ class ServicioCifrado {
 
   Future<void> fijarClave(String uid, String codificada) async {
     final bytes = base64.decode(codificada);
-    if (bytes.length != 32) throw const FormatException('Clave de datos invalida.');
+    if (bytes.length != 32) {
+      throw const FormatException('Clave de datos invalida.');
+    }
     _claveActiva = SecretKey(bytes);
     _uidActivo = uid;
     if (_clavePrueba == null) {
@@ -59,7 +88,9 @@ class ServicioCifrado {
 
   Future<String> descifrar(String uid, String valor) async {
     final partes = valor.split('.');
-    if (partes.length != 3) throw const FormatException('Texto cifrado invalido.');
+    if (partes.length != 3) {
+      throw const FormatException('Texto cifrado invalido.');
+    }
     final claro = await _cifrador.decrypt(
       SecretBox(
         base64Url.decode(partes[1]),

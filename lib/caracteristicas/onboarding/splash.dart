@@ -83,8 +83,10 @@ class _SplashState extends ConsumerState<Splash>
     await Future.delayed(const Duration(seconds: 2));
     if (!mounted) return;
     if (_haySesion) {
-      await _esperaClave.future.timeout(const Duration(seconds: 5),
-          onTimeout: () {});
+      await _esperaClave.future.timeout(
+        const Duration(seconds: 5),
+        onTimeout: () {},
+      );
       if (!mounted) return;
     }
     if (_haySesion) {

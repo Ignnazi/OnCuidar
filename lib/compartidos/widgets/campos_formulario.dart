@@ -64,10 +64,7 @@ class TarjetaSeccion extends StatelessWidget {
                         gradient: const LinearGradient(
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
-                          colors: [
-                            Paleta.doradoPrincipal,
-                            Paleta.doradoOscuro,
-                          ],
+                          colors: [Paleta.doradoPrincipal, Paleta.doradoOscuro],
                         ),
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
@@ -81,12 +78,15 @@ class TarjetaSeccion extends StatelessWidget {
                       child: Icon(icono, color: Colors.white, size: 21),
                     ),
                     const SizedBox(width: 12),
-                    Text(
-                      titulo,
-                      style: GoogleFonts.nunito(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w800,
-                        color: Paleta.textoPrincipal,
+                    Expanded(
+                      child: Text(
+                        titulo,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.nunito(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w800,
+                          color: Paleta.textoPrincipal,
+                        ),
                       ),
                     ),
                   ],
@@ -132,7 +132,9 @@ class CampoFormulario extends StatelessWidget {
     this.oculto = false,
     this.iconoSufijo,
     this.alEnviar,
+    this.alCambiar,
     this.validador,
+    this.habilitado = true,
   });
 
   final TextEditingController controlador;
@@ -143,16 +145,20 @@ class CampoFormulario extends StatelessWidget {
   final bool oculto;
   final Widget? iconoSufijo;
   final ValueChanged<String>? alEnviar;
+  final ValueChanged<String>? alCambiar;
   final String? Function(String?)? validador;
+  final bool habilitado;
 
   @override
   Widget build(BuildContext context) {
     return TextFormField(
       controller: controlador,
       obscureText: oculto,
+      enabled: habilitado,
       keyboardType: tipoTeclado,
       textInputAction: accionTeclado,
       onFieldSubmitted: alEnviar,
+      onChanged: alCambiar,
       validator: validador,
       style: GoogleFonts.nunito(fontSize: 14, color: Paleta.textoPrincipal),
       decoration: decoracionEntrada(

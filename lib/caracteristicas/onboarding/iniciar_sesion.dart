@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/proveedores/proveedores.dart';
 import '../../core/tema/paleta.dart';
+import '../../core/utilidades/validacion_correo.dart';
 import '../../compartidos/widgets/campos_formulario.dart';
 import '../../compartidos/widgets/encabezado_gradiente.dart';
 import '../../compartidos/widgets/marca.dart';
@@ -50,7 +51,7 @@ class _IniciarSesionState extends ConsumerState<IniciarSesion> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('¡Bienvenido de vuelta!'),
-            backgroundColor: Paleta.exito,
+            backgroundColor: Paleta.doradoPrincipal,
           ),
         );
         context.go('/dashboard');
@@ -107,14 +108,24 @@ class _IniciarSesionState extends ConsumerState<IniciarSesion> {
     try {
       await ref
           .read(firebaseAuthProvider)
-          .sendPasswordResetEmail(email: correo);
+          .sendPasswordResetEmail(
+            email: correo,
+            actionCodeSettings: ActionCodeSettings(
+              // URL de continuación = propia página de acción de Firebase Auth
+              // (dominio autorizado, servida por Auth sin hosting): al completar
+              // el cambio de contraseña el flujo termina ahí, sin redirigir a
+              // ningún sitio custom.
+              url: 'https://oncuidar-v1.firebaseapp.com/__/auth/action',
+              handleCodeInApp: false,
+            ),
+          );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
             'Te enviamos un correo para restablecer tu contraseña.',
           ),
-          backgroundColor: Paleta.exito,
+          backgroundColor: Paleta.doradoPrincipal,
         ),
       );
     } on FirebaseAuthException catch (e) {
@@ -146,174 +157,200 @@ class _IniciarSesionState extends ConsumerState<IniciarSesion> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Paleta.crema,
-      body: Column(
-        children: [
-          EncabezadoGradiente(
-            mostrarRetroceso: true,
-            titulo: 'Iniciar sesión',
-            subtitulo: 'Bienvenido de vuelta a tu espacio de cuidado',
-            alto: 130,
-            alRetroceder: () => context.pop(),
-          ),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  children: [
-                    const Marca(tamano: 96),
-                    const SizedBox(height: 16),
-                    Text(
-                      '¡Hola de nuevo!',
-                      style: GoogleFonts.nunito(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w800,
-                        color: Paleta.textoPrincipal,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Ingresa tus datos para continuar cuidando',
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.nunito(
-                        fontSize: 14,
-                        color: Paleta.textoSecundario,
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    TarjetaSeccion(
-                      icono: Icons.login_rounded,
-                      titulo: 'Acceso',
-                      hijos: [
-                        EtiquetaCampo(texto: 'Correo electrónico'),
-                        const SizedBox(height: 8),
-                        CampoFormulario(
-                          controlador: _correoController,
-                          textoAyuda: 'correo@ejemplo.com',
-                          icono: Icons.email_outlined,
-                          tipoTeclado: TextInputType.emailAddress,
-                          accionTeclado: TextInputAction.next,
-                          validador: (v) {
-                            if (v == null || v.trim().isEmpty) {
-                              return 'Ingresa tu correo';
-                            }
-                            if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
-                                .hasMatch(v.trim())) {
-                              return 'Ingresa un correo válido';
-                            }
-                            return null;
-                          },
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) context.go('/bienvenida');
+      },
+      child: Scaffold(
+        backgroundColor: Paleta.crema,
+        body: Column(
+          children: [
+            EncabezadoGradiente(
+              mostrarRetroceso: true,
+              titulo: 'Iniciar sesión',
+              subtitulo: 'Bienvenido de vuelta a tu espacio de cuidado',
+              alto: 130,
+              alRetroceder: () => context.go('/bienvenida'),
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 24,
+                ),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    children: [
+                      const Marca(tamano: 96),
+                      const SizedBox(height: 16),
+                      Text(
+                        '¡Hola de nuevo!',
+                        style: GoogleFonts.nunito(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                          color: Paleta.textoPrincipal,
                         ),
-                        const SizedBox(height: 16),
-                        EtiquetaCampo(texto: 'Contraseña'),
-                        const SizedBox(height: 8),
-                        CampoFormulario(
-                          controlador: _contrasenaController,
-                          textoAyuda: 'Tu contraseña',
-                          icono: Icons.lock_outlined,
-                          oculto: _ocultarContrasena,
-                          iconoSufijo: IconButton(
-                            icon: Icon(
-                              _ocultarContrasena
-                                  ? Icons.visibility_off_outlined
-                                  : Icons.visibility_outlined,
-                              size: 20,
-                            ),
-                            onPressed: () => setState(
-                                () => _ocultarContrasena = !_ocultarContrasena),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Ingresa tus datos para continuar cuidando',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.nunito(
+                          fontSize: 14,
+                          color: Paleta.textoSecundario,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      TarjetaSeccion(
+                        icono: Icons.login_rounded,
+                        titulo: 'Acceso',
+                        hijos: [
+                          EtiquetaCampo(texto: 'Correo electrónico'),
+                          const SizedBox(height: 8),
+                          CampoFormulario(
+                            controlador: _correoController,
+                            textoAyuda: 'correo@ejemplo.com',
+                            icono: Icons.email_outlined,
+                            tipoTeclado: TextInputType.emailAddress,
+                            accionTeclado: TextInputAction.next,
+                            validador: (v) {
+                              if (v == null || v.trim().isEmpty) {
+                                return 'Ingresa tu correo';
+                              }
+                              if (!regexCorreo.hasMatch(v.trim())) {
+                                return 'Ingresa un correo válido';
+                              }
+                              return null;
+                            },
                           ),
-                          accionTeclado: TextInputAction.done,
-                          alEnviar: (_) => _iniciarSesion(),
-                          validador: (v) =>
-                              v == null || v.isEmpty ? 'Ingresa tu contraseña' : null,
-                        ),
-                        const SizedBox(height: 4),
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: TextButton(
-                            onPressed: _recuperarContrasena,
-                            child: Text(
-                              '¿Olvidaste tu contraseña?',
-                              style: GoogleFonts.nunito(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                                color: Paleta.doradoOscuro,
+                          const SizedBox(height: 16),
+                          EtiquetaCampo(texto: 'Contraseña'),
+                          const SizedBox(height: 8),
+                          CampoFormulario(
+                            controlador: _contrasenaController,
+                            textoAyuda: 'Tu contraseña',
+                            icono: Icons.lock_outlined,
+                            oculto: _ocultarContrasena,
+                            iconoSufijo: IconButton(
+                              icon: Icon(
+                                _ocultarContrasena
+                                    ? Icons.visibility_off_outlined
+                                    : Icons.visibility_outlined,
+                                size: 20,
+                              ),
+                              onPressed: () => setState(
+                                () => _ocultarContrasena = !_ocultarContrasena,
                               ),
                             ),
+                            accionTeclado: TextInputAction.done,
+                            alEnviar: (_) => _iniciarSesion(),
+                            validador: (v) => v == null || v.isEmpty
+                                ? 'Ingresa tu contraseña'
+                                : null,
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 54,
-                      child: ElevatedButton(
-                        onPressed: _cargando ? null : _iniciarSesion,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Paleta.doradoPrincipal,
-                          foregroundColor: Colors.white,
-                          elevation: 2,
-                          shadowColor:
-                              Paleta.doradoPrincipal.withValues(alpha: 0.35),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          disabledBackgroundColor:
-                              Paleta.doradoPrincipal.withValues(alpha: 0.5),
-                        ),
-                        child: _cargando
-                            ? const SizedBox(
-                                height: 22,
-                                width: 22,
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 2.5,
-                                ),
-                              )
-                            : Text(
-                                'Iniciar sesión',
+                          const SizedBox(height: 4),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: TextButton(
+                              onPressed: _recuperarContrasena,
+                              child: Text(
+                                '¿Olvidaste tu contraseña?',
                                 style: GoogleFonts.nunito(
-                                  fontSize: 15,
+                                  fontSize: 13,
                                   fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Center(
-                      child: TextButton(
-                        onPressed: () => context.push('/crear-cuenta'),
-                        child: Text.rich(
-                          TextSpan(
-                            text: '¿No tienes cuenta? ',
-                            style: GoogleFonts.nunito(
-                              color: Paleta.textoSecundario,
-                              fontSize: 14,
-                            ),
-                            children: [
-                              TextSpan(
-                                text: 'Crear cuenta',
-                                style: GoogleFonts.nunito(
                                   color: Paleta.doradoOscuro,
-                                  fontWeight: FontWeight.w700,
                                 ),
                               ),
-                            ],
+                            ),
+                          ),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: TextButton(
+                              onPressed: () =>
+                                  context.push('/recuperar-acceso'),
+                              child: Text(
+                                '¿No recuerdas tu correo? Recuperar con el de respaldo',
+                                style: GoogleFonts.nunito(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                  color: Paleta.doradoOscuro,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 54,
+                        child: ElevatedButton(
+                          onPressed: _cargando ? null : _iniciarSesion,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Paleta.doradoPrincipal,
+                            foregroundColor: Colors.white,
+                            elevation: 2,
+                            shadowColor: Paleta.doradoPrincipal.withValues(
+                              alpha: 0.35,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            disabledBackgroundColor: Paleta.doradoPrincipal
+                                .withValues(alpha: 0.5),
+                          ),
+                          child: _cargando
+                              ? const SizedBox(
+                                  height: 22,
+                                  width: 22,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2.5,
+                                  ),
+                                )
+                              : Text(
+                                  'Iniciar sesión',
+                                  style: GoogleFonts.nunito(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Center(
+                        child: TextButton(
+                          onPressed: () => context.go('/crear-cuenta'),
+                          child: Text.rich(
+                            TextSpan(
+                              text: '¿No tienes cuenta? ',
+                              style: GoogleFonts.nunito(
+                                color: Paleta.textoSecundario,
+                                fontSize: 14,
+                              ),
+                              children: [
+                                TextSpan(
+                                  text: 'Crear cuenta',
+                                  style: GoogleFonts.nunito(
+                                    color: Paleta.doradoOscuro,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 24),
-                  ],
+                      const SizedBox(height: 24),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

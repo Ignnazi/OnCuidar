@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -12,7 +13,9 @@ Future<void> main() async {
   await Firebase.initializeApp(options: FirebaseOpciones.actual);
   FirebaseFirestore.instance.settings = const Settings(
     persistenceEnabled: true,
-    cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
+    // 50 MB: los datos cifrados son pequeños; un tope evita que la caché en
+    // disco crezca sin control con docs sensibles en el dispositivo.
+    cacheSizeBytes: 52428800,
   );
   runApp(const ProviderScope(child: OncuidarApp()));
 }
@@ -83,14 +86,45 @@ class _GateClaveState extends ConsumerState<_GateClave> {
       final uid = ref.read(firebaseAuthProvider).currentUser!.uid;
       await ref.read(servicioCifradoProvider).asegurarClave(uid);
       ref.read(bloqueoCifradoProvider.notifier).fijarDesbloqueado(true);
-    } catch (_) {
+    } catch (e, pila) {
+      debugPrint('Error restaurando clave: $e\n$pila');
       if (mounted) {
         setState(() {
           _cargando = false;
-          _error = 'No se pudieron restaurar tus datos.';
+          _error = _mensajeRestauracion(e);
         });
       }
     }
+  }
+
+  // Traduce la excepción a un mensaje claro y accionable. El detalle técnico
+  // (código, pila) queda en debugPrint; aquí solo lo que el usuario necesita.
+  String _mensajeRestauracion(Object e) {
+    if (e is FirebaseFunctionsException) {
+      switch (e.code) {
+        case 'unavailable':
+        case 'deadline-exceeded':
+          return 'No pudimos conectar con el servidor seguro.\n'
+              'Revisa tu conexión a internet y vuelve a intentarlo.';
+        case 'unauthenticated':
+          return 'Tu sesión expiró. Inicia sesión nuevamente.';
+        case 'failed-precondition':
+          return 'El servidor tiene una configuración pendiente.\n'
+              'Inténtalo de nuevo; si persiste, avísanos.';
+        case 'internal':
+          return 'Hubo un error interno al restaurar tus datos.\n'
+              'Reintenta; si persiste, avísanos con el código del error.';
+        default:
+          return 'No se pudieron restaurar tus datos.\n'
+              '(${e.code})';
+      }
+    }
+    if (e is FormatException) {
+      return 'Tus datos locales están dañados.\n'
+          'Se generará una copia nueva; reintenta para continuar.';
+    }
+    return 'No se pudieron restaurar tus datos.\n'
+        'Reintenta y, si persiste, avísanos.';
   }
 
   @override
@@ -104,8 +138,11 @@ class _GateClaveState extends ConsumerState<_GateClave> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.cloud_off_outlined,
-                        size: 56, color: Colors.orange),
+                    const Icon(
+                      Icons.cloud_off_outlined,
+                      size: 56,
+                      color: Colors.orange,
+                    ),
                     const SizedBox(height: 16),
                     Text(
                       _error ?? 'Restauracion pendiente',
@@ -116,6 +153,10 @@ class _GateClaveState extends ConsumerState<_GateClave> {
                       onPressed: _restaurar,
                       icon: const Icon(Icons.refresh),
                       label: const Text('Reintentar'),
+                    ),
+                    TextButton(
+                      onPressed: () => ref.read(firebaseAuthProvider).signOut(),
+                      child: const Text('Salir'),
                     ),
                   ],
                 ),

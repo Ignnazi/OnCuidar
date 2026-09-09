@@ -1,0 +1,76 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ══════════════════════════════════════
+    // USUARIOS — Cada cuidador solo ve/escribe SU doc
+    // ══════════════════════════════════════
+    match /users/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+
+      // En update solo se niegan los campos que ESTE guardado agrega o cambia
+      // (diff.affectedKeys), no los que ya estaban en el doc. Si se revisara el
+      // doc completo, cualquier usuario con correo_respaldo_hash (escrito por el
+      // servidor en registerRecoveryEmail) NO podria actualizar NADA: "No se
+      // pudieron guardar los datos" en el perfil.
+      allow create: if request.auth != null
+        && request.auth.uid == userId
+        && !request.resource.data.keys().hasAny([
+          'correo_respaldo_hash',   // solo servidor (HMAC)
+          'displayName',            // siempre cifrado -> nombre_cifrado
+          'phone',                  // siempre cifrado -> telefono_cifrado
+          'relationship',           // siempre cifrado -> relacion_cifrada
+          'correo_respaldo'         // siempre cifrado -> correo_respaldo_cifrado
+        ]);
+      allow update: if request.auth != null
+        && request.auth.uid == userId
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+          'correo_respaldo_hash',   // solo servidor (HMAC)
+          'displayName',            // siempre cifrado -> nombre_cifrado
+          'phone',                  // siempre cifrado -> telefono_cifrado
+          'relationship',           // siempre cifrado -> relacion_cifrada
+          'correo_respaldo'         // siempre cifrado -> correo_respaldo_cifrado
+        ]);
+      allow delete: if request.auth != null && request.auth.uid == userId;
+
+      // Pacientes del cuidador
+      match /patients/{patientId} {
+        allow read, delete: if request.auth != null && request.auth.uid == userId;
+
+        // Impide que los datos sensibles se escriban en claro (mismo patron:
+        // los campos en claro legacy ya presentes no bloquean el update).
+        allow create: if request.auth != null
+          && request.auth.uid == userId
+          && !request.resource.data.keys().hasAny([
+            'fullName', 'rut', 'age', 'diagnosis',
+            'tratamientoFase',
+            'centroSaludNombre', 'centroSaludDireccion', 'centroSaludTelefono',
+            'contactoEmergenciaNombre', 'contactoEmergenciaTelefono'
+          ]);
+        allow update: if request.auth != null
+          && request.auth.uid == userId
+          && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+            'fullName', 'rut', 'age', 'diagnosis',
+            'tratamientoFase',
+            'centroSaludNombre', 'centroSaludDireccion', 'centroSaludTelefono',
+            'contactoEmergenciaNombre', 'contactoEmergenciaTelefono'
+          ]);
+      }
+    }
+
+    // ══════════════════════════════════════
+    // SOLO SERVIDOR — Claves selladas por Cloud KMS y rate limits
+    // (el Admin SDK de las funciones ignora las reglas)
+    // ══════════════════════════════════════
+
+    // Claves de datos cifradas con Cloud KMS: los clientes nunca leen/escriben.
+    match /recoveryKeys/{uid} {
+      allow read, write: if false;
+    }
+
+    // Rate limiting anti-enumeración: solo el servidor escribe/lee.
+    match /recoveryCooldowns/{hash} {
+      allow read, write: if false;
+    }
+  }
+}

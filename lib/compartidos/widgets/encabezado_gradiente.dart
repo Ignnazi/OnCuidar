@@ -7,7 +7,6 @@ class EncabezadoGradiente extends StatelessWidget {
     super.key,
     required this.titulo,
     this.alto = 120,
-    this.alturaOla = 12,
     this.tamanoTitulo,
     this.mostrarRetroceso = false,
     this.alRetroceder,
@@ -17,7 +16,9 @@ class EncabezadoGradiente extends StatelessWidget {
   final String titulo;
   final String? subtitulo;
   final double alto;
-  final double alturaOla;
+
+  static const _alturaOla = 12.0;
+
   final double? tamanoTitulo;
   final bool mostrarRetroceso;
   final VoidCallback? alRetroceder;
@@ -27,7 +28,7 @@ class EncabezadoGradiente extends StatelessWidget {
     final alturaBarraEstado = MediaQuery.of(context).padding.top;
 
     return SizedBox(
-      height: alturaBarraEstado + alto + (alturaOla * 0.5),
+      height: alturaBarraEstado + alto + (_alturaOla * 0.5),
       child: Stack(
         clipBehavior: Clip.none,
         children: [
@@ -92,8 +93,11 @@ class EncabezadoGradiente extends StatelessWidget {
               left: 4,
               child: IconButton(
                 tooltip: 'Volver',
-                icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                    color: Colors.white, size: 22),
+                icon: const Icon(
+                  Icons.arrow_back_ios_new_rounded,
+                  color: Colors.white,
+                  size: 22,
+                ),
                 onPressed: alRetroceder ?? () => Navigator.of(context).pop(),
               ),
             ),
@@ -102,7 +106,7 @@ class EncabezadoGradiente extends StatelessWidget {
             left: 0,
             right: 0,
             child: CustomPaint(
-              size: Size(MediaQuery.of(context).size.width, alturaOla),
+              size: Size(MediaQuery.of(context).size.width, _alturaOla),
               painter: PintorOla(color: Paleta.crema),
             ),
           ),

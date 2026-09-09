@@ -49,9 +49,14 @@ android/local.properties
 ios/Flutter/ephemeral/
 
 # Environment files (if any are added later)
+
+
 .env
 .env.*
 *.env
 
-# Local tooling artifacts
-.atl/
+# Firebase Functions
+functions/node_modules/
+
+# Firebase local (emuladores, caches de hosting)
+.firebase/

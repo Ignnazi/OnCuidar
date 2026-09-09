@@ -125,14 +125,14 @@ void main() {
       await servicio.crearCuidador({
         'displayName': 'Ana Torres',
         'email': 'ana@correo.cl',
-        'correo_respaldo_hash': 'hash-respaldo-abc123',
         'phone': '+56 9 1111 2222',
         'relationship': 'Madre',
       });
 
       final datos = (await base.collection('users').doc('uid-1').get()).data()!;
       expect(datos['email'], 'ana@correo.cl');
-      expect(datos['correo_respaldo_hash'], 'hash-respaldo-abc123');
+      expect(datos.containsKey('correo_respaldo_hash'), isFalse,
+          reason: 'el cliente nunca escribe el hash; lo hace el servidor');
       expect(datos['nombre_cifrado'], isNot('Ana Torres'));
       expect(datos['telefono_cifrado'], isNot('+56 9 1111 2222'));
       expect(datos['relacion_cifrada'], isNot('Madre'));

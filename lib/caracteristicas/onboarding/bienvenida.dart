@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/tema/paleta.dart';
 import '../../compartidos/widgets/encabezado_gradiente.dart';
 import '../../compartidos/widgets/marca.dart';
 import '../../compartidos/widgets/boton_principal.dart';
 
-class Bienvenida extends StatelessWidget {
+class Bienvenida extends StatefulWidget {
   const Bienvenida({
     super.key,
     required this.alIniciarSesion,
@@ -16,9 +17,35 @@ class Bienvenida extends StatelessWidget {
   final VoidCallback alCrearCuenta;
 
   @override
+  State<Bienvenida> createState() => _BienvenidaState();
+}
+
+class _BienvenidaState extends State<Bienvenida> {
+  DateTime _ultimaPulsacion = DateTime.fromMillisecondsSinceEpoch(0);
+
+  /// Cierra la app con doble-tap en el boton atras, el patron estandar de
+  /// Android para una pantalla que es raiz (sin sesion).
+  void _manejarAtras(bool didPop) {
+    if (didPop) return;
+    final ahora = DateTime.now();
+    if (ahora.difference(_ultimaPulsacion) < const Duration(seconds: 2)) {
+      SystemNavigator.pop();
+      return;
+    }
+    _ultimaPulsacion = ahora;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Presiona atrás de nuevo para salir'),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     return PopScope(
       canPop: false,
+      onPopInvokedWithResult: (didPop, result) => _manejarAtras(didPop),
       child: Scaffold(
         backgroundColor: Paleta.crema,
         body: Column(
@@ -64,12 +91,12 @@ class Bienvenida extends StatelessWidget {
                     const SizedBox(height: 24),
                     BotonPrincipal(
                       etiqueta: 'Iniciar Sesión',
-                      alPulsar: alIniciarSesion,
+                      alPulsar: widget.alIniciarSesion,
                     ),
                     const SizedBox(height: 14),
                     BotonPrincipal(
                       etiqueta: 'Crear Cuenta',
-                      alPulsar: alCrearCuenta,
+                      alPulsar: widget.alCrearCuenta,
                       destacado: false,
                     ),
                     const SizedBox(height: 36),

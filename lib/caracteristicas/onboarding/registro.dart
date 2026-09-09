@@ -9,6 +9,7 @@ import '../../core/proveedores/proveedores.dart';
 import '../../core/servicios/servicio_registro.dart';
 import '../../core/tema/paleta.dart';
 import '../../core/utilidades/rut_utils.dart';
+import '../../core/utilidades/validacion_correo.dart';
 import '../../modelos/paciente.dart';
 
 const _relaciones = ['Madre', 'Padre', 'Tutor', 'Otro'];
@@ -21,15 +22,13 @@ const _fasesTratamiento = [
   'No aplica',
 ];
 
-final _regexCorreo = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-
 String? _validarObligatorio(String? v, String mensaje) =>
     v == null || v.trim().isEmpty ? mensaje : null;
 
 String? _validarCorreo(String? v, {bool opcional = false}) {
   final valor = v?.trim() ?? '';
   if (valor.isEmpty) return opcional ? null : 'Ingresa tu correo';
-  return _regexCorreo.hasMatch(valor) ? null : 'Ingresa un correo válido';
+  return regexCorreo.hasMatch(valor) ? null : 'Ingresa un correo válido';
 }
 
 String? _validarContrasena(String? v) {
@@ -51,6 +50,7 @@ class _RegistroState extends ConsumerState<Registro> {
   // Controllers Cuidador
   final _nombreController = TextEditingController();
   final _telefonoController = TextEditingController();
+  final _direccionController = TextEditingController();
   final _correoController = TextEditingController();
   final _correoRespaldoController = TextEditingController();
   final _contrasenaController = TextEditingController();
@@ -78,6 +78,7 @@ class _RegistroState extends ConsumerState<Registro> {
   late final List<TextEditingController> _controllers = [
     _nombreController,
     _telefonoController,
+    _direccionController,
     _correoController,
     _correoRespaldoController,
     _contrasenaController,
@@ -105,31 +106,35 @@ class _RegistroState extends ConsumerState<Registro> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _cargando = true);
 
-    final resultado =
-        await ref.read(servicioRegistroProvider).registrar(DatosRegistro(
-              nombre: _nombreController.text.trim(),
-              correo: _correoController.text.trim(),
-              telefono: _telefonoController.text.trim(),
-              relacion: _relacion,
-              correoRespaldo: _correoRespaldoController.text.trim(),
-              contrasena: _contrasenaController.text,
-              paciente: Paciente(
-                id: 'auto',
-                fullName: _nombrePacienteController.text.trim(),
-                rut: _rutController.text.trim(),
-                age: int.tryParse(_edadController.text.trim()),
-                diagnosis: _diagnosticoController.text.trim(),
-                tratamientoFase: _faseTratamiento,
-                contactoEmergenciaNombre:
-                    _contactoEmergenciaNombreController.text.trim(),
-                centroSaludNombre: _centroNombreController.text.trim(),
-                centroSaludDireccion: _centroDireccionController.text.trim(),
-                centroSaludTelefono: _centroTelefonoController.text.trim(),
-                contactoEmergenciaTelefono:
-                    _urgenciaTelefonoController.text.trim(),
-                createdAt: DateTime.now(),
-              ),
-            ));
+    final resultado = await ref
+        .read(servicioRegistroProvider)
+        .registrar(
+          DatosRegistro(
+            nombre: _nombreController.text.trim(),
+            correo: _correoController.text.trim(),
+            telefono: _telefonoController.text.trim(),
+            relacion: _relacion,
+            correoRespaldo: _correoRespaldoController.text.trim(),
+            direccion: _direccionController.text.trim(),
+            contrasena: _contrasenaController.text,
+            paciente: Paciente(
+              id: 'auto',
+              fullName: _nombrePacienteController.text.trim(),
+              rut: _rutController.text.trim(),
+              age: int.tryParse(_edadController.text.trim()),
+              diagnosis: _diagnosticoController.text.trim(),
+              tratamientoFase: _faseTratamiento,
+              contactoEmergenciaNombre: _contactoEmergenciaNombreController.text
+                  .trim(),
+              centroSaludNombre: _centroNombreController.text.trim(),
+              centroSaludDireccion: _centroDireccionController.text.trim(),
+              centroSaludTelefono: _centroTelefonoController.text.trim(),
+              contactoEmergenciaTelefono: _urgenciaTelefonoController.text
+                  .trim(),
+              createdAt: DateTime.now(),
+            ),
+          ),
+        );
 
     switch (resultado) {
       case RegistroExitoso():
@@ -138,7 +143,7 @@ class _RegistroState extends ConsumerState<Registro> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('¡Cuenta creada exitosamente!'),
-              backgroundColor: Paleta.exito,
+              backgroundColor: Paleta.doradoPrincipal,
             ),
           );
           context.go('/dashboard');
@@ -213,11 +218,12 @@ class _RegistroState extends ConsumerState<Registro> {
             icono: icono,
           ),
           items: opciones
-              .map((opcion) => DropdownMenuItem(
-                    value: opcion,
-                    child: Text(opcion,
-                        style: GoogleFonts.nunito(fontSize: 14)),
-                  ))
+              .map(
+                (opcion) => DropdownMenuItem(
+                  value: opcion,
+                  child: Text(opcion, style: GoogleFonts.nunito(fontSize: 14)),
+                ),
+              )
               .toList(),
           onChanged: alCambiar,
           validator: (v) => v == null ? mensajeValidacion : null,
@@ -245,9 +251,7 @@ class _RegistroState extends ConsumerState<Registro> {
               if (formateado == valorNuevo.text) return valorNuevo;
               return TextEditingValue(
                 text: formateado,
-                selection: TextSelection.collapsed(
-                  offset: formateado.length,
-                ),
+                selection: TextSelection.collapsed(offset: formateado.length),
               );
             }),
           ],
@@ -257,8 +261,7 @@ class _RegistroState extends ConsumerState<Registro> {
             if (!validarRut(valor)) return 'RUT no válido';
             return null;
           },
-          style: GoogleFonts.nunito(
-              fontSize: 14, color: Paleta.textoPrincipal),
+          style: GoogleFonts.nunito(fontSize: 14, color: Paleta.textoPrincipal),
           decoration: decoracionEntrada(
             textoAyuda: '12.345.678-9',
             icono: Icons.badge_outlined,
@@ -296,6 +299,13 @@ class _RegistroState extends ConsumerState<Registro> {
         accionTeclado: TextInputAction.next,
       ),
       _campoEtiquetado(
+        etiqueta: 'Dirección',
+        controlador: _direccionController,
+        textoAyuda: 'Dirección del cuidador',
+        icono: Icons.location_on_outlined,
+        accionTeclado: TextInputAction.next,
+      ),
+      _campoEtiquetado(
         etiqueta: 'Correo electrónico',
         controlador: _correoController,
         textoAyuda: 'correo@ejemplo.com',
@@ -326,8 +336,8 @@ class _RegistroState extends ConsumerState<Registro> {
                 : Icons.visibility_outlined,
             size: 20,
           ),
-          onPressed: () => setState(
-              () => _ocultarContrasena = !_ocultarContrasena),
+          onPressed: () =>
+              setState(() => _ocultarContrasena = !_ocultarContrasena),
         ),
         accionTeclado: TextInputAction.next,
         validador: _validarContrasena,
@@ -345,8 +355,8 @@ class _RegistroState extends ConsumerState<Registro> {
                 : Icons.visibility_outlined,
             size: 20,
           ),
-          onPressed: () => setState(
-              () => _ocultarConfirmar = !_ocultarConfirmar),
+          onPressed: () =>
+              setState(() => _ocultarConfirmar = !_ocultarConfirmar),
         ),
         accionTeclado: TextInputAction.next,
         validador: _validarConfirmacion,
@@ -449,8 +459,9 @@ class _RegistroState extends ConsumerState<Registro> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
-          disabledBackgroundColor:
-              Paleta.doradoPrincipal.withValues(alpha: 0.5),
+          disabledBackgroundColor: Paleta.doradoPrincipal.withValues(
+            alpha: 0.5,
+          ),
         ),
         child: _cargando
             ? const SizedBox(
@@ -475,7 +486,7 @@ class _RegistroState extends ConsumerState<Registro> {
   Widget _enlaceIniciarSesion() {
     return Center(
       child: TextButton(
-        onPressed: () => context.push('/iniciar-sesion'),
+        onPressed: () => context.go('/iniciar-sesion'),
         child: Text.rich(
           TextSpan(
             text: '¿Ya tienes cuenta? ',
@@ -500,53 +511,62 @@ class _RegistroState extends ConsumerState<Registro> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Paleta.crema,
-      body: Column(
-        children: [
-          EncabezadoGradiente(
-            mostrarRetroceso: true,
-            titulo: 'Crear tu perfil',
-            subtitulo: 'Completa los datos para comenzar tu cuidado',
-            alto: 130,
-            alRetroceder: () => context.pop(),
-          ),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    TarjetaSeccion(
-                      icono: Icons.person_rounded,
-                      titulo: 'Datos del cuidador',
-                      hijos: _camposCuidador(),
-                    ),
-                    const SizedBox(height: 16),
-                    TarjetaSeccion(
-                      icono: Icons.child_care_rounded,
-                      titulo: 'Datos del paciente',
-                      hijos: _camposPaciente(),
-                    ),
-                    const SizedBox(height: 16),
-                    TarjetaSeccion(
-                      icono: Icons.local_hospital_outlined,
-                      titulo: 'Información de apoyo',
-                      hijos: _camposApoyo(),
-                    ),
-                    const SizedBox(height: 28),
-                    _botonGuardar(),
-                    const SizedBox(height: 16),
-                    _enlaceIniciarSesion(),
-                    const SizedBox(height: 32),
-                  ],
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) context.go('/bienvenida');
+      },
+      child: Scaffold(
+        backgroundColor: Paleta.crema,
+        body: Column(
+          children: [
+            EncabezadoGradiente(
+              mostrarRetroceso: true,
+              titulo: 'Crear tu perfil',
+              subtitulo: 'Completa los datos para comenzar tu cuidado',
+              alto: 130,
+              alRetroceder: () => context.go('/bienvenida'),
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 24,
+                ),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      TarjetaSeccion(
+                        icono: Icons.person_rounded,
+                        titulo: 'Datos del cuidador',
+                        hijos: _camposCuidador(),
+                      ),
+                      const SizedBox(height: 16),
+                      TarjetaSeccion(
+                        icono: Icons.child_care_rounded,
+                        titulo: 'Datos del paciente',
+                        hijos: _camposPaciente(),
+                      ),
+                      const SizedBox(height: 16),
+                      TarjetaSeccion(
+                        icono: Icons.local_hospital_outlined,
+                        titulo: 'Información de apoyo',
+                        hijos: _camposApoyo(),
+                      ),
+                      const SizedBox(height: 28),
+                      _botonGuardar(),
+                      const SizedBox(height: 16),
+                      _enlaceIniciarSesion(),
+                      const SizedBox(height: 32),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
