@@ -8,6 +8,8 @@ import 'package:oncuidar/caracteristicas/onboarding/registro.dart';
 import 'package:oncuidar/core/proveedores/proveedores.dart';
 import 'package:oncuidar/core/servicios/servicio_base_datos.dart';
 import 'package:oncuidar/core/servicios/servicio_cifrado.dart';
+import 'package:oncuidar/core/servicios/servicio_registro.dart';
+import 'package:oncuidar/modelos/paciente.dart';
 
 const _clavePrueba = 'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=';
 const _uid = 'uid-test';
@@ -124,7 +126,7 @@ void main() {
     expect(find.text('Dashboard'), findsOneWidget);
   });
 
-  testWidgets('fallo en Firestore corta el flujo y no navega', (tester) async {
+testWidgets('fallo en Firestore corta el flujo y no navega', (tester) async {
     await _pantallaAlta(tester);
     final auth = _authLimpio();
     final cifrado = _cifradoListo();
@@ -140,6 +142,56 @@ void main() {
     expect(find.text('Dashboard'), findsNothing,
         reason: 'fallo en Firestore impide navegar');
     expect(find.text('Error inesperado. Intenta de nuevo.'), findsOneWidget);
+  });
+
+  test(
+      'registro con respaldo normaliza, llama al callable y NO escribe el hash',
+      () async {
+    final auth = _authLimpio();
+    final cifrado = _cifradoListo();
+    final base = FakeFirebaseFirestore();
+    final baseDatos = ServicioBaseDatos(
+      base: base,
+      auth: auth,
+      cifrado: cifrado,
+    );
+
+    String? emailRegistrado;
+    final servicio = ServicioRegistro(
+      auth: auth,
+      cifrado: cifrado,
+      baseDatos: baseDatos,
+      registrarCorreoRespaldo: (email) async => emailRegistrado = email,
+    );
+
+    final resultado = await servicio.registrar(DatosRegistro(
+      nombre: 'Ana Torres',
+      correo: 'ana@correo.cl',
+      telefono: '+56 9 1111 2222',
+      relacion: 'Madre',
+      correoRespaldo: '  Respaldo@Ejemplo.cl ',
+      contrasena: 'secreto123',
+      paciente: Paciente(
+        id: 'auto',
+        fullName: 'Paciente Ana',
+        rut: '12.345.678-9',
+        diagnosis: 'Cancer de mama',
+        tratamientoFase: 'Tratamiento',
+        createdAt: DateTime.now(),
+      ),
+    ));
+
+    expect(resultado, isA<RegistroExitoso>());
+    expect(emailRegistrado, 'respaldo@ejemplo.cl',
+        reason: 'el respaldo se normaliza en minúsculas antes del callable');
+    final uidCreado = auth.currentUser!.uid;
+    final doc =
+        (await base.collection('users').doc(uidCreado).get()).data()!;
+    expect(doc.containsKey('correo_respaldo_hash'), isFalse,
+        reason: 'el cliente nunca escribe el hash; lo registra el servidor');
+    final cifradoRespaldo = doc['correo_respaldo_cifrado'] as String;
+    expect(
+        await cifrado.descifrar(uidCreado, cifradoRespaldo), 'respaldo@ejemplo.cl');
   });
 }
 

@@ -10,11 +10,7 @@ class Paleta {
   static const degradadoCabecera = LinearGradient(
     begin: Alignment(-0.6, -0.8),
     end: Alignment(1.0, 1.0),
-    colors: [
-      doradoOscuro,
-      doradoMedio,
-      Color(0xFFF5C842),
-    ],
+    colors: [doradoOscuro, doradoMedio, Color(0xFFF5C842)],
   );
 
   static const textoPrincipal = Color(0xFF2C1A00);
@@ -24,6 +20,5 @@ class Paleta {
   static const tarjeta = Color(0xFFFFFFFF);
   static const fondoEntrada = Color(0xFFFFF8F0);
   static const bordeTarjeta = Color(0x33E8A820);
-  static const exito = Color(0xFF10B981);
   static const error = Color(0xFFEF4444);
 }

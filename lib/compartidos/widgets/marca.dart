@@ -16,14 +16,9 @@ class Marca extends StatelessWidget {
 }
 
 class LogoCircular extends StatelessWidget {
-  const LogoCircular({
-    super.key,
-    this.tamano = 220,
-    this.fondo = Colors.white,
-  });
+  const LogoCircular({super.key, this.tamano = 220});
 
   final double tamano;
-  final Color fondo;
 
   @override
   Widget build(BuildContext context) {
@@ -31,7 +26,7 @@ class LogoCircular extends StatelessWidget {
       width: tamano,
       height: tamano,
       decoration: BoxDecoration(
-        color: fondo,
+        color: Colors.white,
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
@@ -42,10 +37,7 @@ class LogoCircular extends StatelessWidget {
         ],
       ),
       padding: EdgeInsets.all(tamano * 0.12),
-      child: Image.asset(
-        'assets/images/logo2.png',
-        fit: BoxFit.contain,
-      ),
+      child: Image.asset('assets/images/logo2.png', fit: BoxFit.contain),
     );
   }
 }

@@ -18,7 +18,15 @@ class BotonPrincipal extends StatelessWidget {
     if (destacado) {
       return ElevatedButton(
         onPressed: alPulsar,
-        child: Text(etiqueta),
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            etiqueta,
+            maxLines: 1,
+            overflow: TextOverflow.fade,
+            textAlign: TextAlign.center,
+          ),
+        ),
       );
     }
     return OutlinedButton(
@@ -28,11 +36,17 @@ class BotonPrincipal extends StatelessWidget {
         foregroundColor: Paleta.doradoPrincipal,
         minimumSize: const Size(double.infinity, 54),
         textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      ),
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Text(
+          etiqueta,
+          maxLines: 1,
+          overflow: TextOverflow.fade,
+          textAlign: TextAlign.center,
         ),
       ),
-      child: Text(etiqueta),
     );
   }
 }

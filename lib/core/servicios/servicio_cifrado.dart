@@ -13,8 +13,23 @@ class ServicioCifrado {
   String? _uidActivo;
 
   Future<bool> restaurarClave(String uid) async {
-    final valor = _clavePrueba ?? await _almacen.read(key: 'oncuidar.data-key.$uid');
+    if (_clavePrueba != null) {
+      await fijarClave(uid, _clavePrueba);
+      return true;
+    }
+    String? valor;
+    try {
+      valor = await _almacen.read(key: 'oncuidar.data-key.$uid');
+    } catch (_) {
+      return false;
+    }
     if (valor == null) return false;
+    try {
+      final bytes = base64.decode(valor);
+      if (bytes.length != 32) return false;
+    } catch (_) {
+      return false;
+    }
     await fijarClave(uid, valor);
     return true;
   }
@@ -22,6 +37,9 @@ class ServicioCifrado {
   Future<void> asegurarClave(String uid) async {
     final local = await restaurarClave(uid);
     if (local) return;
+    try {
+      await _almacen.delete(key: 'oncuidar.data-key.$uid');
+    } catch (_) {}
     final resultado = await FirebaseFunctions.instanceFor(
       region: 'southamerica-west1',
     ).httpsCallable('getOrCreateDataKey').call();
@@ -30,7 +48,9 @@ class ServicioCifrado {
 
   Future<void> fijarClave(String uid, String codificada) async {
     final bytes = base64.decode(codificada);
-    if (bytes.length != 32) throw const FormatException('Clave de datos invalida.');
+    if (bytes.length != 32) {
+      throw const FormatException('Clave de datos invalida.');
+    }
     _claveActiva = SecretKey(bytes);
     _uidActivo = uid;
     if (_clavePrueba == null) {
@@ -57,7 +77,9 @@ class ServicioCifrado {
 
   Future<String> descifrar(String uid, String valor) async {
     final partes = valor.split('.');
-    if (partes.length != 3) throw const FormatException('Texto cifrado invalido.');
+    if (partes.length != 3) {
+      throw const FormatException('Texto cifrado invalido.');
+    }
     final claro = await _cifrador.decrypt(
       SecretBox(
         base64Url.decode(partes[1]),

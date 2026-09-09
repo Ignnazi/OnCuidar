@@ -12,6 +12,7 @@ import 'package:oncuidar/caracteristicas/perfil/perfil.dart';
 import 'package:oncuidar/core/proveedores/proveedores.dart';
 import 'package:oncuidar/core/servicios/servicio_base_datos.dart';
 import 'package:oncuidar/core/servicios/servicio_cifrado.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 const _clavePrueba = 'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=';
 const _uid = 'uid-test';
@@ -96,6 +97,10 @@ Widget _pantallaLogin(
 }
 
 void main() {
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+  });
+
   testWidgets('iniciar sesion valido desbloquea clave y navega al dashboard',
       (tester) async {
     await _pantallaAlta(tester);
@@ -250,8 +255,12 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    await tester.tap(find.text('Mi perfil'));
+    await tester.pumpAndSettle();
+
     expect(find.text('Ana Torres'), findsOneWidget);
-    expect(find.text('ana@correo.cl'), findsOneWidget);
+    expect(find.text('ana@correo.cl'), findsWidgets,
+        reason: 'aparece en la tarjeta del cuidador y en la fila de correo');
 
     await tester.tap(find.text('Cerrar sesión').first);
     await tester.pumpAndSettle();

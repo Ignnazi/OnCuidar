@@ -49,10 +49,11 @@ class Tema {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: Paleta.fondoEntrada,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       ),
     );
   }

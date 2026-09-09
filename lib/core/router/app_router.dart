@@ -3,6 +3,7 @@ import '../../caracteristicas/dashboard/dashboard.dart';
 import '../../caracteristicas/onboarding/bienvenida.dart';
 import '../../caracteristicas/onboarding/iniciar_sesion.dart';
 import '../../caracteristicas/onboarding/proximamente.dart';
+import '../../caracteristicas/onboarding/recuperar_acceso.dart';
 import '../../caracteristicas/onboarding/registro.dart';
 import '../../caracteristicas/onboarding/splash.dart';
 import '../../caracteristicas/perfil/perfil.dart';
@@ -13,9 +14,8 @@ final router = GoRouter(
   routes: [
     GoRoute(
       path: '/',
-      builder: (context, state) => Splash(
-        alFinalizar: () => context.go('/bienvenida'),
-      ),
+      builder: (context, state) =>
+          Splash(alFinalizar: () => context.go('/bienvenida')),
     ),
     GoRoute(
       path: '/bienvenida',
@@ -32,6 +32,10 @@ final router = GoRouter(
       path: '/crear-cuenta',
       builder: (context, state) => const Registro(),
     ),
+    GoRoute(
+      path: '/recuperar-acceso',
+      builder: (context, state) => const RecuperarAcceso(),
+    ),
     ShellRoute(
       builder: (context, state, child) => NavegacionPrincipal(child: child),
       routes: [
@@ -39,10 +43,7 @@ final router = GoRouter(
           path: '/dashboard',
           builder: (context, state) => const Dashboard(),
         ),
-        GoRoute(
-          path: '/perfil',
-          builder: (context, state) => const Perfil(),
-        ),
+        GoRoute(path: '/perfil', builder: (context, state) => const Perfil()),
         GoRoute(
           path: '/proximamente',
           builder: (context, state) => Proximamente(
