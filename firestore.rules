@@ -8,11 +8,6 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if request.auth != null && request.auth.uid == userId;
 
-      // En update solo se niegan los campos que ESTE guardado agrega o cambia
-      // (diff.affectedKeys), no los que ya estaban en el doc. Si se revisara el
-      // doc completo, cualquier usuario con correo_respaldo_hash (escrito por el
-      // servidor en registerRecoveryEmail) NO podria actualizar NADA: "No se
-      // pudieron guardar los datos" en el perfil.
       allow create: if request.auth != null
         && request.auth.uid == userId
         && !request.resource.data.keys().hasAny([
@@ -37,8 +32,7 @@ service cloud.firestore {
       match /patients/{patientId} {
         allow read, delete: if request.auth != null && request.auth.uid == userId;
 
-        // Impide que los datos sensibles se escriban en claro (mismo patron:
-        // los campos en claro legacy ya presentes no bloquean el update).
+        // Impide que los datos sensibles se escriban en claro
         allow create: if request.auth != null
           && request.auth.uid == userId
           && !request.resource.data.keys().hasAny([
@@ -55,6 +49,25 @@ service cloud.firestore {
             'centroSaludNombre', 'centroSaludDireccion', 'centroSaludTelefono',
             'contactoEmergenciaNombre', 'contactoEmergenciaTelefono'
           ]);
+
+        // Registros clínicos del paciente cifrados
+        match /clinicalRecords/{recordId} {
+          allow read, delete: if request.auth != null && request.auth.uid == userId;
+          allow create: if request.auth != null
+            && request.auth.uid == userId
+            && !request.resource.data.keys().hasAny([
+              'generalNotes', 'alertMessage',          // nombres de la especificación
+              'observaciones', 'mensajeAlerta',        // nombres locales en claro
+              'sintomas', 'signosVitales'              // siempre cifrados
+            ]);
+          allow update: if request.auth != null
+            && request.auth.uid == userId
+            && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+              'generalNotes', 'alertMessage',
+              'observaciones', 'mensajeAlerta',
+              'sintomas', 'signosVitales'
+            ]);
+        }
       }
     }
 

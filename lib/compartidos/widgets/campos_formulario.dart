@@ -20,14 +20,14 @@ class TarjetaSeccion extends StatelessWidget {
       width: double.infinity,
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: Paleta.tarjeta,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Paleta.bordeTarjeta),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: Paleta.doradoClaro),
         boxShadow: [
           BoxShadow(
-            color: Paleta.doradoOscuro.withValues(alpha: 0.08),
-            blurRadius: 20,
-            offset: const Offset(0, 6),
+            color: Paleta.doradoOscuro.withValues(alpha: 0.10),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
@@ -35,64 +35,50 @@ class TarjetaSeccion extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            height: 4,
             width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
                 colors: [
                   Paleta.doradoOscuro,
                   Paleta.doradoPrincipal,
-                  Paleta.doradoClaro,
+                  Paleta.doradoMedio,
                 ],
               ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.22),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Icon(icono, color: Colors.white, size: 26),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    titulo,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.nunito(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
           Padding(
             padding: const EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 38,
-                      height: 38,
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [Paleta.doradoPrincipal, Paleta.doradoOscuro],
-                        ),
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Paleta.doradoOscuro.withValues(alpha: 0.28),
-                            blurRadius: 8,
-                            offset: const Offset(0, 3),
-                          ),
-                        ],
-                      ),
-                      child: Icon(icono, color: Colors.white, size: 21),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        titulo,
-                        overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.nunito(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w800,
-                          color: Paleta.textoPrincipal,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                ...hijos,
-              ],
+              children: hijos,
             ),
           ),
         ],

@@ -2,6 +2,38 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'paleta.dart';
 
+class _TransicionWhatsApp extends PageTransitionsBuilder {
+  const _TransicionWhatsApp();
+
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    if (route.settings.name == 'noAnimation') {
+      return child;
+    }
+    final curva = CurvedAnimation(
+      parent: animation,
+      curve: Curves.easeOutCubic,
+      reverseCurve: Curves.easeInCubic,
+    );
+    return FadeTransition(
+      opacity: curva,
+      child: SlideTransition(
+        position: Tween<Offset>(
+          begin: const Offset(0.10, 0),
+          end: Offset.zero,
+        ).animate(curva),
+        child: child,
+      ),
+    );
+  }
+}
+
 class Tema {
   static ThemeData obtener() {
     final esquema = ColorScheme.fromSeed(
@@ -16,6 +48,15 @@ class Tema {
       useMaterial3: true,
       colorScheme: esquema,
       scaffoldBackgroundColor: Paleta.crema,
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: _TransicionWhatsApp(),
+          TargetPlatform.iOS: _TransicionWhatsApp(),
+          TargetPlatform.windows: _TransicionWhatsApp(),
+          TargetPlatform.macOS: _TransicionWhatsApp(),
+          TargetPlatform.linux: _TransicionWhatsApp(),
+        },
+      ),
       textTheme: GoogleFonts.nunitoTextTheme().apply(
         bodyColor: Paleta.textoPrincipal,
         displayColor: Paleta.textoPrincipal,

@@ -8,7 +8,7 @@ class Marca extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Image.asset(
-      'assets/images/logo2.png',
+      'assets/images/OnCuidar.png',
       width: tamano,
       height: tamano,
     );
@@ -37,7 +37,7 @@ class LogoCircular extends StatelessWidget {
         ],
       ),
       padding: EdgeInsets.all(tamano * 0.12),
-      child: Image.asset('assets/images/logo2.png', fit: BoxFit.contain),
+      child: Image.asset('assets/images/OnCuidar.png', fit: BoxFit.contain),
     );
   }
 }

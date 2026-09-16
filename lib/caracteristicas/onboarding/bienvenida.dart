@@ -46,20 +46,21 @@ class _BienvenidaState extends State<Bienvenida> {
       onPopInvokedWithResult: (didPop, result) => _manejarAtras(didPop),
       child: Scaffold(
         backgroundColor: Paleta.crema,
-        body: Column(
+        body: Stack(
           children: [
-            const EncabezadoGradiente(
-              titulo: 'OnCuidar',
-              alto: 200,
-              tamanoTitulo: 28,
-            ),
-            Expanded(
+
+            Positioned.fill(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 28),
+                padding: EdgeInsets.fromLTRB(
+                  28,
+                  MediaQuery.of(context).padding.top + 160 + 8,
+                  28,
+                  24,
+                ),
                 child: Column(
                   children: [
                     const SizedBox(height: 24),
-                    const Marca(tamano: 170),
+                    const Marca(tamano: 200),
                     const SizedBox(height: 18),
                     Text(
                       'Te damos la bienvenida',
@@ -100,6 +101,18 @@ class _BienvenidaState extends State<Bienvenida> {
                     const SizedBox(height: 36),
                   ],
                 ),
+              ),
+            ),
+
+            const Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: EncabezadoGradiente(
+                titulo: 'OnCuidar',
+                alto: 160,
+                tamanoTitulo: 42,
+                tituloCentrado: true,
               ),
             ),
           ],

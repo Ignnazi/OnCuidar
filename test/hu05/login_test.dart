@@ -18,14 +18,12 @@ const _clavePrueba = 'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=';
 const _uid = 'uid-test';
 
 MockFirebaseAuth _authConSesion() => MockFirebaseAuth(
-      mockUser: MockUser(uid: _uid, email: 'ana@correo.cl'),
-    );
+  mockUser: MockUser(uid: _uid, email: 'ana@correo.cl'),
+);
 
 ServicioCifrado _cifradoListo() => ServicioCifrado(clavePrueba: _clavePrueba);
 
-Future<ServicioBaseDatos> _baseConCuidador(
-  ServicioCifrado cifrado,
-) async {
+Future<ServicioBaseDatos> _baseConCuidador(ServicioCifrado cifrado) async {
   await cifrado.fijarClave(_uid, _clavePrueba);
   final base = ServicioBaseDatos(
     base: FakeFirebaseFirestore(),
@@ -74,15 +72,13 @@ Widget _pantallaLogin(
       GoRoute(path: '/', builder: (c, s) => const IniciarSesion()),
       GoRoute(
         path: '/dashboard',
-        builder: (c, s) => const Scaffold(
-          body: Center(child: Text('Dashboard')),
-        ),
+        builder: (c, s) =>
+            const Scaffold(body: Center(child: Text('Dashboard'))),
       ),
       GoRoute(
         path: '/crear-cuenta',
-        builder: (c, s) => const Scaffold(
-          body: Center(child: Text('Registro')),
-        ),
+        builder: (c, s) =>
+            const Scaffold(body: Center(child: Text('Registro'))),
       ),
     ],
   );
@@ -101,8 +97,9 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
-  testWidgets('iniciar sesion valido desbloquea clave y navega al dashboard',
-      (tester) async {
+  testWidgets('iniciar sesion valido desbloquea clave y navega al dashboard', (
+    tester,
+  ) async {
     await _pantallaAlta(tester);
     final auth = _authConSesion();
     final cifrado = _cifradoListo();
@@ -122,19 +119,21 @@ void main() {
     expect(find.text('Dashboard'), findsOneWidget);
   });
 
-  testWidgets('contrasena incorrecta muestra el error y no navega',
-      (tester) async {
+  testWidgets('contrasena incorrecta muestra el error y no navega', (
+    tester,
+  ) async {
     await _pantallaAlta(tester);
     final auth = MockFirebaseAuth();
     final cifrado = _cifradoListo();
     final base = await _baseConCuidador(cifrado);
     whenCalling(
-      Invocation.method(
-        #signInWithEmailAndPassword,
-        null,
-        {#email: 'ana@correo.cl', #password: 'malaclave'},
-      ),
-    ).on(auth).thenThrow(
+          Invocation.method(#signInWithEmailAndPassword, null, {
+            #email: 'ana@correo.cl',
+            #password: 'malaclave',
+          }),
+        )
+        .on(auth)
+        .thenThrow(
           FirebaseAuthException(
             code: 'wrong-password',
             message: 'The password is invalid',
@@ -155,8 +154,9 @@ void main() {
     expect(find.text('Dashboard'), findsNothing);
   });
 
-  testWidgets('recuperar contrasena envia correo de restablecimiento',
-      (tester) async {
+  testWidgets('recuperar contrasena envia correo de restablecimiento', (
+    tester,
+  ) async {
     await _pantallaAlta(tester);
     final auth = _authConSesion();
     final cifrado = _cifradoListo();
@@ -194,15 +194,13 @@ void main() {
         ),
         GoRoute(
           path: '/bienvenida',
-          builder: (c, s) => const Scaffold(
-            body: Center(child: Text('Bienvenida')),
-          ),
+          builder: (c, s) =>
+              const Scaffold(body: Center(child: Text('Bienvenida'))),
         ),
         GoRoute(
           path: '/dashboard',
-          builder: (c, s) => const Scaffold(
-            body: Center(child: Text('Dashboard')),
-          ),
+          builder: (c, s) =>
+              const Scaffold(body: Center(child: Text('Dashboard'))),
         ),
       ],
     );
@@ -237,9 +235,8 @@ void main() {
         GoRoute(path: '/', builder: (c, s) => const Perfil()),
         GoRoute(
           path: '/bienvenida',
-          builder: (c, s) => const Scaffold(
-            body: Center(child: Text('Bienvenida')),
-          ),
+          builder: (c, s) =>
+              const Scaffold(body: Center(child: Text('Bienvenida'))),
         ),
       ],
     );
@@ -259,8 +256,11 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Ana Torres'), findsOneWidget);
-    expect(find.text('ana@correo.cl'), findsWidgets,
-        reason: 'aparece en la tarjeta del cuidador y en la fila de correo');
+    expect(
+      find.text('ana@correo.cl'),
+      findsWidgets,
+      reason: 'aparece en la tarjeta del cuidador y en la fila de correo',
+    );
 
     await tester.tap(find.text('Cerrar sesión').first);
     await tester.pumpAndSettle();

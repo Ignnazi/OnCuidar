@@ -10,7 +10,7 @@ class ChipFranja extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.18),
         borderRadius: BorderRadius.circular(20),
@@ -18,14 +18,18 @@ class ChipFranja extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icono, size: 13, color: Colors.white),
+          Icon(icono, size: 14.5, color: Colors.white),
           const SizedBox(width: 5),
-          Text(
-            texto,
-            style: GoogleFonts.nunito(
-              fontSize: 11,
-              fontWeight: FontWeight.w800,
-              color: Colors.white,
+          Flexible(
+            child: Text(
+              texto,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.nunito(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
+              ),
             ),
           ),
         ],

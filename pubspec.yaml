@@ -29,6 +29,7 @@ dependencies:
   # Encriptación
   cryptography: ^2.7.0
   flutter_secure_storage: ^9.2.4
+  uuid: ^4.6.0
 
 dev_dependencies:
   flutter_test:
@@ -42,10 +43,10 @@ dev_dependencies:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/images/icon.png"
+  image_path: "assets/images/OnCuidar.png"
   background_color: "#FFFFFF"
   adaptive_icon_background: "#FFFFFF"
-  adaptive_icon_foreground: "assets/images/icon.png"
+  adaptive_icon_foreground: "assets/images/OnCuidar.png"
 
 flutter:
   uses-material-design: true

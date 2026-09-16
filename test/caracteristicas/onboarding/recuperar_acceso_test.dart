@@ -13,7 +13,7 @@ const _mensajeErrorServidor = 'No se pudo completar. Intenta de nuevo.';
 
 class _ErrorConectividad extends FirebaseFunctionsException {
   _ErrorConectividad()
-      : super(code: 'unavailable', message: 'Unavailable (simulado)');
+    : super(code: 'unavailable', message: 'Unavailable (simulado)');
 }
 
 class _ErrorServidor extends FirebaseFunctionsException {
@@ -54,8 +54,9 @@ bool _campoDeshabilitado(WidgetTester tester) {
 }
 
 void main() {
-  testWidgets('correo asociado muestra "enviado" y bloquea el reenvio',
-      (tester) async {
+  testWidgets('correo asociado muestra "enviado" y bloquea el reenvio', (
+    tester,
+  ) async {
     await _pantallaAlta(tester);
     final emailsEnviados = <String>[];
     await tester.pumpWidget(
@@ -74,13 +75,17 @@ void main() {
 
     expect(emailsEnviados, ['ana@correo.cl']);
     expect(find.text(_mensajeEnviado), findsOneWidget);
-    expect(find.byType(TextField), findsOneWidget); // El formulario NO desaparece
+    expect(
+      find.byType(TextField),
+      findsOneWidget,
+    ); // El formulario NO desaparece
     expect(_botonDeshabilitado(tester), isTrue);
     expect(_campoDeshabilitado(tester), isTrue);
   });
 
-  testWidgets('correo no asociado lo indica y permite reintentar',
-      (tester) async {
+  testWidgets('correo no asociado lo indica y permite reintentar', (
+    tester,
+  ) async {
     await _pantallaAlta(tester);
     var llamadas = 0;
     await tester.pumpWidget(
@@ -111,42 +116,39 @@ void main() {
     expect(_campoDeshabilitado(tester), isFalse);
   });
 
-  testWidgets('falla de conectividad muestra error de red y permite reintentar',
-      (tester) async {
+  testWidgets(
+    'falla de conectividad muestra error de red y permite reintentar',
+    (tester) async {
+      await _pantallaAlta(tester);
+      await tester.pumpWidget(
+        _pantalla(
+          RecuperarAcceso(onSubmit: (_) async => throw _ErrorConectividad()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await _ingresarCorreoYEnviar(tester, email: 'ana@correo.cl');
+
+      expect(find.text(_mensajeSinConexion), findsOneWidget);
+      expect(find.text(_mensajeEnviado), findsNothing);
+      expect(find.text(_mensajeNoEncontrado), findsNothing);
+      expect(
+        tester
+            .widget<ElevatedButton>(
+              find.widgetWithText(ElevatedButton, 'Enviar enlace'),
+            )
+            .onPressed,
+        isNotNull,
+      );
+    },
+  );
+
+  testWidgets('error de servidor muestra mensaje de error reintentable', (
+    tester,
+  ) async {
     await _pantallaAlta(tester);
     await tester.pumpWidget(
-      _pantalla(
-        RecuperarAcceso(
-          onSubmit: (_) async => throw _ErrorConectividad(),
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    await _ingresarCorreoYEnviar(tester, email: 'ana@correo.cl');
-
-    expect(find.text(_mensajeSinConexion), findsOneWidget);
-    expect(find.text(_mensajeEnviado), findsNothing);
-    expect(find.text(_mensajeNoEncontrado), findsNothing);
-    expect(
-      tester
-          .widget<ElevatedButton>(
-            find.widgetWithText(ElevatedButton, 'Enviar enlace'),
-          )
-          .onPressed,
-      isNotNull,
-    );
-  });
-
-  testWidgets('error de servidor muestra mensaje de error reintentable',
-      (tester) async {
-    await _pantallaAlta(tester);
-    await tester.pumpWidget(
-      _pantalla(
-        RecuperarAcceso(
-          onSubmit: (_) async => throw _ErrorServidor(),
-        ),
-      ),
+      _pantalla(RecuperarAcceso(onSubmit: (_) async => throw _ErrorServidor())),
     );
     await tester.pumpAndSettle();
 
@@ -157,8 +159,9 @@ void main() {
     expect(find.text(_mensajeNoEncontrado), findsNothing);
   });
 
-  testWidgets('correo invalido no envia y muestra el error del validador',
-      (tester) async {
+  testWidgets('correo invalido no envia y muestra el error del validador', (
+    tester,
+  ) async {
     await _pantallaAlta(tester);
     var enviado = false;
     await tester.pumpWidget(

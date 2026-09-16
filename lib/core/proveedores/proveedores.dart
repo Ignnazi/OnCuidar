@@ -1,8 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart' show StateProvider;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../modelos/paciente.dart';
+import '../../modelos/registro_clinico.dart';
 import '../servicios/servicio_base_datos.dart';
 import '../servicios/servicio_cifrado.dart';
 import '../servicios/servicio_registro.dart';
@@ -121,3 +123,17 @@ final currentPatientProvider = StreamProvider.autoDispose<Paciente?>((
   }
   yield pacientes.first;
 });
+
+
+final registrosClinicosProvider =
+    StreamProvider.autoDispose<List<RegistroClinico>>((ref) {
+      final pacienteAsync = ref.watch(currentPatientProvider);
+      if (pacienteAsync is AsyncLoading) return Stream.empty();
+      final paciente = pacienteAsync.value;
+      if (paciente == null) return Stream.value(const []);
+      return ref
+          .watch(servicioBaseDatosProvider)
+          .registrosClinicosEnTiempoReal(paciente.id);
+    });
+
+final registroEnEdicionProvider = StateProvider<RegistroClinico?>((ref) => null);

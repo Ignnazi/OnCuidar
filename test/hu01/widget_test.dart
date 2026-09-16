@@ -8,9 +8,7 @@ void main() {
   testWidgets('inicia en splash y navega a bienvenida', (tester) async {
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [
-          firebaseAuthProvider.overrideWithValue(MockFirebaseAuth()),
-        ],
+        overrides: [firebaseAuthProvider.overrideWithValue(MockFirebaseAuth())],
         child: const OncuidarApp(),
       ),
     );

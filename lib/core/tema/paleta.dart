@@ -10,7 +10,7 @@ class Paleta {
   static const degradadoCabecera = LinearGradient(
     begin: Alignment(-0.6, -0.8),
     end: Alignment(1.0, 1.0),
-    colors: [doradoOscuro, doradoMedio, Color(0xFFF5C842)],
+    colors: [doradoMedio, doradoPrincipal, doradoOscuro],
   );
 
   static const textoPrincipal = Color(0xFF2C1A00);

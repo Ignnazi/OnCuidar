@@ -88,20 +88,15 @@ class _RecuperarAccesoState extends State<RecuperarAcceso> {
       },
       child: Scaffold(
         backgroundColor: Paleta.crema,
-        body: Column(
+        body: Stack(
           children: [
-            EncabezadoGradiente(
-              mostrarRetroceso: true,
-              titulo: 'Recuperar acceso',
-              subtitulo: 'Usa tu correo de respaldo para recuperar tu cuenta',
-              alto: 130,
-              alRetroceder: () => context.go('/iniciar-sesion'),
-            ),
-            Expanded(
+            Positioned.fill(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 24,
+                padding: EdgeInsets.fromLTRB(
+                  20,
+                  MediaQuery.of(context).padding.top + 100 + 8,
+                  20,
+                  24,
                 ),
                 child: Form(
                   key: _formKey,
@@ -243,6 +238,18 @@ class _RecuperarAccesoState extends State<RecuperarAcceso> {
                     ],
                   ),
                 ),
+              ),
+            ),
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: EncabezadoGradiente(
+                mostrarRetroceso: true,
+                titulo: 'Recuperar acceso',
+                subtitulo: 'Usa tu correo de respaldo para recuperar tu cuenta',
+                alto: 100,
+                alRetroceder: () => context.go('/iniciar-sesion'),
               ),
             ),
           ],

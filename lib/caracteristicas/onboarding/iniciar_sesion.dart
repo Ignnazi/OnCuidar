@@ -8,7 +8,6 @@ import '../../core/tema/paleta.dart';
 import '../../core/utilidades/validacion_correo.dart';
 import '../../compartidos/widgets/campos_formulario.dart';
 import '../../compartidos/widgets/encabezado_gradiente.dart';
-import '../../compartidos/widgets/marca.dart';
 
 class IniciarSesion extends ConsumerStatefulWidget {
   const IniciarSesion({super.key});
@@ -160,42 +159,41 @@ class _IniciarSesionState extends ConsumerState<IniciarSesion> {
       },
       child: Scaffold(
         backgroundColor: Paleta.crema,
-        body: Column(
+        body: Stack(
           children: [
-            EncabezadoGradiente(
-              mostrarRetroceso: true,
-              titulo: 'Iniciar sesión',
-              subtitulo: 'Bienvenido de vuelta a tu espacio de cuidado',
-              alto: 130,
-              alRetroceder: () => context.go('/bienvenida'),
-            ),
-            Expanded(
+            Positioned.fill(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 24,
+                padding: EdgeInsets.fromLTRB(
+                  20,
+                  MediaQuery.of(context).padding.top + 100 + 8,
+                  20,
+                  24,
                 ),
                 child: Form(
                   key: _formKey,
                   child: Column(
                     children: [
-                      const Marca(tamano: 96),
-                      const SizedBox(height: 16),
-                      Text(
-                        '¡Hola de nuevo!',
-                        style: GoogleFonts.nunito(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w800,
-                          color: Paleta.textoPrincipal,
+                      const SizedBox(height: 28),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          '¡Hola de nuevo!',
+                          style: GoogleFonts.nunito(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                            color: Paleta.textoPrincipal,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 4),
-                      Text(
-                        'Ingresa tus datos para continuar cuidando',
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.nunito(
-                          fontSize: 14,
-                          color: Paleta.textoSecundario,
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'Ingresa tus datos para continuar cuidando',
+                          style: GoogleFonts.nunito(
+                            fontSize: 14,
+                            color: Paleta.textoSecundario,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 24),
@@ -282,37 +280,59 @@ class _IniciarSesionState extends ConsumerState<IniciarSesion> {
                       SizedBox(
                         width: double.infinity,
                         height: 54,
-                        child: ElevatedButton(
-                          onPressed: _cargando ? null : _iniciarSesion,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Paleta.doradoPrincipal,
-                            foregroundColor: Colors.white,
-                            elevation: 2,
-                            shadowColor: Paleta.doradoPrincipal.withValues(
-                              alpha: 0.35,
-                            ),
-                            shape: RoundedRectangleBorder(
+                        child: Opacity(
+                          opacity: _cargando ? 0.6 : 1,
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  Paleta.doradoPrincipal,
+                                  Paleta.doradoOscuro,
+                                ],
+                              ),
                               borderRadius: BorderRadius.circular(16),
-                            ),
-                            disabledBackgroundColor: Paleta.doradoPrincipal
-                                .withValues(alpha: 0.5),
-                          ),
-                          child: _cargando
-                              ? const SizedBox(
-                                  height: 22,
-                                  width: 22,
-                                  child: CircularProgressIndicator(
-                                    color: Colors.white,
-                                    strokeWidth: 2.5,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Paleta.doradoPrincipal.withValues(
+                                    alpha: 0.35,
                                   ),
-                                )
-                              : Text(
-                                  'Iniciar sesión',
-                                  style: GoogleFonts.nunito(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w700,
-                                  ),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
                                 ),
+                              ],
+                            ),
+                            child: ElevatedButton(
+                              onPressed: _cargando ? null : _iniciarSesion,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.transparent,
+                                foregroundColor: Colors.white,
+                                disabledBackgroundColor: Colors.transparent,
+                                elevation: 0,
+                                shadowColor: Colors.transparent,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                              ),
+                              child: _cargando
+                                  ? const SizedBox(
+                                      height: 22,
+                                      width: 22,
+                                      child: CircularProgressIndicator(
+                                        color: Colors.white,
+                                        strokeWidth: 2.5,
+                                      ),
+                                    )
+                                  : Text(
+                                      'Iniciar sesión',
+                                      style: GoogleFonts.nunito(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                            ),
+                          ),
                         ),
                       ),
                       const SizedBox(height: 12),
@@ -343,6 +363,18 @@ class _IniciarSesionState extends ConsumerState<IniciarSesion> {
                     ],
                   ),
                 ),
+              ),
+            ),
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: EncabezadoGradiente(
+                titulo: 'Iniciar sesión',
+                subtitulo: 'Bienvenido a tu espacio de cuidado',
+                logo: const AssetImage('assets/images/OnCuidar.png'),
+                tamanoTitulo: 20,
+                alto: 100,
               ),
             ),
           ],

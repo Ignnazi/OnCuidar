@@ -85,7 +85,12 @@ void main() {
     test('crearPaciente guarda campos sensibles cifrados', () async {
       final id = await servicio.crearPaciente(await paciente('Ana Torres'));
 
-      final doc = await base.collection('users').doc('uid-1').collection('patients').doc(id).get();
+      final doc = await base
+          .collection('users')
+          .doc('uid-1')
+          .collection('patients')
+          .doc(id)
+          .get();
       final datos = doc.data()!;
 
       expect(datos.containsKey('nombre_cifrado'), isTrue);
@@ -130,8 +135,11 @@ void main() {
 
       final datos = (await base.collection('users').doc('uid-1').get()).data()!;
       expect(datos['email'], 'ana@correo.cl');
-      expect(datos.containsKey('correo_respaldo_hash'), isFalse,
-          reason: 'el cliente nunca escribe el hash; lo hace el servidor');
+      expect(
+        datos.containsKey('correo_respaldo_hash'),
+        isFalse,
+        reason: 'el cliente nunca escribe el hash; lo hace el servidor',
+      );
       expect(datos['nombre_cifrado'], isNot('Ana Torres'));
       expect(datos['telefono_cifrado'], isNot('+56 9 1111 2222'));
       expect(datos['relacion_cifrada'], isNot('Madre'));

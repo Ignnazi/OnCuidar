@@ -13,8 +13,8 @@ const _clavePrueba = 'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=';
 const _uid = 'uid-test';
 
 MockFirebaseAuth _authConSesion() => MockFirebaseAuth(
-      mockUser: MockUser(uid: _uid, email: 'ana@correo.cl'),
-    );
+  mockUser: MockUser(uid: _uid, email: 'ana@correo.cl'),
+);
 
 Future<ServicioBaseDatos> _baseConCuidador(ServicioCifrado cifrado) async {
   await cifrado.fijarClave(_uid, _clavePrueba);
@@ -44,9 +44,8 @@ Widget _pantallaPerfil(
       GoRoute(path: '/', builder: (c, s) => const Perfil()),
       GoRoute(
         path: '/bienvenida',
-        builder: (c, s) => const Scaffold(
-          body: Center(child: Text('Bienvenida')),
-        ),
+        builder: (c, s) =>
+            const Scaffold(body: Center(child: Text('Bienvenida'))),
       ),
     ],
   );
@@ -73,8 +72,9 @@ Future<void> _pantallaAlta(WidgetTester tester) async {
 }
 
 void main() {
-  testWidgets('editar mis datos abre SOLO datos personales y guarda',
-      (tester) async {
+  testWidgets('editar mis datos abre SOLO datos personales y guarda', (
+    tester,
+  ) async {
     await _pantallaAlta(tester);
     final auth = _authConSesion();
     final cifrado = ServicioCifrado(clavePrueba: _clavePrueba);
@@ -122,62 +122,73 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Datos actualizados'), findsOneWidget);
-    expect(find.text('Ana Torres Nueva'), findsOneWidget,
-        reason: 'la tarjeta refresca el nombre guardado');
-    expect(find.text('Calle Nueva 123'), findsOneWidget,
-        reason: 'la dirección guardada aparece en la tarjeta');
+    expect(
+      find.text('Ana Torres Nueva'),
+      findsOneWidget,
+      reason: 'la tarjeta refresca el nombre guardado',
+    );
+    expect(
+      find.text('Calle Nueva 123'),
+      findsOneWidget,
+      reason: 'la dirección guardada aparece en la tarjeta',
+    );
   });
 
   testWidgets(
-      'tarjeta Autenticacion (estilo Centro de Salud): un solo menu para '
-      'editar correo principal o respaldo, sin "ambos"', (tester) async {
-    await _pantallaAlta(tester);
-    final auth = _authConSesion();
-    final cifrado = ServicioCifrado(clavePrueba: _clavePrueba);
-    final base = await _baseConCuidador(cifrado);
-    await tester.pumpWidget(_pantallaPerfil(auth, base, cifrado));
-    await tester.pumpAndSettle();
-    await _abrirMiPerfil(tester);
+    'tarjeta Autenticacion (estilo Centro de Salud): un solo menu para '
+    'editar correo principal o respaldo, sin "ambos"',
+    (tester) async {
+      await _pantallaAlta(tester);
+      final auth = _authConSesion();
+      final cifrado = ServicioCifrado(clavePrueba: _clavePrueba);
+      final base = await _baseConCuidador(cifrado);
+      await tester.pumpWidget(_pantallaPerfil(auth, base, cifrado));
+      await tester.pumpAndSettle();
+      await _abrirMiPerfil(tester);
 
-    expect(find.text('Autenticación'), findsOneWidget);
-    expect(find.text('Correo principal'), findsOneWidget);
-    expect(find.text('Correo de respaldo'), findsOneWidget);
-    expect(find.text('No configurado'), findsOneWidget);
-    expect(find.byKey(const Key('menuAutenticacion')), findsOneWidget);
+      expect(find.text('Correo principal'), findsOneWidget);
+      expect(find.text('Correo de respaldo'), findsOneWidget);
+      expect(find.text('No configurado'), findsOneWidget);
+      expect(find.byKey(const Key('menuAutenticacion')), findsOneWidget);
 
-    await tester.tap(find.byKey(const Key('menuAutenticacion')));
-    await tester.pumpAndSettle();
-    expect(find.text('Editar correo principal'), findsOneWidget);
-    expect(find.text('Editar correo de respaldo'), findsOneWidget);
-    expect(find.text('Editar ambos correos'), findsNothing);
+      await tester.tap(find.byKey(const Key('menuAutenticacion')));
+      await tester.pumpAndSettle();
+      expect(find.text('Editar correo principal'), findsOneWidget);
+      expect(find.text('Editar correo de respaldo'), findsOneWidget);
+      expect(find.text('Editar ambos correos'), findsNothing);
 
-    await tester.tap(find.text('Editar correo principal'));
-    await tester.pumpAndSettle();
-    expect(find.text('Editar correo principal'), findsOneWidget);
-    expect(
-      find.widgetWithText(TextField, 'Correo principal (cuenta de acceso)'),
-      findsOneWidget,
-    );
-    expect(
-      find.widgetWithText(TextField, 'Correo de respaldo'),
-      findsNothing,
-    );
-    expect(find.widgetWithText(TextField, 'Contraseña actual'), findsNothing);
-    await tester.tap(find.text('Cancelar'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('Editar correo principal'));
+      await tester.pumpAndSettle();
+      expect(find.text('Editar correo principal'), findsOneWidget);
+      expect(find.widgetWithText(TextField, 'ana@correo.cl'), findsOneWidget);
+      expect(
+        find.widgetWithText(TextField, 'Correo de respaldo'),
+        findsNothing,
+      );
+      expect(
+        find.widgetWithText(TextField, 'Contraseña actual'),
+        findsOneWidget,
+      );
+      await tester.tap(find.text('Cancelar'));
+      await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const Key('menuAutenticacion')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Editar correo de respaldo'));
-    await tester.pumpAndSettle();
-    expect(find.text('Configurar correo de respaldo'), findsOneWidget);
-    expect(
-      find.widgetWithText(TextField, 'Correo de respaldo'),
-      findsOneWidget,
-    );
-    expect(
-      find.widgetWithText(TextField, 'Correo principal (cuenta de acceso)'),
-      findsNothing,
-    );
-  });
+      await tester.tap(find.byKey(const Key('menuAutenticacion')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Editar correo de respaldo'));
+      await tester.pumpAndSettle();
+      expect(find.text('Configurar correo de respaldo'), findsOneWidget);
+      expect(
+        find.widgetWithText(TextField, 'Correo de respaldo *'),
+        findsOneWidget,
+      );
+      expect(
+        find.widgetWithText(TextField, 'Correo principal (cuenta de acceso)'),
+        findsNothing,
+      );
+
+      await tester.tap(find.text('Guardar cambios'));
+      await tester.pumpAndSettle();
+      expect(find.text('Ingresa el correo de respaldo'), findsOneWidget);
+    },
+  );
 }

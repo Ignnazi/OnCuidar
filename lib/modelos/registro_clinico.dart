@@ -1,0 +1,121 @@
+import 'package:flutter/material.dart';
+
+enum NivelAlerta { normal, alerta, critico }
+
+class SignosVitales {
+  const SignosVitales({
+    this.temperature,
+    this.heartRate,
+    this.oxygenSaturation,
+    this.respiratoryRate,
+  });
+
+  final double? temperature;
+  final int? heartRate;
+  final int? oxygenSaturation;
+  final int? respiratoryRate;
+}
+
+class EntradaSintoma {
+  const EntradaSintoma({
+    required this.name,
+    required this.intensity,
+    this.notes,
+  });
+
+  final String name;
+  final int intensity;
+  final String? notes;
+
+  static Color colorPara(int intensity) {
+    switch (intensity) {
+      case 0:
+        return const Color(0xFF6BA368);
+      case 1:
+      case 2:
+        return const Color(0xFF8BC34A);
+      case 3:
+      case 4:
+        return const Color(0xFFE8A820);
+      case 5:
+      case 6:
+        return const Color(0xFFEF8A17);
+      case 7:
+      case 8:
+        return const Color(0xFFD9534F);
+      case 9:
+      case 10:
+        return const Color(0xFFB71C1C);
+      default:
+        return const Color(0xFF9A8060);
+    }
+  }
+
+  static IconData iconoPara(int intensity) {
+    switch (intensity) {
+      case 0:
+        return Icons.sentiment_very_satisfied;
+      case 1:
+      case 2:
+        return Icons.sentiment_satisfied;
+      case 3:
+      case 4:
+        return Icons.sentiment_dissatisfied;
+      default:
+        return Icons.sentiment_very_dissatisfied;
+    }
+  }
+
+  static String etiquetaPara(int intensity) {
+    switch (intensity) {
+      case 0:
+        return 'Mínimo síntoma';
+      case 1:
+      case 2:
+      case 3:
+        return 'Leve';
+      case 4:
+      case 5:
+      case 6:
+        return 'Moderado';
+      case 7:
+      case 8:
+        return 'Intenso';
+      case 9:
+      case 10:
+        return 'Insoportable';
+      default:
+        return '';
+    }
+  }
+}
+
+class RegistroClinico {
+  const RegistroClinico({
+    required this.id,
+    required this.pacienteId,
+    required this.fecha,
+    required this.creadoEn,
+    required this.tipoRegistro,
+    this.signosVitales,
+    this.sintomas = const [],
+    this.observaciones,
+    this.nivelAlerta = NivelAlerta.normal,
+    this.mensajeAlerta,
+  });
+
+  final String id;
+  final String pacienteId;
+
+  final DateTime fecha;
+
+  final DateTime creadoEn;
+
+  final String tipoRegistro;
+  final SignosVitales? signosVitales;
+  final List<EntradaSintoma> sintomas;
+  final String? observaciones;
+  final NivelAlerta nivelAlerta;
+
+  final String? mensajeAlerta;
+}
