@@ -1,7 +1,13 @@
+import 'dart:io';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:open_filex/open_filex.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../compartidos/widgets/dialogo_confirmacion.dart';
 import '../../compartidos/widgets/encabezado_gradiente.dart';
 import '../../core/proveedores/proveedores.dart';
@@ -9,6 +15,8 @@ import '../../core/tema/config_alerta.dart';
 import '../../core/tema/paleta.dart';
 import '../../core/util/formato_fecha.dart';
 import '../../modelos/registro_clinico.dart';
+import 'exportadores/exportador_excel.dart';
+import 'exportadores/exportador_pdf.dart';
 import 'widgets/boton_cargar_mas.dart';
 import 'widgets/chip_estado.dart';
 import 'widgets/dialogo_rango_fechas.dart';
@@ -31,6 +39,7 @@ class _HistorialScreenState extends ConsumerState<HistorialScreen> {
   DateTime? _fechaFin;
   bool _noHayMas = false;
   bool _cargandoMas = false;
+  bool _exportando = false;
   String? _expandidoId;
 
   @override
@@ -126,6 +135,48 @@ class _HistorialScreenState extends ConsumerState<HistorialScreen> {
                 subtitulo: 'Tus registros clínicos',
                 logo: const AssetImage('assets/images/OnCuidar.png'),
                 tamanoTitulo: 20,
+                reservaDerecha: 140,
+                alTocarLogo: () => context.go('/dashboard'),
+                accionDerecha: Tooltip(
+                  message: 'Nuevo registro',
+                  child: GestureDetector(
+                    onTap: () => context.push('/registro-clinico'),
+                    child: Container(
+                      height: 36,
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(18),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Paleta.doradoOscuro.withValues(alpha: 0.25),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.add_rounded,
+                            color: Paleta.doradoOscuro,
+                            size: 17,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Nuevo registro',
+                            style: GoogleFonts.nunito(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w800,
+                              color: Paleta.doradoOscuro,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
               ),
             ),
           ],
@@ -182,7 +233,7 @@ class _HistorialScreenState extends ConsumerState<HistorialScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _filaFiltros(),
+        _filaFiltros(filtrados),
         const SizedBox(height: 16),
         if (filtrados.isEmpty)
           EstadoVacio(
@@ -220,7 +271,7 @@ class _HistorialScreenState extends ConsumerState<HistorialScreen> {
     );
   }
 
-  Widget _filaFiltros() {
+  Widget _filaFiltros(List<RegistroClinico> filtrados) {
     final hayRango = _fechaInicio != null || _fechaFin != null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -249,26 +300,246 @@ class _HistorialScreenState extends ConsumerState<HistorialScreen> {
         const SizedBox(height: 10),
         Row(
           children: [
-            _botonRango(),
-            if (hayRango) ...[
-              const SizedBox(width: 8),
-              IconButton(
-                tooltip: 'Limpiar filtro de fecha',
-                onPressed: _limpiarRango,
-                style: IconButton.styleFrom(
-                  backgroundColor: Paleta.doradoClaro.withValues(alpha: 0.6),
-                ),
-                icon: const Icon(
-                  Icons.close,
-                  size: 18,
-                  color: Paleta.textoSecundario,
+            Expanded(
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    _botonRango(),
+                    if (hayRango) ...[
+                      const SizedBox(width: 8),
+                      IconButton(
+                        tooltip: 'Limpiar filtro de fecha',
+                        onPressed: _limpiarRango,
+                        style: IconButton.styleFrom(
+                          backgroundColor:
+                              Paleta.doradoClaro.withValues(alpha: 0.6),
+                        ),
+                        icon: const Icon(
+                          Icons.close,
+                          size: 18,
+                          color: Paleta.textoSecundario,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
-            ],
+            ),
+            const SizedBox(width: 8),
+            _botonExportarPdf(filtrados.isNotEmpty),
+            const SizedBox(width: 8),
+            _botonExportarExcel(filtrados.isNotEmpty),
           ],
         ),
       ],
     );
+  }
+
+  Widget _botonExportarPdf(bool habilitado) {
+    return _botonExportar(
+      titulo: 'PDF',
+      tooltip: 'Exportar PDF',
+      icono: Icons.picture_as_pdf,
+      colores: const [Paleta.doradoPrincipal, Paleta.doradoOscuro],
+      habilitado: habilitado && !_exportando,
+      onPulsar: () => _exportarPdf(),
+    );
+  }
+
+  Widget _botonExportarExcel(bool habilitado) {
+    return _botonExportar(
+      titulo: 'Excel',
+      tooltip: 'Exportar Excel',
+      icono: Icons.table_chart,
+      colores: const [Color(0xFF217346), Color(0xFF14401F)],
+      habilitado: habilitado && !_exportando,
+      onPulsar: () => _exportarExcel(),
+    );
+  }
+
+  Widget _botonExportar({
+    required String titulo,
+    required String tooltip,
+    required IconData icono,
+    required List<Color> colores,
+    required VoidCallback onPulsar,
+    required bool habilitado,
+  }) {
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: habilitado ? onPulsar : null,
+          borderRadius: BorderRadius.circular(20),
+          child: Ink(
+            height: 40,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            decoration: BoxDecoration(
+              gradient: habilitado
+                  ? LinearGradient(colors: colores)
+                  : null,
+              color: habilitado ? null : const Color(0xFFEDE3D2),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  icono,
+                  size: 16,
+                  color: habilitado
+                      ? Colors.white
+                      : Paleta.textoSecundario,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  titulo,
+                  style: GoogleFonts.nunito(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: habilitado
+                        ? Colors.white
+                        : Paleta.textoSecundario,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  List<RegistroClinico> _filtradosActuales() {
+    final async = ref.read(registrosClinicosProvider);
+    final base = async.value ?? const <RegistroClinico>[];
+    final visibles = _visibles(base);
+    return [
+      for (final r in visibles)
+        if (r.nivelAlerta.name == _estadoFiltro || _estadoFiltro == null)
+          if (_coincideFecha(r.fecha)) r,
+    ];
+  }
+
+  Future<void> _exportarPdf() async {
+    if (_exportando) return;
+    setState(() => _exportando = true);
+    try {
+      final paciente = ref.read(currentPatientProvider).value;
+      final bytes = await generarPdfHistorial(
+        registros: _filtradosActuales(),
+        paciente: paciente,
+        nombreCuidador: await _nombreCuidador(),
+        fechaInicio: _fechaInicio,
+        fechaFin: _fechaFin,
+        generadoEn: DateTime.now(),
+      );
+      if (!mounted) return;
+      await _abrirArchivo(bytes, 'pdf');
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('No se pudo generar el PDF: $e'),
+          backgroundColor: Paleta.error,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _exportando = false);
+    }
+  }
+
+  Future<void> _exportarExcel() async {
+    if (_exportando) return;
+    setState(() => _exportando = true);
+    try {
+      final paciente = ref.read(currentPatientProvider).value;
+      final bytes = generarExcelHistorial(
+        registros: _filtradosActuales(),
+        paciente: paciente,
+        nombreCuidador: await _nombreCuidador(),
+        fechaInicio: _fechaInicio,
+        fechaFin: _fechaFin,
+        generadoEn: DateTime.now(),
+      );
+      if (!mounted) return;
+      await _abrirArchivo(bytes, 'xlsx');
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('No se pudo generar el Excel: $e'),
+          backgroundColor: Paleta.error,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _exportando = false);
+    }
+  }
+
+  Future<String> _nombreCuidador() async {
+    try {
+      final cuidador = await ref.read(cuidadorProvider.future);
+      return (cuidador?['nombre'] as String?) ?? '';
+    } catch (_) {
+      return '';
+    }
+  }
+
+  Future<void> _abrirArchivo(Uint8List bytes, String extension) async {
+    final dir = await getTemporaryDirectory();
+    final archivo = File(
+      '${dir.path}${Platform.pathSeparator}${_nombreArchivo(extension)}',
+    );
+    await archivo.writeAsBytes(bytes, flush: true);
+    final resultado = await OpenFilex.open(archivo.path);
+    if (resultado.type == ResultType.noAppToOpen) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'No hay una app para abrir el archivo; se abre el menú de compartir',
+          ),
+          backgroundColor: Paleta.doradoOscuro,
+        ),
+      );
+      await _compartirArchivo(bytes, extension);
+    } else if (resultado.type != ResultType.done) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('No se pudo abrir el archivo: ${resultado.message}'),
+          backgroundColor: Paleta.error,
+        ),
+      );
+    }
+  }
+
+  Future<void> _compartirArchivo(Uint8List bytes, String extension) async {
+    final dir = await getTemporaryDirectory();
+    final archivo = File(
+      '${dir.path}${Platform.pathSeparator}${_nombreArchivo(extension)}',
+    );
+    await archivo.writeAsBytes(bytes, flush: true);
+    await SharePlus.instance.share(
+      ShareParams(
+        files: [XFile(archivo.path)],
+        subject: 'Historial clínico OnCuidar',
+        text: 'Historial clínico OnCuidar',
+      ),
+    );
+  }
+
+  String _nombreArchivo(String extension) {
+    final ahora = DateTime.now();
+    final mes = ahora.month.toString().padLeft(2, '0');
+    final dia = ahora.day.toString().padLeft(2, '0');
+    final fecha = '${ahora.year}-$mes-$dia';
+    final hora =
+        '${ahora.hour.toString().padLeft(2, '0')}${ahora.minute.toString().padLeft(2, '0')}';
+    return 'historial_oncuidar_${fecha}_$hora.$extension';
   }
 
   Widget _botonRango() {

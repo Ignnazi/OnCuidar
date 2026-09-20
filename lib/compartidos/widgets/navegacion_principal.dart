@@ -34,6 +34,10 @@ class _NavegacionPrincipalState extends ConsumerState<NavegacionPrincipal> {
     if (widget.ubicacion == '/proximamente') {
       return widget.tituloProximamente == 'Aprende' ? 3 : 1;
     }
+    if (widget.ubicacion == '/biblioteca' ||
+        widget.ubicacion.startsWith('/biblioteca/')) {
+      return 3;
+    }
     return widget.shell.currentIndex == 0 ? 0 : 4;
   }
 
@@ -48,8 +52,8 @@ class _NavegacionPrincipalState extends ConsumerState<NavegacionPrincipal> {
         if (widget.ubicacion == '/registro-clinico') break;
         context.push('/registro-clinico');
       case 3:
-        if (widget.ubicacion == '/proximamente') break;
-        context.push('/proximamente?titulo=Aprende');
+        if (widget.ubicacion.startsWith('/biblioteca')) break;
+        context.push('/biblioteca');
       case 4:
         widget.shell.goBranch(1, initialLocation: true);
     }

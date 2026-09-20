@@ -4,6 +4,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
+import '../../modelos/checklist_usuario.dart';
+import '../../modelos/material_educativo.dart';
 import '../../modelos/paciente.dart';
 import '../../modelos/registro_clinico.dart';
 import 'servicio_cifrado.dart';
@@ -74,7 +76,26 @@ class ServicioBaseDatos {
 
   Future<Map<String, dynamic>> obtenerCuidador() async {
     final doc = await _docUsuario.get();
-    final datos = (doc.data() as Map<String, dynamic>?) ?? {};
+    return _mapearCuidador((doc.data() as Map<String, dynamic>?) ?? {});
+  }
+
+  Stream<Map<String, dynamic>?> cuidadorEnTiempoReal() {
+    if (!_tieneIdentidad()) return Stream.value(null);
+    return _docUsuario.snapshots().asyncMap((doc) async {
+      if (!doc.exists) return null;
+      try {
+        return await _mapearCuidador(
+          (doc.data() as Map<String, dynamic>?) ?? {},
+        );
+      } catch (_) {
+        return null;
+      }
+    });
+  }
+
+  Future<Map<String, dynamic>> _mapearCuidador(
+    Map<String, dynamic> datos,
+  ) async {
     final correoPendiente = datos['pendiente_correo'] as String?;
     return {
       'email': datos['email'] as String?,
@@ -379,6 +400,154 @@ class ServicioBaseDatos {
     return lista;
   }
 
+  CollectionReference _contenidoEducativo() => _base.collection('educationalContent');
+
+  Stream<List<MaterialEducativo>> contenidoEducativoEnTiempoReal() {
+    return _contenidoEducativo().snapshots().map(
+      (snap) => [
+        for (final doc in snap.docs)
+          MaterialEducativo.fromMap(doc.id, doc.data() as Map<String, dynamic>),
+      ],
+    );
+  }
+
+  Future<MaterialEducativo?> obtenerContenidoEducativo(String id) async {
+    final doc = await _contenidoEducativo().doc(id).get();
+    if (!doc.exists) return null;
+    return MaterialEducativo.fromMap(doc.id, doc.data() as Map<String, dynamic>);
+  }
+
+  Stream<List<String>> idsFavoritosEnTiempoReal() {
+    if (!_tieneIdentidad()) return Stream.value(const []);
+    return _docUsuario.snapshots().map((snap) {
+      final datos = snap.data() as Map<String, dynamic>?;
+      return List<String>.from(datos?['favoriteArticleIds'] ?? const []);
+    });
+  }
+
+  Future<void> alternarFavorito(String materialId) async {
+    Map<String, dynamic>? datos;
+    try {
+      final doc = await _docUsuario.get(const GetOptions(source: Source.cache));
+      datos = doc.data() as Map<String, dynamic>?;
+    } catch (_) {
+      rethrow;
+    }
+    final favoritos = List<String>.from(datos?['favoriteArticleIds'] ?? const []);
+    if (favoritos.contains(materialId)) {
+      favoritos.remove(materialId);
+    } else {
+      favoritos.add(materialId);
+    }
+    await _docUsuario.set({'favoriteArticleIds': favoritos}, SetOptions(merge: true));
+  }
+
+  CollectionReference _checklistsUsuario(String idPaciente) => _docUsuario
+      .collection('patients')
+      .doc(idPaciente)
+      .collection('userChecklists');
+
+  Stream<List<ChecklistUsuario>> listasChecklistTiempoReal(String idPaciente) {
+    if (!_tieneIdentidad()) return Stream.value(const []);
+    return _checklistsUsuario(idPaciente)
+        .orderBy('creadoEn', descending: true)
+        .limit(50)
+        .snapshots()
+        .asyncMap(
+          (snap) => Future.wait(
+            snap.docs.map(
+              (d) => _descifrarChecklistUsuario(
+                d.id,
+                d.data() as Map<String, dynamic>,
+              ),
+            ),
+          ),
+        );
+  }
+
+  Future<String> crearListaChecklist(
+    String idPaciente, {
+    required String titulo,
+    required List<String> items,
+  }) async {
+    final datos = <String, dynamic>{
+      'indicesMarcados': <int>[],
+      'creadoEn': DateTime.now(),
+    };
+    await _reemplazarPorCifrado(datos, plano: titulo, cifrado: 'titulo_cifrado');
+    datos['items_cifrado'] = await _cifrado.cifrar(_uid, jsonEncode(items));
+    final ref = await _checklistsUsuario(idPaciente).add(datos);
+    return ref.id;
+  }
+
+  Future<void> actualizarListaChecklist(
+    String idPaciente,
+    String idLista, {
+    String? titulo,
+    List<String>? items,
+    List<int>? indicesMarcados,
+  }) async {
+    final datos = <String, dynamic>{};
+    if (titulo != null) {
+      await _reemplazarPorCifrado(
+        datos,
+        plano: titulo,
+        cifrado: 'titulo_cifrado',
+      );
+    }
+    if (items != null) {
+      datos['items_cifrado'] = await _cifrado.cifrar(_uid, jsonEncode(items));
+    }
+    if (indicesMarcados != null) {
+      datos['indicesMarcados'] = indicesMarcados;
+    }
+    if (datos.isEmpty) return;
+    await _checklistsUsuario(
+      idPaciente,
+    ).doc(idLista).set(datos, SetOptions(merge: true));
+  }
+
+  Future<void> eliminarListaChecklist(String idPaciente, String idLista) async {
+    await _checklistsUsuario(idPaciente).doc(idLista).delete();
+  }
+
+  Future<ChecklistUsuario> _descifrarChecklistUsuario(
+    String id,
+    Map<String, dynamic> datos,
+  ) async {
+    return ChecklistUsuario(
+      id: id,
+      titulo: (await _descifrarCampo(datos, 'titulo_cifrado')) ?? '',
+      items: await _descifrarItemsChecklist(datos),
+      indicesMarcados:
+          (datos['indicesMarcados'] as List<dynamic>?)
+              ?.map((e) => (e as num).toInt())
+              .toList() ??
+          const [],
+      creadoEn: _fechaTolerante(datos['creadoEn']),
+    );
+  }
+
+  Future<List<String>> _descifrarItemsChecklist(
+    Map<String, dynamic> datos,
+  ) async {
+    final cifrado = datos['items_cifrado'] as String?;
+    if (cifrado != null && cifrado.isNotEmpty) {
+      try {
+        final texto = await _cifrado.descifrar(_uid, cifrado);
+        final lista = jsonDecode(texto) as List<dynamic>;
+        return lista.map((e) => e.toString()).toList();
+      } catch (e, pila) {
+        debugPrint('No se pudo descifrar items_cifrado: $e\n$pila');
+      }
+    }
+    final itemsRaw = datos['items'];
+    if (itemsRaw is List) {
+      return itemsRaw.map((e) => e.toString()).toList();
+    }
+    return const [];
+  }
+
   Future<void> _reautenticar(String contrasena) async {
     final usuario = _usuarioAutenticado;
     final email = usuario.email;
@@ -389,7 +558,9 @@ class ServicioBaseDatos {
       email: email,
       password: contrasena,
     );
-    await usuario.reauthenticateWithCredential(credencial);
+    await usuario
+        .reauthenticateWithCredential(credencial)
+        .timeout(const Duration(seconds: 5));
   }
 
   User get _usuarioAutenticado {
@@ -405,7 +576,9 @@ class ServicioBaseDatos {
   }) async {
     await _reautenticar(contrasena);
     final normalizado = nuevoCorreo.trim().toLowerCase();
-    await _usuarioAutenticado.verifyBeforeUpdateEmail(normalizado);
+    await _usuarioAutenticado
+        .verifyBeforeUpdateEmail(normalizado)
+        .timeout(const Duration(seconds: 5));
     await _docUsuario.set({
       'pendiente_correo': normalizado,
       'pendiente_correo_tipo': 'principal',
@@ -426,7 +599,13 @@ class ServicioBaseDatos {
     try {
       await FirebaseFunctions.instanceFor(
         region: 'southamerica-west1',
-      ).httpsCallable('registerRecoveryEmail').call({'email': normalizado});
+      ).httpsCallable('registerRecoveryEmail').call({'email': normalizado}).timeout(
+            const Duration(seconds: 5),
+            onTimeout: () => throw FirebaseFunctionsException(
+              code: 'unavailable',
+              message: 'Sin conexión',
+            ),
+          );
       confirmadoServidor = true;
       await _docUsuario.set({
         'pendiente_correo': normalizado,

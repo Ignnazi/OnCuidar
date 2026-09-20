@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -151,35 +153,41 @@ class _DialogoCorreosState extends State<_DialogoCorreos> {
     var cambiadoPrincipal = false;
     String? principalEnviado;
 
-    if (_hayCambioRespaldo) {
-      try {
-        respaldoConfirmado = await widget.servicio.cambiarCorreoRespaldo(
-          contrasena: _contrasenaController.text,
-          nuevoCorreo: _respaldoController.text.trim(),
-        );
-      } on FirebaseAuthException catch (e) {
-        errorCorreo ??= _mensajeErrorCambioCorreo(e);
-      } catch (_) {
-        errorCorreo ??= 'El correo de respaldo no se pudo actualizar.';
+    try {
+      if (_hayCambioRespaldo) {
+        try {
+          respaldoConfirmado = await widget.servicio.cambiarCorreoRespaldo(
+            contrasena: _contrasenaController.text,
+            nuevoCorreo: _respaldoController.text.trim(),
+          );
+        } on FirebaseAuthException catch (e) {
+          errorCorreo ??= _mensajeErrorCambioCorreo(e);
+        } catch (_) {
+          errorCorreo ??= 'El correo de respaldo no se pudo actualizar.';
+        }
       }
-    }
-    if (_hayCambioPrincipal) {
-      cambiadoPrincipal = true;
-      principalEnviado = _principalController.text.trim();
-      try {
-        await widget.servicio.cambiarCorreoPrincipal(
-          contrasena: _contrasenaController.text,
-          nuevoCorreo: principalEnviado,
-        );
-      } on FirebaseAuthException catch (e) {
-        errorCorreo ??= _mensajeErrorCambioCorreo(e);
-      } catch (_) {
-        errorCorreo ??= 'El correo principal no se pudo actualizar.';
+      if (_hayCambioPrincipal) {
+        cambiadoPrincipal = true;
+        principalEnviado = _principalController.text.trim();
+        try {
+          await widget.servicio.cambiarCorreoPrincipal(
+            contrasena: _contrasenaController.text,
+            nuevoCorreo: principalEnviado,
+          );
+        } on FirebaseAuthException catch (e) {
+          errorCorreo ??= _mensajeErrorCambioCorreo(e);
+        } catch (_) {
+          errorCorreo ??= 'El correo principal no se pudo actualizar.';
+        }
       }
+      if (!mounted) return;
+      if (errorCorreo == null) {
+        nav.pop();
+        unawaited(widget.alRefrescar());
+      }
+    } finally {
+      if (mounted) setState(() => _cargando = false);
     }
-    await widget.alRefrescar();
-    if (!mounted) return;
-    nav.pop();
     if (errorCorreo != null) {
       messenger.showSnackBar(
         SnackBar(content: Text(errorCorreo), backgroundColor: Paleta.error),

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/servicios/servicio_base_datos.dart';
@@ -54,7 +56,6 @@ class _DialogoPacienteState extends State<_DialogoPaciente> {
   late final TextEditingController _centroTelefonoController;
   late final TextEditingController _emergenciaNombreController;
   late final TextEditingController _emergenciaTelefonoController;
-  bool _cargando = false;
 
   bool get _esEdicion => widget.paciente != null;
 
@@ -133,11 +134,29 @@ class _DialogoPacienteState extends State<_DialogoPaciente> {
       'contactoEmergenciaNombre': _emergenciaNombreController.text.trim(),
       'contactoEmergenciaTelefono': _emergenciaTelefonoController.text.trim(),
     };
-    setState(() => _cargando = true);
+    final servicio = widget.servicio;
+    final esEdicion = _esEdicion;
+    final paciente = widget.paciente;
+    nav.pop();
+    unawaited(_guardarEnBackground(
+      messenger,
+      servicio: servicio,
+      datos: datos,
+      esEdicion: esEdicion,
+      paciente: paciente,
+    ));
+  }
+
+  Future<void> _guardarEnBackground(
+    ScaffoldMessengerState messenger, {
+    required ServicioBaseDatos servicio,
+    required Map<String, dynamic> datos,
+    required bool esEdicion,
+    required Paciente? paciente,
+  }) async {
     try {
-      final servicio = widget.servicio;
-      if (_esEdicion && widget.paciente != null) {
-        await servicio.actualizarPaciente(widget.paciente!.id, datos);
+      if (esEdicion && paciente != null) {
+        await servicio.actualizarPaciente(paciente.id, datos);
       } else {
         await servicio.crearPaciente(
           Paciente(
@@ -158,18 +177,15 @@ class _DialogoPacienteState extends State<_DialogoPaciente> {
           ),
         );
       }
-      if (!mounted) return;
-      nav.pop();
       messenger.showSnackBar(
         SnackBar(
           content: Text(
-            _esEdicion ? 'Paciente actualizado' : 'Paciente agregado',
+            esEdicion ? 'Paciente actualizado' : 'Paciente agregado',
           ),
           backgroundColor: Paleta.doradoPrincipal,
         ),
       );
     } catch (_) {
-      if (mounted) setState(() => _cargando = false);
       messenger.showSnackBar(
         const SnackBar(
           content: Text('No se pudo guardar. Intenta de nuevo.'),
@@ -398,14 +414,10 @@ class _DialogoPacienteState extends State<_DialogoPaciente> {
                         Expanded(
                           flex: 2,
                           child: BotonPrincipal(
-                            etiqueta: _cargando
-                                ? 'Guardando…'
-                                : (_esEdicion
-                                      ? 'Guardar cambios'
-                                      : 'Guardar'),
-                            alPulsar: _cargando
-                                ? () {}
-                                : _guardar,
+                            etiqueta: _esEdicion
+                                ? 'Guardar cambios'
+                                : 'Guardar',
+                            alPulsar: _guardar,
                           ),
                         ),
                       ],

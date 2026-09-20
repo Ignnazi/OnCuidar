@@ -76,9 +76,26 @@ Widget _pantalla(ServicioCifrado cifrado, ServicioBaseDatos base) {
     routes: [
       GoRoute(path: '/', builder: (c, s) => const RegistroClinicoScreen()),
       GoRoute(
+        path: '/registro-clinico',
+        builder: (c, s) => const RegistroClinicoScreen(),
+      ),
+      GoRoute(
         path: '/dashboard',
-        builder: (c, s) =>
-            const Scaffold(body: Center(child: Text('Dashboard'))),
+        builder: (context, s) => Scaffold(
+          body: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('Dashboard'),
+                const SizedBox(height: 12),
+                FilledButton(
+                  onPressed: () => context.push('/registro-clinico'),
+                  child: const Text('Reabrir registro'),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     ],
   );
@@ -402,6 +419,17 @@ void main() {
         dolorGuardado['intensity'],
         0,
         reason: 'una intensidad 0 seleccionada también se persiste',
+      );
+
+      expect(
+        find.text('Registro clínico'),
+        findsOneWidget,
+        reason: 'la pantalla de registro debe seguir visible tras guardar',
+      );
+      expect(
+        find.text('Selecciona los síntomas…'),
+        findsOneWidget,
+        reason: 'el formulario queda limpio tras guardar',
       );
 
       await tester.pump(const Duration(seconds: 3));

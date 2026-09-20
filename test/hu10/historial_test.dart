@@ -77,6 +77,11 @@ Widget _pantalla(
         builder: (c, s) =>
             const Scaffold(body: Center(child: Text('Dashboard'))),
       ),
+      GoRoute(
+        path: '/registro-clinico',
+        builder: (c, s) =>
+            const Scaffold(body: Center(child: Text('Registro clínico abierto'))),
+      ),
     ],
   );
   return ProviderScope(
@@ -384,5 +389,22 @@ void main() {
       find.text('Crea el primer registro desde el botón de abajo.'),
       findsOneWidget,
     );
+  });
+
+  testWidgets('el botón "Nuevo registro" abre la pantalla de registro', (
+    tester,
+  ) async {
+    _taller(tester);
+    final cifrado = ServicioCifrado(clavePrueba: _clavePrueba);
+    final (base, _, _) = await _baseConPaciente(cifrado);
+    await tester.pumpWidget(_pantalla(cifrado, base));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Nuevo registro'), findsOneWidget);
+
+    await tester.tap(find.text('Nuevo registro'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Registro clínico abierto'), findsOneWidget);
   });
 }

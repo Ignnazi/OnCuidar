@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/tema/paleta.dart';
 import '../../compartidos/widgets/encabezado_gradiente.dart';
@@ -113,7 +114,7 @@ class _PerfilState extends ConsumerState<Perfil> {
             ),
           ),
 
-          const Positioned(
+          Positioned(
             top: 0,
             left: 0,
             right: 0,
@@ -123,6 +124,7 @@ class _PerfilState extends ConsumerState<Perfil> {
               logo: AssetImage('assets/images/OnCuidar.png'),
               tamanoTitulo: 20,
               alto: 100,
+              alTocarLogo: () => context.go('/dashboard'),
             ),
           ),
         ],

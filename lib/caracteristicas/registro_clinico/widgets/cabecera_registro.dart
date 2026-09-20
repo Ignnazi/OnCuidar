@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../compartidos/widgets/encabezado_gradiente.dart';
@@ -25,10 +26,11 @@ class CabeceraRegistro extends StatelessWidget {
         titulo: esEdicion ? 'Editar registro' : 'Registro clínico',
         subtitulo: esEdicion
             ? 'Actualiza signos y síntomas'
-            : 'Registra signos y síntomas',
+            : 'Registra el cuidado',
         logo: const AssetImage('assets/images/OnCuidar.png'),
         tamanoTitulo: 20,
         reservaDerecha: 140,
+        alTocarLogo: () => context.go('/dashboard'),
         accionDerecha: !esEdicion
             ? Tooltip(
                 message: 'Ver historial',
@@ -51,6 +53,12 @@ class CabeceraRegistro extends StatelessWidget {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
+                        const Icon(
+                          Icons.history_rounded,
+                          color: Paleta.doradoOscuro,
+                          size: 17,
+                        ),
+                        const SizedBox(width: 6),
                         Text(
                           'Ver historial',
                           style: GoogleFonts.nunito(
@@ -58,12 +66,6 @@ class CabeceraRegistro extends StatelessWidget {
                             fontWeight: FontWeight.w800,
                             color: Paleta.doradoOscuro,
                           ),
-                        ),
-                        const SizedBox(width: 6),
-                        const Icon(
-                          Icons.history_rounded,
-                          color: Paleta.doradoOscuro,
-                          size: 17,
                         ),
                       ],
                     ),

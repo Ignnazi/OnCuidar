@@ -63,7 +63,13 @@ class ServicioRegistro {
   Future<void> _viaCallable(String email) async {
     await FirebaseFunctions.instanceFor(
       region: 'southamerica-west1',
-    ).httpsCallable('registerRecoveryEmail').call({'email': email});
+    ).httpsCallable('registerRecoveryEmail').call({'email': email}).timeout(
+          const Duration(seconds: 5),
+          onTimeout: () => throw FirebaseFunctionsException(
+            code: 'unavailable',
+            message: 'Sin conexión',
+          ),
+        );
   }
 
   Future<ResultadoRegistro> registrar(DatosRegistro datos) async {

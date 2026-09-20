@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -32,20 +34,29 @@ class _PerfilCuidadorState extends ConsumerState<PerfilCuidador> {
   }
 
   Future<void> _cargar() async {
-    setState(() {
-      _cargando = true;
-      _error = false;
-    });
+    if (_cuidador == null) {
+      setState(() {
+        _cargando = true;
+        _error = false;
+      });
+    }
     try {
       final base = ref.read(servicioBaseDatosProvider);
-      final datos = await base.obtenerCuidador();
-      await _confirmarCambioCorreoConfirmado(base, datos);
-      final datosActualizados = await base.obtenerCuidador();
+      var datos = await base
+          .obtenerCuidador()
+          .timeout(const Duration(seconds: 5));
+      final pendiente = datos['pendienteCorreo'] as Map?;
+      if (pendiente != null && pendiente['tipo'] == 'principal') {
+        await _confirmarCambioCorreoConfirmado(base, datos);
+        datos = await base
+            .obtenerCuidador()
+            .timeout(const Duration(seconds: 5));
+      }
       if (!mounted) return;
-      setState(() => _cuidador = datosActualizados);
+      setState(() => _cuidador = datos);
     } catch (_) {
       if (!mounted) return;
-      setState(() => _error = true);
+      if (_cuidador == null) setState(() => _error = true);
     } finally {
       if (mounted) setState(() => _cargando = false);
     }
@@ -85,7 +96,9 @@ class _PerfilCuidadorState extends ConsumerState<PerfilCuidador> {
           MensajeErrorDatos(alReintentar: _cargar)
         else ...[
           _tarjetaPerfil(),
+          const SizedBox(height: 28),
           PieVersion(),
+          const SizedBox(height: 8),
           BotonCerrarSesion(
             cargando: _cerrandoSesion,
             alPulsar: _cerrarSesion,
@@ -133,13 +146,28 @@ class _PerfilCuidadorState extends ConsumerState<PerfilCuidador> {
         required String relacion,
         required String direccion,
       }) async {
-        await servicio.actualizarCuidador(
-          nombre: nombre,
-          telefono: telefono,
-          relacion: relacion,
-          direccion: direccion,
-        );
-        await _cargar();
+        if (mounted) {
+          setState(() {
+            _cuidador = {
+              ...?_cuidador,
+              'nombre': nombre,
+              'telefono': telefono,
+              'relacion': relacion,
+              'direccion': direccion,
+            };
+          });
+        }
+        ref.invalidate(cuidadorProvider);
+        unawaited(_cargar());
+        try {
+          await servicio.actualizarCuidador(
+            nombre: nombre,
+            telefono: telefono,
+            relacion: relacion,
+            direccion: direccion,
+          ).timeout(const Duration(seconds: 3));
+        } catch (_) {}
+        unawaited(_cargar());
       },
     );
   }

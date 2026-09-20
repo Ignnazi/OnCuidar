@@ -34,7 +34,13 @@ class _RecuperarAccesoState extends State<RecuperarAcceso> {
   Future<bool> _envioPorDefecto(String email) async {
     final resultado = await FirebaseFunctions.instanceFor(
       region: 'southamerica-west1',
-    ).httpsCallable('recoverByBackupEmail').call({'email': email});
+    ).httpsCallable('recoverByBackupEmail').call({'email': email}).timeout(
+          const Duration(seconds: 5),
+          onTimeout: () => throw FirebaseFunctionsException(
+            code: 'unavailable',
+            message: 'Sin conexión',
+          ),
+        );
     return resultado.data is Map && resultado.data['found'] == true;
   }
 
@@ -245,11 +251,11 @@ class _RecuperarAccesoState extends State<RecuperarAcceso> {
               left: 0,
               right: 0,
               child: EncabezadoGradiente(
-                mostrarRetroceso: true,
                 titulo: 'Recuperar acceso',
                 subtitulo: 'Usa tu correo de respaldo para recuperar tu cuenta',
+                logo: const AssetImage('assets/images/OnCuidar.png'),
+                tamanoTitulo: 20,
                 alto: 100,
-                alRetroceder: () => context.go('/iniciar-sesion'),
               ),
             ),
           ],

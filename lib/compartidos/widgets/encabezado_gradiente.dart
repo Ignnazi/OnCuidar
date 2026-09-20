@@ -16,6 +16,7 @@ class EncabezadoGradiente extends StatelessWidget {
     this.iconoRetroceso = Icons.home_rounded,
     this.reservaDerecha = 0,
     this.tituloCentrado = false,
+    this.alTocarLogo,
   });
 
   final String titulo;
@@ -33,6 +34,7 @@ class EncabezadoGradiente extends StatelessWidget {
   final IconData iconoRetroceso;
   final double reservaDerecha;
   final bool tituloCentrado;
+  final VoidCallback? alTocarLogo;
 
   @override
   Widget build(BuildContext context) {
@@ -52,63 +54,47 @@ class EncabezadoGradiente extends StatelessWidget {
             child: IgnorePointer(
               child: ClipPath(
                 clipper: const _ClipperOla(profundidad: _profundidadOla),
-                child: DecoratedBox(
-                  decoration: const BoxDecoration(
+                child: const DecoratedBox(
+                  decoration: BoxDecoration(
                     gradient: Paleta.degradadoCabecera,
                   ),
-                  child: Align(
-                    alignment: tituloCentrado
-                        ? Alignment.center
-                        : const Alignment(-1, -0.35),
-                    child: Padding(
-                      padding: EdgeInsets.fromLTRB(
-                        lateral,
-                        alturaBarraEstado + 4,
-                        derecha,
-                        4,
-                      ),
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: logo != null
-                            ? Row(
-                                mainAxisSize: MainAxisSize.min,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Container(
-                                    width: 48,
-                                    height: 48,
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      shape: BoxShape.circle,
-                                      border: Border.all(
-                                        color: Paleta.doradoClaro,
-                                        width: 1.5,
-                                      ),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Paleta.doradoOscuro
-                                              .withValues(alpha: 0.25),
-                                          blurRadius: 6,
-                                          offset: const Offset(0, 2),
-                                        ),
-                                      ],
-                                    ),
-                                    child: Image(
-                                      image: logo!,
-                                      width: 28,
-                                      height: 28,
-                                      fit: BoxFit.contain,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  _contenidoTitulo(),
-                                ],
-                              )
-                            : _contenidoTitulo(),
-                      ),
-                    ),
-                  ),
                 ),
+              ),
+            ),
+          ),
+          Align(
+            alignment: tituloCentrado
+                ? Alignment.center
+                : const Alignment(-1, -0.35),
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(
+                lateral,
+                alturaBarraEstado + 4,
+                derecha,
+                4,
+              ),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: logo != null
+                    ? Row(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          if (alTocarLogo != null)
+                            GestureDetector(
+                              onTap: alTocarLogo,
+                              behavior: HitTestBehavior.opaque,
+                              child: _logoRedondo(),
+                            )
+                          else
+                            IgnorePointer(
+                              child: _logoRedondo(),
+                            ),
+                          const SizedBox(width: 10),
+                          IgnorePointer(child: _contenidoTitulo()),
+                        ],
+                      )
+                    : IgnorePointer(child: _contenidoTitulo()),
               ),
             ),
           ),
@@ -143,6 +129,34 @@ class EncabezadoGradiente extends StatelessWidget {
               child: accionDerecha!,
             ),
         ],
+      ),
+    );
+  }
+
+  Widget _logoRedondo() {
+    return Container(
+      width: 48,
+      height: 48,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: Paleta.doradoClaro,
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Paleta.doradoOscuro.withValues(alpha: 0.25),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Image(
+        image: logo!,
+        width: 28,
+        height: 28,
+        fit: BoxFit.contain,
       ),
     );
   }

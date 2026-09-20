@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
@@ -11,7 +13,9 @@ import 'package:oncuidar/caracteristicas/onboarding/splash.dart';
 import 'package:oncuidar/caracteristicas/perfil/perfil.dart';
 import 'package:oncuidar/core/proveedores/proveedores.dart';
 import 'package:oncuidar/core/servicios/servicio_base_datos.dart';
+import 'package:oncuidar/core/servicios/servicio_cache_contenido.dart';
 import 'package:oncuidar/core/servicios/servicio_cifrado.dart';
+import 'package:oncuidar/modelos/material_educativo.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 const _clavePrueba = 'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=';
@@ -22,6 +26,42 @@ MockFirebaseAuth _authConSesion() => MockFirebaseAuth(
 );
 
 ServicioCifrado _cifradoListo() => ServicioCifrado(clavePrueba: _clavePrueba);
+
+class _CacheFalso implements ServicioCacheContenido {
+  final Set<String> descargados = {};
+
+  @override
+  Future<File?> archivoEnCache(String url) async =>
+      descargados.contains(url) ? File(url) : null;
+
+  @override
+  Future<File> descargar(String url) async {
+    descargados.add(url);
+    return File(url);
+  }
+
+  @override
+  Future<bool> archivoDescargado(String url) async =>
+      descargados.contains(url);
+
+  @override
+  Future<void> eliminar(String url) async {
+    descargados.remove(url);
+  }
+}
+
+class _BaseSinContenido extends ServicioBaseDatos {
+  _BaseSinContenido()
+      : super(
+          base: FakeFirebaseFirestore(),
+          uidPrueba: _uid,
+          cifrado: _cifradoListo(),
+        );
+
+  @override
+  Stream<List<MaterialEducativo>> contenidoEducativoEnTiempoReal() =>
+      Stream.value(const []);
+}
 
 Future<ServicioBaseDatos> _baseConCuidador(ServicioCifrado cifrado) async {
   await cifrado.fijarClave(_uid, _clavePrueba);
@@ -209,6 +249,8 @@ void main() {
         overrides: [
           firebaseAuthProvider.overrideWithValue(auth),
           servicioCifradoProvider.overrideWithValue(cifrado),
+          servicioBaseDatosProvider.overrideWith((_) => _BaseSinContenido()),
+          servicioCacheContenidoProvider.overrideWithValue(_CacheFalso()),
         ],
         child: MaterialApp.router(routerConfig: router),
       ),

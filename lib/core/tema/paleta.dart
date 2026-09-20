@@ -17,8 +17,12 @@ class Paleta {
   static const textoSecundario = Color(0xFF9A8060);
   static const textoTerciario = Color(0xFF8A5A05);
   static const textoAyuda = Color(0xFFB8954A);
+
+  static const doradoBannerClaro = Color(0xFFFFF8E7);
+  static const doradoBannerOscuro = Color(0xFFFFE9B2);
   static const tarjeta = Color(0xFFFFFFFF);
   static const fondoEntrada = Color(0xFFFFF8F0);
   static const bordeTarjeta = Color(0x33E8A820);
   static const error = Color(0xFFEF4444);
+  static const verdeExito = Color(0xFF10B981);
 }

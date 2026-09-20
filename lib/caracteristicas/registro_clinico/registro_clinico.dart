@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:collection';
 
 import 'package:flutter/material.dart';
@@ -57,7 +58,6 @@ class _RegistroClinicoScreenState extends ConsumerState<RegistroClinicoScreen> {
   final LinkedHashSet<String> _seleccionados = LinkedHashSet<String>();
   final Map<String, int> _intensidades = {};
   final Map<String, String> _otroTexto = {};
-  bool _guardando = false;
   RegistroClinico? _registroEdicion;
 
   @override
@@ -294,73 +294,87 @@ class _RegistroClinicoScreenState extends ConsumerState<RegistroClinicoScreen> {
       );
       return;
     }
+    final messenger = ScaffoldMessenger.of(context);
+    final esEdicion = _registroEdicion != null;
     final registros =
         ref.read(registrosClinicosProvider).value ?? const <RegistroClinico>[];
     final tope = paciente.maximoRegistrosDia;
     _sincronizarOtroProblema();
     final alerta = _evaluarAlerta();
     final ahora = DateTime.now();
-    setState(() => _guardando = true);
-    try {
-      await ref
-          .read(servicioBaseDatosProvider)
-          .guardarRegistroClinico(
-            paciente.id,
-            RegistroClinico(
-              id: _registroEdicion?.id ?? const Uuid().v4(),
-              pacienteId: paciente.id,
-              fecha: _registroEdicion?.fecha ?? ahora,
-              creadoEn: _registroEdicion?.creadoEn ?? ahora,
-              tipoRegistro: _registroEdicion != null
-                  ? _registroEdicion!.tipoRegistro
-                  : _tipoEfectivo(_registrosHoy(registros), tope),
-              signosVitales: _signosActuales(),
-              sintomas: List.of(_sintomas),
-              observaciones: _observacionesController.text.trim().isEmpty
-                  ? null
-                  : _observacionesController.text.trim(),
-              nivelAlerta: alerta.nivel,
-              mensajeAlerta: alerta.mensajes.isEmpty
-                  ? null
-                  : alerta.mensajes.join(' '),
+    final registro = RegistroClinico(
+      id: _registroEdicion?.id ?? const Uuid().v4(),
+      pacienteId: paciente.id,
+      fecha: _registroEdicion?.fecha ?? ahora,
+      creadoEn: _registroEdicion?.creadoEn ?? ahora,
+      tipoRegistro: _registroEdicion != null
+          ? _registroEdicion!.tipoRegistro
+          : _tipoEfectivo(_registrosHoy(registros), tope),
+      signosVitales: _signosActuales(),
+      sintomas: List.of(_sintomas),
+      observaciones: _observacionesController.text.trim().isEmpty
+          ? null
+          : _observacionesController.text.trim(),
+      nivelAlerta: alerta.nivel,
+      mensajeAlerta: alerta.mensajes.isEmpty
+          ? null
+          : alerta.mensajes.join(' '),
+    );
+    final base = ref.read(servicioBaseDatosProvider);
+    _snackCon(
+      messenger,
+      esEdicion ? 'Registro actualizado' : 'Guardado correctamente',
+      color: Paleta.doradoPrincipal,
+      icono: Icons.check_circle,
+    );
+    _reiniciarFormulario();
+    unawaited(() async {
+      try {
+        await base.guardarRegistroClinico(paciente.id, registro);
+      } catch (e) {
+        messenger.showSnackBar(
+          SnackBar(
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 2),
+            backgroundColor: Paleta.error,
+            content: Row(
+              children: [
+                const Icon(Icons.error_outline, color: Colors.white, size: 20),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Error al guardar: $e',
+                    style: GoogleFonts.nunito(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
             ),
-          );
-      if (!mounted) return;
-      final esEdicion = _registroEdicion != null;
-      setState(() {
-        _guardando = false;
-        if (!esEdicion) _resetearFormulario();
-      });
-      _mostrarSnack(
-        esEdicion ? 'Registro actualizado' : 'Guardado correctamente',
-        color: const Color(0xFF10B981),
-        icono: Icons.check_circle,
-      );
-      if (esEdicion && mounted) {
-        Navigator.of(context).pop();
+          ),
+        );
       }
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _guardando = false);
-      _mostrarSnack(
-        'Error al guardar: $e',
-        color: Paleta.error,
-        icono: Icons.error_outline,
-      );
-    }
+    }());
   }
 
-  void _resetearFormulario() {
-    _tipoRegistro = 'programado';
-    for (final controlador in _controladoresSignos) {
-      controlador.clear();
-    }
-    _observacionesController.clear();
-    _otroProblemaController.clear();
-    _sintomas.clear();
-    _seleccionados.clear();
-    _intensidades.clear();
-    _otroTexto.clear();
+  void _reiniciarFormulario() {
+    setState(() {
+      _tempController.clear();
+      _frecCardiacaController.clear();
+      _o2Controller.clear();
+      _frecRespiratoriaController.clear();
+      _observacionesController.clear();
+      _otroProblemaController.clear();
+      _sintomas.clear();
+      _seleccionados.clear();
+      _intensidades.clear();
+      _otroTexto.clear();
+      _registroEdicion = null;
+      _tipoRegistro = 'programado';
+    });
+    FocusScope.of(context).unfocus();
   }
 
   void _alRetroceder() {
@@ -373,7 +387,16 @@ class _RegistroClinicoScreenState extends ConsumerState<RegistroClinicoScreen> {
 
   void _mostrarSnack(String texto, {required Color color, IconData? icono}) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
+    _snackCon(ScaffoldMessenger.of(context), texto, color: color, icono: icono);
+  }
+
+  void _snackCon(
+    ScaffoldMessengerState messenger,
+    String texto, {
+    required Color color,
+    IconData? icono,
+  }) {
+    messenger.showSnackBar(
       SnackBar(
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 2),
@@ -476,7 +499,7 @@ class _RegistroClinicoScreenState extends ConsumerState<RegistroClinicoScreen> {
                     IndicadorAlerta(alerta: _evaluarAlerta()),
                     const SizedBox(height: 16),
                     BotonGuardar(
-                      guardando: _guardando,
+                      guardando: false,
                       esEdicion: _registroEdicion != null,
                       onPressed: _guardar,
                     ),

@@ -43,7 +43,13 @@ class ServicioCifrado {
     } catch (_) {}
     final resultado = await FirebaseFunctions.instanceFor(
       region: 'southamerica-west1',
-    ).httpsCallable('getOrCreateDataKey').call();
+    ).httpsCallable('getOrCreateDataKey').call().timeout(
+          const Duration(seconds: 5),
+          onTimeout: () => throw FirebaseFunctionsException(
+            code: 'unavailable',
+            message: 'Sin conexión',
+          ),
+        );
     await fijarClave(uid, (resultado.data as Map)['dataKey'] as String);
   }
 

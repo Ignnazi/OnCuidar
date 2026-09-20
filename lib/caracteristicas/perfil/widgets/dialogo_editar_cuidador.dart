@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -53,7 +55,6 @@ class _DialogoEditarCuidadorState extends State<_DialogoEditarCuidador> {
   late final TextEditingController _relacionController;
   late final TextEditingController _direccionController;
   final _formKey = GlobalKey<FormState>();
-  var _cargando = false;
 
   @override
   void initState() {
@@ -85,33 +86,56 @@ class _DialogoEditarCuidadorState extends State<_DialogoEditarCuidador> {
     if (!_formKey.currentState!.validate()) return;
     final messenger = ScaffoldMessenger.of(context);
     final nav = Navigator.of(context);
-    setState(() => _cargando = true);
+    final nombre = _nombreController.text.trim();
+    final telefono = _telefonoController.text.trim();
+    final relacion = _relacionController.text.trim();
+    final direccion = _direccionController.text.trim();
+    final alGuardar = widget.alGuardar;
+    nav.pop();
+    unawaited(_guardarEnBackground(
+      messenger,
+      alGuardar,
+      nombre: nombre,
+      telefono: telefono,
+      relacion: relacion,
+      direccion: direccion,
+    ));
+  }
+
+  Future<void> _guardarEnBackground(
+    ScaffoldMessengerState messenger,
+    Future<void> Function({
+      required String nombre,
+      required String telefono,
+      required String relacion,
+      required String direccion,
+    }) alGuardar, {
+    required String nombre,
+    required String telefono,
+    required String relacion,
+    required String direccion,
+  }) async {
     try {
-      await widget.alGuardar(
-        nombre: _nombreController.text.trim(),
-        telefono: _telefonoController.text.trim(),
-        relacion: _relacionController.text.trim(),
-        direccion: _direccionController.text.trim(),
+      await alGuardar(
+        nombre: nombre,
+        telefono: telefono,
+        relacion: relacion,
+        direccion: direccion,
+      );
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Datos actualizados'),
+          backgroundColor: Paleta.doradoPrincipal,
+        ),
       );
     } catch (e) {
-      if (!mounted) return;
-      setState(() => _cargando = false);
       messenger.showSnackBar(
         SnackBar(
           content: Text(_mensajeErrorGuardado(e)),
           backgroundColor: Paleta.error,
         ),
       );
-      return;
     }
-    if (!mounted) return;
-    nav.pop();
-    messenger.showSnackBar(
-      const SnackBar(
-        content: Text('Datos actualizados'),
-        backgroundColor: Paleta.doradoPrincipal,
-      ),
-    );
   }
 
   @override
@@ -258,10 +282,8 @@ class _DialogoEditarCuidadorState extends State<_DialogoEditarCuidador> {
                           Expanded(
                             flex: 2,
                             child: BotonPrincipal(
-                              etiqueta: _cargando
-                                  ? 'Guardando…'
-                                  : 'Guardar cambios',
-                              alPulsar: _cargando ? () {} : _guardar,
+                              etiqueta: 'Guardar cambios',
+                              alPulsar: _guardar,
                             ),
                           ),
                         ],

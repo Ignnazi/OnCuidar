@@ -44,6 +44,9 @@ class _IniciarSesionState extends ConsumerState<IniciarSesion> {
 
       await ref.read(servicioCifradoProvider).asegurarClave(uid);
       ref.read(bloqueoCifradoProvider.notifier).fijarDesbloqueado(true);
+      ref
+          .read(sincronizacionBibliotecaProvider.notifier)
+          .sincronizarAlIniciarSesion();
 
       if (mounted) {
         FocusManager.instance.primaryFocus?.unfocus();
@@ -265,7 +268,7 @@ class _IniciarSesionState extends ConsumerState<IniciarSesion> {
                               onPressed: () =>
                                   context.push('/recuperar-acceso'),
                               child: Text(
-                                '¿No recuerdas tu correo? Recuperar con el de respaldo',
+                                'Recuperar con el correo de respaldo',
                                 style: GoogleFonts.nunito(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w700,
