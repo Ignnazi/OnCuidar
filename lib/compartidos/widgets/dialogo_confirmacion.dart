@@ -4,17 +4,20 @@ import '../../core/tema/paleta.dart';
 
 Future<bool?> mostrarDialogoConfirmacion(
   BuildContext context, {
+  Key? key,
   required IconData icono,
   required String titulo,
   required String mensaje,
   required String textoConfirmar,
   Color colorConfirmar = Paleta.doradoOscuro,
   IconData? iconoConfirmar,
+  Key? keyConfirmar,
   String textoCancelar = 'Cancelar',
 }) {
   return showDialog<bool>(
     context: context,
     builder: (dialogCtx) => Dialog(
+      key: key,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       backgroundColor: Paleta.tarjeta,
       insetPadding: const EdgeInsets.symmetric(horizontal: 28),
@@ -94,6 +97,7 @@ Future<bool?> mostrarDialogoConfirmacion(
                 Expanded(
                   child: iconoConfirmar == null
                       ? ElevatedButton(
+                          key: keyConfirmar,
                           onPressed: () => Navigator.of(dialogCtx).pop(true),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: colorConfirmar,

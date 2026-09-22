@@ -1,6 +1,21 @@
 import 'dart:io';
 
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+String claveAvanceVideo(String url) =>
+    'avance_video_${Uri.encodeComponent(url)}';
+
+Future<int> leerAvanceVideo(String url) async {
+  final prefs = await SharedPreferences.getInstance();
+  return prefs.getInt(claveAvanceVideo(url)) ?? 0;
+}
+
+Future<void> guardarAvanceVideo(String url, Duration avance) async {
+  if (avance.inMilliseconds < 1000) return;
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setInt(claveAvanceVideo(url), avance.inMilliseconds);
+}
 
 class ServicioCacheContenido {
   ServicioCacheContenido({CacheManager? gestor})

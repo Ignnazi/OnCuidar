@@ -1,10 +1,11 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import '../../modelos/checklist_usuario.dart';
+import '../../modelos/conversacion.dart';
 import '../../modelos/material_educativo.dart';
 import '../../modelos/paciente.dart';
 import '../../modelos/registro_clinico.dart';
@@ -264,16 +265,6 @@ class ServicioBaseDatos {
         );
   }
 
-  Future<List<Paciente>> obtenerPacientes() async {
-    final snap = await _docUsuario.collection('patients').get();
-    final lista = <Paciente>[];
-    for (final doc in snap.docs) {
-      if (doc.data()['archivado'] == true) continue;
-      lista.add(await _descifrarPaciente(doc.id, doc.data()));
-    }
-    return lista;
-  }
-
   Stream<List<Paciente>> pacientesEnTiempoReal() {
     return _docUsuario
         .collection('patients')
@@ -303,6 +294,7 @@ class ServicioBaseDatos {
     }
     final signos = registro.signosVitales;
     final datos = <String, dynamic>{
+      'id': registro.id,
       'paciente_id': registro.pacienteId,
       'fecha': registro.fecha,
       'creadoEn': registro.creadoEn,
@@ -349,7 +341,6 @@ class ServicioBaseDatos {
     ).doc(registro.id).set(datos, SetOptions(merge: true));
   }
 
-  /// Elimina un registro clínico del paciente.
   Future<void> eliminarRegistroClinico(
     String idPaciente,
     String idRegistro,
@@ -377,7 +368,6 @@ class ServicioBaseDatos {
         );
   }
 
-
   Future<List<RegistroClinico>> cargarMasRegistrosClinicos(
     String idPaciente,
     DateTime ultimoCreadoEn,
@@ -400,7 +390,8 @@ class ServicioBaseDatos {
     return lista;
   }
 
-  CollectionReference _contenidoEducativo() => _base.collection('educationalContent');
+  CollectionReference _contenidoEducativo() =>
+      _base.collection('educationalContent');
 
   Stream<List<MaterialEducativo>> contenidoEducativoEnTiempoReal() {
     return _contenidoEducativo().snapshots().map(
@@ -414,7 +405,10 @@ class ServicioBaseDatos {
   Future<MaterialEducativo?> obtenerContenidoEducativo(String id) async {
     final doc = await _contenidoEducativo().doc(id).get();
     if (!doc.exists) return null;
-    return MaterialEducativo.fromMap(doc.id, doc.data() as Map<String, dynamic>);
+    return MaterialEducativo.fromMap(
+      doc.id,
+      doc.data() as Map<String, dynamic>,
+    );
   }
 
   Stream<List<String>> idsFavoritosEnTiempoReal() {
@@ -426,20 +420,28 @@ class ServicioBaseDatos {
   }
 
   Future<void> alternarFavorito(String materialId) async {
-    Map<String, dynamic>? datos;
+    var favoritos = <String>[];
     try {
       final doc = await _docUsuario.get(const GetOptions(source: Source.cache));
-      datos = doc.data() as Map<String, dynamic>?;
+      final datos = doc.data() as Map<String, dynamic>?;
+      favoritos = List<String>.from(datos?['favoriteArticleIds'] ?? const []);
     } catch (_) {
-      rethrow;
+      try {
+        final doc = await _docUsuario.get();
+        final datos = doc.data() as Map<String, dynamic>?;
+        favoritos = List<String>.from(datos?['favoriteArticleIds'] ?? const []);
+      } catch (_) {
+        favoritos = const [];
+      }
     }
-    final favoritos = List<String>.from(datos?['favoriteArticleIds'] ?? const []);
     if (favoritos.contains(materialId)) {
       favoritos.remove(materialId);
     } else {
       favoritos.add(materialId);
     }
-    await _docUsuario.set({'favoriteArticleIds': favoritos}, SetOptions(merge: true));
+    await _docUsuario.set({
+      'favoriteArticleIds': favoritos,
+    }, SetOptions(merge: true));
   }
 
   CollectionReference _checklistsUsuario(String idPaciente) => _docUsuario
@@ -474,7 +476,11 @@ class ServicioBaseDatos {
       'indicesMarcados': <int>[],
       'creadoEn': DateTime.now(),
     };
-    await _reemplazarPorCifrado(datos, plano: titulo, cifrado: 'titulo_cifrado');
+    await _reemplazarPorCifrado(
+      datos,
+      plano: titulo,
+      cifrado: 'titulo_cifrado',
+    );
     datos['items_cifrado'] = await _cifrado.cifrar(_uid, jsonEncode(items));
     final ref = await _checklistsUsuario(idPaciente).add(datos);
     return ref.id;
@@ -548,6 +554,124 @@ class ServicioBaseDatos {
     return const [];
   }
 
+  CollectionReference _conversaciones() =>
+      _docUsuario.collection('conversations');
+
+  Stream<List<Conversacion>> conversacionesEnTiempoReal() {
+    if (!_tieneIdentidad()) return Stream.value(const []);
+    return _conversaciones()
+        .orderBy('ultimaActividad', descending: true)
+        .limit(50)
+        .snapshots()
+        .asyncMap(
+          (snap) => Future.wait(
+            snap.docs.map(
+              (d) => _descifrarConversacion(
+                d.id,
+                d.data() as Map<String, dynamic>,
+              ),
+            ),
+          ),
+        );
+  }
+
+  Future<String> crearConversacion({
+    required String titulo,
+    required List<MensajeConversacion> mensajes,
+  }) async {
+    final datos = <String, dynamic>{
+      'mensajes_cifrado': await _cifrado.cifrar(
+        _uid,
+        jsonEncode([for (final mensaje in mensajes) mensaje.aMapa()]),
+      ),
+      'ultimaActividad': DateTime.now(),
+      'creadoEn': DateTime.now(),
+      'version_encriptacion': 3,
+    };
+    await _reemplazarPorCifrado(
+      datos,
+      plano: titulo,
+      cifrado: 'titulo_cifrado',
+    );
+    final ref = await _conversaciones().add(datos);
+    return ref.id;
+  }
+
+  Future<void> actualizarConversacion(
+    String id, {
+    String? titulo,
+    required List<MensajeConversacion> mensajes,
+  }) async {
+    final datos = <String, dynamic>{
+      'mensajes_cifrado': await _cifrado.cifrar(
+        _uid,
+        jsonEncode([for (final mensaje in mensajes) mensaje.aMapa()]),
+      ),
+      'ultimaActividad': DateTime.now(),
+    };
+    if (titulo != null) {
+      await _reemplazarPorCifrado(
+        datos,
+        plano: titulo,
+        cifrado: 'titulo_cifrado',
+      );
+    }
+    await _conversaciones().doc(id).set(datos, SetOptions(merge: true));
+  }
+
+  Future<void> renombrarConversacion(String id, String titulo) async {
+    final datos = <String, dynamic>{};
+    await _reemplazarPorCifrado(
+      datos,
+      plano: titulo,
+      cifrado: 'titulo_cifrado',
+    );
+    await _conversaciones().doc(id).set(datos, SetOptions(merge: true));
+  }
+
+  Future<void> eliminarConversacion(String id) async {
+    await _conversaciones().doc(id).delete();
+  }
+
+  Future<Conversacion> _descifrarConversacion(
+    String id,
+    Map<String, dynamic> datos,
+  ) async {
+    return Conversacion(
+      id: id,
+      titulo: (await _descifrarCampo(datos, 'titulo_cifrado')) ?? '',
+      ultimaActividad: _fechaTolerante(datos['ultimaActividad']),
+      creadoEn: _fechaTolerante(datos['creadoEn']),
+      mensajes: await _descifrarMensajesConversacion(datos),
+    );
+  }
+
+  Future<List<MensajeConversacion>> _descifrarMensajesConversacion(
+    Map<String, dynamic> datos,
+  ) async {
+    final cifrado = datos['mensajes_cifrado'] as String?;
+    if (cifrado != null && cifrado.isNotEmpty) {
+      try {
+        final texto = await _cifrado.descifrar(_uid, cifrado);
+        final lista = jsonDecode(texto) as List<dynamic>;
+        return [
+          for (final item in lista.cast<Map<String, dynamic>>())
+            MensajeConversacion.desdeMapa(item),
+        ];
+      } catch (e, pila) {
+        debugPrint('No se pudo descifrar mensajes_cifrado: $e\n$pila');
+      }
+    }
+    final mensajesRaw = datos['mensajes'];
+    if (mensajesRaw is List) {
+      return [
+        for (final item in mensajesRaw.cast<Map<String, dynamic>>())
+          MensajeConversacion.desdeMapa(item),
+      ];
+    }
+    return const [];
+  }
+
   Future<void> _reautenticar(String contrasena) async {
     final usuario = _usuarioAutenticado;
     final email = usuario.email;
@@ -597,13 +721,14 @@ class ServicioBaseDatos {
     }, SetOptions(merge: true));
     var confirmadoServidor = false;
     try {
-      await FirebaseFunctions.instanceFor(
-        region: 'southamerica-west1',
-      ).httpsCallable('registerRecoveryEmail').call({'email': normalizado}).timeout(
+      await FirebaseFunctions.instanceFor(region: 'southamerica-west1')
+          .httpsCallable('registerRecoveryEmail')
+          .call({'email': normalizado})
+          .timeout(
             const Duration(seconds: 5),
             onTimeout: () => throw FirebaseFunctionsException(
               code: 'unavailable',
-              message: 'Sin conexión',
+              message: 'Sin conexiÃ³n',
             ),
           );
       confirmadoServidor = true;

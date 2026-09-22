@@ -13,9 +13,6 @@ class _TransicionWhatsApp extends PageTransitionsBuilder {
     Animation<double> secondaryAnimation,
     Widget child,
   ) {
-    if (route.settings.name == 'noAnimation') {
-      return child;
-    }
     final curva = CurvedAnimation(
       parent: animation,
       curve: Curves.easeOutCubic,

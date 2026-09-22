@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart' show StateProvider;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../modelos/checklist_usuario.dart';
+import '../../modelos/conversacion.dart';
 import '../../modelos/material_educativo.dart';
 import '../../modelos/paciente.dart';
 import '../../modelos/registro_clinico.dart';
@@ -380,4 +383,9 @@ final listasChecklistProvider =
       return ref
           .watch(servicioBaseDatosProvider)
           .listasChecklistTiempoReal(paciente.id);
+    });
+
+final conversacionesProvider =
+    StreamProvider.autoDispose<List<Conversacion>>((ref) {
+      return ref.watch(servicioBaseDatosProvider).conversacionesEnTiempoReal();
     });

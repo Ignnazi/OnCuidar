@@ -110,10 +110,10 @@ void main() {
       expect(datos.containsKey('edad'), isFalse);
     });
 
-    test('obtenerPacientes descifra de vuelta', () async {
+    test('pacientesEnTiempoReal descifra de vuelta', () async {
       final id = await servicio.crearPaciente(await paciente('Ana Torres'));
 
-      final pacientes = await servicio.obtenerPacientes();
+      final pacientes = await servicio.pacientesEnTiempoReal().first;
       expect(pacientes, hasLength(1));
       expect(pacientes.first.id, id);
       expect(pacientes.first.fullName, 'Ana Torres');

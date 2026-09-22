@@ -400,9 +400,9 @@ void main() {
     await tester.pumpWidget(_pantalla(cifrado, base));
     await tester.pumpAndSettle();
 
-    expect(find.text('Nuevo registro'), findsOneWidget);
+    expect(find.byKey(const Key('botonNuevoRegistro')), findsOneWidget);
 
-    await tester.tap(find.text('Nuevo registro'));
+    await tester.tap(find.byKey(const Key('botonNuevoRegistro')));
     await tester.pumpAndSettle();
 
     expect(find.text('Registro clínico abierto'), findsOneWidget);

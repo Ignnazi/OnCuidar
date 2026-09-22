@@ -83,6 +83,18 @@ service cloud.firestore {
               'titulo', 'items'
             ]);
         }
+
+        }
+
+      // Conversaciones del cuidador: título y mensajes siempre cifrados
+      match /conversations/{conversationId} {
+        allow read, delete: if request.auth != null && request.auth.uid == userId;
+        allow create: if request.auth != null
+          && request.auth.uid == userId
+          && !request.resource.data.keys().hasAny(['titulo', 'mensajes', 'primeraPregunta']);
+        allow update: if request.auth != null
+          && request.auth.uid == userId
+          && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['titulo', 'mensajes', 'primeraPregunta']);
       }
     }
 

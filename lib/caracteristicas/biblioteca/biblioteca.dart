@@ -7,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:open_filex/open_filex.dart';
 import '../../compartidos/widgets/dialogo_confirmacion.dart';
 import '../../compartidos/widgets/encabezado_gradiente.dart';
+import '../../core/configuracion/entrega_semana.dart';
 import '../../core/proveedores/proveedores.dart';
 import '../../core/tema/paleta.dart';
 import '../../core/util/estilos.dart';
@@ -32,8 +33,10 @@ class _BibliotecaScreenState extends ConsumerState<BibliotecaScreen> {
   String _busqueda = '';
   String _filtro = 'Todos';
   bool _soloFavoritos = false;
+  bool _buscando = false;
   final Set<String> _urlsVerificadas = {};
   final Set<String> _urlsDescargando = {};
+  final _controladorBusqueda = TextEditingController();
 
   List<MaterialEducativo> _filtrar(
     List<MaterialEducativo> items,
@@ -49,6 +52,16 @@ class _BibliotecaScreenState extends ConsumerState<BibliotecaScreen> {
       }
       return true;
     }).toList();
+  }
+
+  void _alternarBusqueda() {
+    setState(() {
+      _buscando = !_buscando;
+      if (!_buscando) {
+        _busqueda = '';
+        _controladorBusqueda.clear();
+      }
+    });
   }
 
   Future<void> _verificarDescargas(List<MaterialEducativo> items) async {
@@ -71,6 +84,11 @@ class _BibliotecaScreenState extends ConsumerState<BibliotecaScreen> {
   }
 
   Future<void> _abrirMaterial(MaterialEducativo material) async {
+    if (!habilitadaDesdeSemana(3) &&
+        (material.esVideo || material.esChecklist)) {
+      context.push('/proximamente?titulo=${material.title}');
+      return;
+    }
     if (material.esVideo) {
       await _reproducirVideo(material);
       return;
@@ -110,9 +128,7 @@ class _BibliotecaScreenState extends ConsumerState<BibliotecaScreen> {
     try {
       final cache = ref.read(servicioCacheContenidoProvider);
       final archivo = await cache.descargar(url);
-      ref
-          .read(contenidosDescargadosProvider.notifier)
-          .marcarDescargado(url);
+      ref.read(contenidosDescargadosProvider.notifier).marcarDescargado(url);
       if (!mounted) return;
       await Navigator.of(context).push(
         MaterialPageRoute<void>(
@@ -152,9 +168,7 @@ class _BibliotecaScreenState extends ConsumerState<BibliotecaScreen> {
     try {
       final cache = ref.read(servicioCacheContenidoProvider);
       final archivo = await cache.descargar(url);
-      ref
-          .read(contenidosDescargadosProvider.notifier)
-          .marcarDescargado(url);
+      ref.read(contenidosDescargadosProvider.notifier).marcarDescargado(url);
       if (!mounted) return;
       aviso.hideCurrentSnackBar();
       final resultado = await OpenFilex.open(archivo.path);
@@ -191,13 +205,16 @@ class _BibliotecaScreenState extends ConsumerState<BibliotecaScreen> {
   void _mostrarAviso(String mensaje) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
-          mensaje,
-          style: GoogleFonts.nunito(fontSize: 14),
-        ),
+        content: Text(mensaje, style: GoogleFonts.nunito(fontSize: 14)),
         backgroundColor: Paleta.error,
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _controladorBusqueda.dispose();
+    super.dispose();
   }
 
   @override
@@ -218,12 +235,19 @@ class _BibliotecaScreenState extends ConsumerState<BibliotecaScreen> {
             logo: AssetImage('assets/images/OnCuidar.png'),
             tamanoTitulo: 20,
             alto: 100,
+            reservaDerecha: 104,
             alTocarLogo: () => context.go('/dashboard'),
+            accionDerecha: Row(
+              children: [
+                _botonBusqueda(),
+                const SizedBox(width: 8),
+                _botonFavoritos(favoritos.length),
+              ],
+            ),
           ),
           Expanded(
             child: contenidosAsync.when(
-              loading: () =>
-                  const Center(child: CircularProgressIndicator()),
+              loading: () => const Center(child: CircularProgressIndicator()),
               error: (e, _) => _EstadoVacio(
                 mensaje: 'No se pudieron cargar los materiales.',
               ),
@@ -235,7 +259,7 @@ class _BibliotecaScreenState extends ConsumerState<BibliotecaScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _filaBusqueda(favoritos.length),
+                      if (_buscando) _campoBusqueda(),
                       const SizedBox(height: 10),
                       _filaFiltros(),
                       const SizedBox(height: 6),
@@ -257,79 +281,129 @@ class _BibliotecaScreenState extends ConsumerState<BibliotecaScreen> {
     );
   }
 
-  Widget _filaBusqueda(int totalFavoritos) {
-    return Row(
-      children: [
-        Expanded(
-          child: TextField(
-            onChanged: (valor) => setState(() => _busqueda = valor),
-            style: const TextStyle(color: Paleta.textoPrincipal),
-            decoration: entradaDorada(
-              hintText: 'Buscar material...',
-              prefixIcon: const Icon(
-                Icons.search,
-                color: Paleta.textoSecundario,
-                size: 20,
+  Widget _botonBusqueda() {
+    return Tooltip(
+      message: _buscando ? 'Cerrar búsqueda' : 'Buscar material',
+      child: GestureDetector(
+        key: const Key('alternarBusquedaBiblioteca'),
+        onTap: _alternarBusqueda,
+        child: Container(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Paleta.doradoOscuro.withValues(alpha: 0.25),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
               ),
-            ),
+            ],
+          ),
+          child: Icon(
+            _buscando ? Icons.arrow_back : Icons.search,
+            color: Paleta.doradoOscuro,
+            size: 22,
           ),
         ),
-        const SizedBox(width: 8),
-        GestureDetector(
-          key: const Key('alternarFavoritos'),
-          onTap: () => setState(() => _soloFavoritos = !_soloFavoritos),
-          child: Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: _soloFavoritos
-                  ? Paleta.doradoOscuro
-                  : Paleta.doradoClaro,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
+      ),
+    );
+  }
+
+  Widget _botonFavoritos(int totalFavoritos) {
+    return Tooltip(
+      message: _soloFavoritos
+          ? 'Ver todos los materiales'
+          : 'Ver materiales guardados',
+      child: GestureDetector(
+        key: const Key('alternarFavoritos'),
+        onTap: () => setState(() => _soloFavoritos = !_soloFavoritos),
+        child: Container(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Paleta.doradoOscuro.withValues(alpha: 0.25),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Icon(
+                Icons.bookmark,
                 color: _soloFavoritos
                     ? Paleta.doradoOscuro
-                    : Paleta.bordeTarjeta,
+                    : Paleta.textoSecundario,
+                size: 22,
               ),
-            ),
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                Icon(
-                  Icons.bookmark,
-                  color: _soloFavoritos
-                      ? Colors.white
-                      : Paleta.doradoOscuro,
-                  size: 24,
-                ),
-                if (totalFavoritos > 0 && !_soloFavoritos)
-                  Positioned(
-                    top: 2,
-                    right: 2,
-                    child: Container(
-                      width: 18,
-                      height: 18,
-                      decoration: const BoxDecoration(
-                        color: Paleta.doradoOscuro,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Center(
-                        child: Text(
-                          '$totalFavoritos',
-                          style: GoogleFonts.nunito(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                          ),
+              if (totalFavoritos > 0 && !_soloFavoritos)
+                Positioned(
+                  top: 0,
+                  right: 0,
+                  child: Container(
+                    width: 18,
+                    height: 18,
+                    decoration: const BoxDecoration(
+                      color: Paleta.doradoOscuro,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Text(
+                        '$totalFavoritos',
+                        style: GoogleFonts.nunito(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
                         ),
                       ),
                     ),
                   ),
-              ],
-            ),
+                ),
+            ],
           ),
         ),
-      ],
+      ),
+    );
+  }
+
+  Widget _campoBusqueda() {
+    return TextField(
+      key: const Key('campoBusquedaBiblioteca'),
+      controller: _controladorBusqueda,
+      autofocus: true,
+      onChanged: (valor) => setState(() => _busqueda = valor),
+      style: GoogleFonts.nunito(fontSize: 14, color: Paleta.textoPrincipal),
+      decoration:
+          entradaDorada(
+            hintText: 'Buscar material...',
+            prefixIcon: const Icon(
+              Icons.search,
+              color: Paleta.textoSecundario,
+              size: 20,
+            ),
+          ).copyWith(
+            suffixIcon: _busqueda.isNotEmpty
+                ? GestureDetector(
+                    key: const Key('borrarBusquedaBiblioteca'),
+                    onTap: () {
+                      _controladorBusqueda.clear();
+                      setState(() => _busqueda = '');
+                    },
+                    child: const Icon(
+                      Icons.cancel_rounded,
+                      color: Paleta.textoSecundario,
+                      size: 18,
+                    ),
+                  )
+                : null,
+          ),
     );
   }
 
@@ -349,9 +423,7 @@ class _BibliotecaScreenState extends ConsumerState<BibliotecaScreen> {
               duration: const Duration(milliseconds: 200),
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
               decoration: BoxDecoration(
-                color: seleccionado
-                    ? Paleta.doradoMedio
-                    : Paleta.doradoClaro,
+                color: seleccionado ? Paleta.doradoMedio : Paleta.doradoClaro,
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: seleccionado
                     ? [
@@ -368,9 +440,7 @@ class _BibliotecaScreenState extends ConsumerState<BibliotecaScreen> {
                 style: GoogleFonts.nunito(
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
-                  color: seleccionado
-                      ? Colors.white
-                      : const Color(0xFF7A6030),
+                  color: seleccionado ? Colors.white : const Color(0xFF7A6030),
                 ),
               ),
             ),
@@ -386,6 +456,7 @@ class _BibliotecaScreenState extends ConsumerState<BibliotecaScreen> {
     List<ChecklistUsuario> listas,
   ) {
     final mostrarSeccion =
+        habilitadaDesdeSemana(3) &&
         (_filtro == 'Todos' || _filtro == 'Checklist') &&
         (filtrados.isNotEmpty || listas.isNotEmpty);
     if (filtrados.isEmpty && !mostrarSeccion) {
@@ -410,10 +481,7 @@ class _BibliotecaScreenState extends ConsumerState<BibliotecaScreen> {
     );
   }
 
-  Widget _tarjetaMaterial(
-    MaterialEducativo material,
-    Set<String> descargados,
-  ) {
+  Widget _tarjetaMaterial(MaterialEducativo material, Set<String> descargados) {
     final url = material.fileUrl;
     return TarjetaMaterial(
       material: material,
@@ -429,8 +497,21 @@ class _BibliotecaScreenState extends ConsumerState<BibliotecaScreen> {
 
   Future<void> _alternarFavorito(String materialId) async {
     final base = ref.read(servicioBaseDatosProvider);
+    final ids = ref.read(idsFavoritosProvider).value ?? const <String>[];
+    final eraFavorito = ids.contains(materialId);
     try {
       await base.alternarFavorito(materialId);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              eraFavorito ? 'Quitado de favoritos' : 'Añadido a favoritos',
+              style: const TextStyle(color: Colors.white),
+            ),
+            backgroundColor: Paleta.doradoPrincipal,
+          ),
+        );
+      }
     } catch (_) {
       if (mounted) {
         _mostrarAviso('No se pudo actualizar el favorito. Revisa tu conexión.');
@@ -591,8 +672,10 @@ class _BibliotecaScreenState extends ConsumerState<BibliotecaScreen> {
                 PopupMenuItem(
                   value: _AccionChecklist.editar,
                   child: ListTile(
-                    leading:
-                        const Icon(Icons.edit_outlined, color: Paleta.doradoOscuro),
+                    leading: const Icon(
+                      Icons.edit_outlined,
+                      color: Paleta.doradoOscuro,
+                    ),
                     title: const Text(
                       'Editar',
                       style: TextStyle(
@@ -607,7 +690,10 @@ class _BibliotecaScreenState extends ConsumerState<BibliotecaScreen> {
                 PopupMenuItem(
                   value: _AccionChecklist.eliminar,
                   child: ListTile(
-                    leading: const Icon(Icons.delete_outline, color: Paleta.error),
+                    leading: const Icon(
+                      Icons.delete_outline,
+                      color: Paleta.error,
+                    ),
                     title: const Text(
                       'Eliminar',
                       style: TextStyle(
@@ -717,16 +803,10 @@ class _BibliotecaScreenState extends ConsumerState<BibliotecaScreen> {
               },
             ),
             ListTile(
-              leading: const Icon(
-                Icons.delete_outline,
-                color: Paleta.error,
-              ),
+              leading: const Icon(Icons.delete_outline, color: Paleta.error),
               title: Text(
                 'Eliminar',
-                style: GoogleFonts.nunito(
-                  fontSize: 14,
-                  color: Paleta.error,
-                ),
+                style: GoogleFonts.nunito(fontSize: 14, color: Paleta.error),
               ),
               onTap: () {
                 Navigator.of(ctx).pop();

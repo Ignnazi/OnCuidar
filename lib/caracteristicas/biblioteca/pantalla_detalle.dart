@@ -63,10 +63,7 @@ class _PantallaDetalleMaterialState
   void _mostrarAviso(String mensaje) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
-          mensaje,
-          style: GoogleFonts.nunito(fontSize: 14),
-        ),
+        content: Text(mensaje, style: GoogleFonts.nunito(fontSize: 14)),
         backgroundColor: Paleta.error,
       ),
     );
@@ -74,8 +71,21 @@ class _PantallaDetalleMaterialState
 
   Future<void> _alternarFavorito(String materialId) async {
     final base = ref.read(servicioBaseDatosProvider);
+    final ids = ref.read(idsFavoritosProvider).value ?? const <String>[];
+    final eraFavorito = ids.contains(materialId);
     try {
       await base.alternarFavorito(materialId);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              eraFavorito ? 'Quitado de favoritos' : 'Añadido a favoritos',
+              style: const TextStyle(color: Colors.white),
+            ),
+            backgroundColor: Paleta.doradoPrincipal,
+          ),
+        );
+      }
     } catch (_) {
       if (mounted) {
         _mostrarAviso('No se pudo actualizar el favorito. Revisa tu conexión.');

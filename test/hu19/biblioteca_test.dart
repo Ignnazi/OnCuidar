@@ -191,6 +191,8 @@ void main() {
     final (base, _) = await _baseConContenido([_video(), _guia(), _checklist()]);
     await _montar(tester, base, _CacheFalso());
 
+    await tester.tap(find.byKey(const Key('alternarBusquedaBiblioteca')));
+    await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), 'fiebre');
     await tester.pumpAndSettle();
 
@@ -262,6 +264,8 @@ void main() {
     final (base, _) = await _baseConContenido([_video(), _guia(), _checklist()]);
     await _montar(tester, base, _CacheFalso());
 
+    await tester.tap(find.byKey(const Key('alternarBusquedaBiblioteca')));
+    await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), 'zzz');
     await tester.pumpAndSettle();
 
