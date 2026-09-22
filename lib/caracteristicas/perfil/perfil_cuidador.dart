@@ -42,15 +42,15 @@ class _PerfilCuidadorState extends ConsumerState<PerfilCuidador> {
     }
     try {
       final base = ref.read(servicioBaseDatosProvider);
-      var datos = await base
-          .obtenerCuidador()
-          .timeout(const Duration(seconds: 5));
+      var datos = await base.obtenerCuidador().timeout(
+        const Duration(seconds: 5),
+      );
       final pendiente = datos['pendienteCorreo'] as Map?;
       if (pendiente != null && pendiente['tipo'] == 'principal') {
         await _confirmarCambioCorreoConfirmado(base, datos);
-        datos = await base
-            .obtenerCuidador()
-            .timeout(const Duration(seconds: 5));
+        datos = await base.obtenerCuidador().timeout(
+          const Duration(seconds: 5),
+        );
       }
       if (!mounted) return;
       setState(() => _cuidador = datos);
@@ -99,10 +99,7 @@ class _PerfilCuidadorState extends ConsumerState<PerfilCuidador> {
           const SizedBox(height: 28),
           PieVersion(),
           const SizedBox(height: 8),
-          BotonCerrarSesion(
-            cargando: _cerrandoSesion,
-            alPulsar: _cerrarSesion,
-          ),
+          BotonCerrarSesion(cargando: _cerrandoSesion, alPulsar: _cerrarSesion),
         ],
       ],
     );
@@ -125,8 +122,7 @@ class _PerfilCuidadorState extends ConsumerState<PerfilCuidador> {
       direccion: direccion ?? '',
       telefono: telefono ?? '',
       correoPrincipal: correoPrincipal,
-      correoRespaldo:
-          (correoRespaldo != null && correoRespaldo.isNotEmpty)
+      correoRespaldo: (correoRespaldo != null && correoRespaldo.isNotEmpty)
           ? correoRespaldo
           : null,
       onEditarDatos: _dialogoEditarCuidador,
@@ -140,35 +136,36 @@ class _PerfilCuidadorState extends ConsumerState<PerfilCuidador> {
     await mostrarDialogoEditarCuidador(
       context,
       cuidador: _cuidador ?? {},
-      alGuardar: ({
-        required String nombre,
-        required String telefono,
-        required String relacion,
-        required String direccion,
-      }) async {
-        if (mounted) {
-          setState(() {
-            _cuidador = {
-              ...?_cuidador,
-              'nombre': nombre,
-              'telefono': telefono,
-              'relacion': relacion,
-              'direccion': direccion,
-            };
-          });
-        }
-        ref.invalidate(cuidadorProvider);
-        unawaited(_cargar());
-        try {
-          await servicio.actualizarCuidador(
-            nombre: nombre,
-            telefono: telefono,
-            relacion: relacion,
-            direccion: direccion,
-          ).timeout(const Duration(seconds: 3));
-        } catch (_) {}
-        unawaited(_cargar());
-      },
+      alGuardar:
+          ({
+            required String nombre,
+            required String telefono,
+            required String relacion,
+            required String direccion,
+          }) async {
+            if (mounted) {
+              setState(() {
+                _cuidador = {
+                  ...?_cuidador,
+                  'nombre': nombre,
+                  'telefono': telefono,
+                  'relacion': relacion,
+                  'direccion': direccion,
+                };
+              });
+            }
+            ref.invalidate(cuidadorProvider);
+            unawaited(_cargar());
+            await servicio
+                .actualizarCuidador(
+                  nombre: nombre,
+                  telefono: telefono,
+                  relacion: relacion,
+                  direccion: direccion,
+                )
+                .timeout(const Duration(seconds: 3));
+            unawaited(_cargar());
+          },
     );
   }
 
@@ -207,6 +204,11 @@ class _PerfilCuidadorState extends ConsumerState<PerfilCuidador> {
     await ref.read(selectedPatientIdProvider.notifier).select(null);
     ref.read(servicioCifradoProvider).bloquear();
     ref.read(bloqueoCifradoProvider.notifier).fijarDesbloqueado(false);
+    try {
+      await ref.read(servicioNotificacionesProvider).cancelarTodas();
+    } catch (_) {
+      // Si falla, se sigue igual.
+    }
     try {
       await ref.read(firebaseAuthProvider).signOut();
     } catch (_) {

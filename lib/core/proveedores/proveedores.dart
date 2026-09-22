@@ -9,11 +9,13 @@ import '../../modelos/checklist_usuario.dart';
 import '../../modelos/conversacion.dart';
 import '../../modelos/material_educativo.dart';
 import '../../modelos/paciente.dart';
+import '../../modelos/recordatorio.dart';
 import '../../modelos/registro_clinico.dart';
 import '../servicios/servicio_base_datos.dart';
 import '../servicios/servicio_cache_contenido.dart';
 import '../servicios/servicio_cache_metadata.dart';
 import '../servicios/servicio_cifrado.dart';
+import '../servicios/servicio_notificaciones.dart';
 import '../servicios/servicio_registro.dart';
 
 final servicioCifradoProvider = Provider<ServicioCifrado>((ref) {
@@ -385,7 +387,25 @@ final listasChecklistProvider =
           .listasChecklistTiempoReal(paciente.id);
     });
 
+final recordatoriosProvider = StreamProvider.autoDispose<List<Recordatorio>>(
+  (ref) {
+    final pacienteAsync = ref.watch(currentPatientProvider);
+    if (pacienteAsync is AsyncLoading) return Stream.empty();
+    final paciente = pacienteAsync.value;
+    if (paciente == null) return Stream.value(const []);
+    return ref
+        .watch(servicioBaseDatosProvider)
+        .recordatoriosEnTiempoReal(paciente.id);
+  },
+);
+
 final conversacionesProvider =
     StreamProvider.autoDispose<List<Conversacion>>((ref) {
       return ref.watch(servicioBaseDatosProvider).conversacionesEnTiempoReal();
     });
+
+final servicioNotificacionesProvider = Provider<ServicioNotificaciones>((ref) {
+  final notificaciones = ServicioNotificaciones();
+  unawaited(notificaciones.inicializar());
+  return notificaciones;
+});

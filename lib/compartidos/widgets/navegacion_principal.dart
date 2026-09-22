@@ -9,13 +9,11 @@ class NavegacionPrincipal extends ConsumerStatefulWidget {
     super.key,
     required this.shell,
     required this.ubicacion,
-    required this.tituloProximamente,
     required this.child,
   });
 
   final StatefulNavigationShell shell;
   final String ubicacion;
-  final String? tituloProximamente;
   final Widget child;
 
   @override
@@ -31,10 +29,11 @@ class _NavegacionPrincipalState extends ConsumerState<NavegacionPrincipal> {
         widget.ubicacion == '/historial') {
       return 2;
     }
-    if (widget.ubicacion == '/proximamente') {
-      return widget.tituloProximamente == 'Aprende' ? 3 : 1;
+    if (widget.ubicacion == '/chat') {
+      return 1;
     }
-    if (widget.ubicacion == '/biblioteca' ||
+    if (widget.ubicacion == '/proximamente' ||
+        widget.ubicacion == '/biblioteca' ||
         widget.ubicacion.startsWith('/biblioteca/')) {
       return 3;
     }
@@ -46,13 +45,15 @@ class _NavegacionPrincipalState extends ConsumerState<NavegacionPrincipal> {
       case 0:
         widget.shell.goBranch(0, initialLocation: true);
       case 1:
-        if (widget.ubicacion == '/proximamente') break;
-        context.push('/proximamente?titulo=Chat');
+        if (widget.ubicacion == '/chat') break;
+        context.push('/chat');
       case 2:
-        if (widget.ubicacion == '/registro-clinico') break;
+        if (widget.ubicacion == '/registro-clinico')
+          break;
         context.push('/registro-clinico');
       case 3:
-        if (widget.ubicacion.startsWith('/biblioteca')) break;
+        if (widget.ubicacion.startsWith('/biblioteca'))
+          break;
         context.push('/biblioteca');
       case 4:
         widget.shell.goBranch(1, initialLocation: true);

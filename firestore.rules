@@ -84,7 +84,23 @@ service cloud.firestore {
             ]);
         }
 
+        // Recordatorios del paciente: título y descripción siempre cifrados
+        match /recordatorios/{recordatorioId} {
+          allow read, delete: if request.auth != null && request.auth.uid == userId;
+          allow create: if request.auth != null
+            && request.auth.uid == userId
+            && !request.resource.data.keys().hasAny([
+              'titulo', 'descripcion',  // siempre cifrados -> titulo_cifrado / descripcion_cifrada
+              'tipo', 'fechaHora', 'diasRepeticion', 'recurrencia', 'completadoEn'
+            ]);
+          allow update: if request.auth != null
+            && request.auth.uid == userId
+            && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+              'titulo', 'descripcion'
+            ]);
         }
+
+      }
 
       // Conversaciones del cuidador: título y mensajes siempre cifrados
       match /conversations/{conversationId} {

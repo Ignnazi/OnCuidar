@@ -8,6 +8,7 @@ import 'package:oncuidar/caracteristicas/historial/historial.dart';
 import 'package:oncuidar/caracteristicas/onboarding/iniciar_sesion.dart';
 import 'package:oncuidar/caracteristicas/onboarding/registro.dart';
 import 'package:oncuidar/caracteristicas/perfil/perfil.dart';
+import 'package:oncuidar/caracteristicas/recordatorios/recordatorios.dart';
 import 'package:oncuidar/caracteristicas/registro_clinico/registro_clinico.dart';
 import 'package:oncuidar/caracteristicas/registro_clinico/widgets/selector_multi_sintoma.dart';
 import 'package:oncuidar/core/proveedores/proveedores.dart';
@@ -15,6 +16,7 @@ import 'package:oncuidar/core/servicios/servicio_base_datos.dart';
 import 'package:oncuidar/core/servicios/servicio_cifrado.dart';
 import 'package:oncuidar/core/servicios/servicio_registro.dart';
 import 'package:oncuidar/modelos/paciente.dart';
+import 'package:oncuidar/modelos/recordatorio.dart';
 import 'package:oncuidar/modelos/registro_clinico.dart';
 
 const _clavePrueba = 'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=';
@@ -357,6 +359,57 @@ void main() {
       reason: 'el detalle expandido no debe desbordar',
     );
 
+    await _scrollHastaElFinal(tester);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('recordatorios no desborda en 360x800', (tester) async {
+    _viewportCompacto(tester, const Size(360, 800));
+    final auth = _authConSesion();
+    final cifrado = ServicioCifrado(clavePrueba: _clavePrueba);
+    final base = await _baseConCuidador(cifrado);
+    final idPaciente = await base.crearPaciente(
+      Paciente(id: 'auto', fullName: 'Paciente Test', createdAt: DateTime.now()),
+    );
+    final fecha = DateTime.now();
+    await base.agregarRecordatorio(
+      idPaciente,
+      Recordatorio(
+        id: '',
+        pacienteId: idPaciente,
+        tipo: 'medicamento',
+        titulo: 'Tomar paracetamol de 500 mg junto con una cena ligera',
+        descripcion:
+            'Recordatorio muy largo sobre la medicación para comprobar que '
+            'el texto con elipsis no desborda en pantallas pequeñas.',
+        fechaHora: fecha,
+        diasRepeticion: const ['lun', 'mar', 'mie', 'jue', 'vie', 'sab', 'dom'],
+        activo: true,
+        creadoEn: fecha,
+      ),
+    );
+    await tester.pumpWidget(
+      _pantalla(auth, base, cifrado, const RecordatoriosScreen()),
+    );
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    await _scrollHastaElFinal(tester);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('recordatorios no desborda en 320x568', (tester) async {
+    _viewportCompacto(tester, const Size(320, 568));
+    final auth = _authConSesion();
+    final cifrado = ServicioCifrado(clavePrueba: _clavePrueba);
+    final base = await _baseConCuidador(cifrado);
+    await base.crearPaciente(
+      Paciente(id: 'auto', fullName: 'Paciente Test', createdAt: DateTime.now()),
+    );
+    await tester.pumpWidget(
+      _pantalla(auth, base, cifrado, const RecordatoriosScreen()),
+    );
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
     await _scrollHastaElFinal(tester);
     expect(tester.takeException(), isNull);
   });
