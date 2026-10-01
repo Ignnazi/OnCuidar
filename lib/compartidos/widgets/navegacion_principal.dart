@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/tema/paleta.dart';
+import 'banner_conexion.dart';
 
 class NavegacionPrincipal extends ConsumerStatefulWidget {
   const NavegacionPrincipal({
@@ -65,7 +66,13 @@ class _NavegacionPrincipalState extends ConsumerState<NavegacionPrincipal> {
     return Scaffold(
       backgroundColor: Paleta.crema,
       body: widget.child,
-      bottomNavigationBar: _barraNavegacion(),
+      bottomNavigationBar: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const BannerConexion(),
+          _barraNavegacion(),
+        ],
+      ),
     );
   }
 

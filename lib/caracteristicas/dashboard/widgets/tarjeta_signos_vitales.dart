@@ -75,10 +75,8 @@ class TarjetaSignosVitales extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () => context.push(
-          '/historial',
-          extra: {'filtroFecha': _inicioDeHoy()},
-        ),
+        onTap: () =>
+            context.push('/historial', extra: {'filtroFecha': _inicioDeHoy()}),
         borderRadius: BorderRadius.circular(14),
         child: Ink(
           padding: const EdgeInsets.symmetric(vertical: 11),

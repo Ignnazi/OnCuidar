@@ -17,9 +17,7 @@ class DetalleRegistro extends StatelessWidget {
     final motivos = MotorReglasClinicas.evaluar(
       registro.signosVitales,
       registro.sintomas,
-    ).mensajes
-        .where((m) => m != 'Sin síntomas preocupantes')
-        .toList();
+    ).mensajes.where((m) => m != 'Sin síntomas preocupantes').toList();
 
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),

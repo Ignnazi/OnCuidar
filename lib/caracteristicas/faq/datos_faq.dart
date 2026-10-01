@@ -1,3 +1,4 @@
+import '../../modelos/material_educativo.dart';
 import 'pregunta_base.dart';
 
 const mensajeBienvenidaChat =
@@ -19,6 +20,7 @@ final List<PreguntaBase> preguntasFrecuentes = [
         'Se considera fiebre desde los 38 °C axilares. En un niño en '
         'tratamiento oncológico, la fiebre siempre es una urgencia: llama de '
         'inmediato a su equipo médico, aunque se vea bien.',
+    contenidoRelacionadoId: 'videos-como-medir-la-fiebre',
     claves: [
       'fiebre',
       'temperatura',
@@ -68,6 +70,7 @@ final List<PreguntaBase> preguntasFrecuentes = [
         'Ofrece alimentos bien cocidos y de procedencia confiable. Evita los '
         'crudos, ahumados o sin pasteurizar, y las frutas sin pelar. El agua '
         'debe ser hervida o embotellada.',
+    contenidoRelacionadoId: 'pdfs-guia-de-alimentacion-durante-el-tratamiento',
     claves: [
       'aliment',
       'comida',
@@ -86,6 +89,18 @@ final List<PreguntaBase> preguntasFrecuentes = [
     ],
   ),
 ];
+
+MaterialEducativo? materialRelacionado(
+  PreguntaBase pregunta,
+  List<MaterialEducativo> catalogo,
+) {
+  final id = pregunta.contenidoRelacionadoId;
+  if (id == null || id.isEmpty) return null;
+  for (final material in catalogo) {
+    if (material.id == id) return material;
+  }
+  return null;
+}
 
 List<String> categoriasDePreguntas() {
   return preguntasFrecuentes.map((p) => p.categoria).toSet().toList();

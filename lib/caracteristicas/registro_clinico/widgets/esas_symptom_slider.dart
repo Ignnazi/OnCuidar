@@ -131,11 +131,7 @@ class EsasSymptomSlider extends StatelessWidget {
             ),
           ),
         if (mostrarLinea)
-          Divider(
-            height: 18,
-            thickness: 1,
-            color: Paleta.bordeTarjeta,
-          ),
+          Divider(height: 18, thickness: 1, color: Paleta.bordeTarjeta),
       ],
     );
   }

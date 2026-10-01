@@ -5,6 +5,7 @@ class PreguntaBase {
     required this.pregunta,
     required this.respuesta,
     this.claves = const [],
+    this.contenidoRelacionadoId,
   });
 
   final String id;
@@ -13,4 +14,6 @@ class PreguntaBase {
   final String respuesta;
 
   final List<String> claves;
+
+  final String? contenidoRelacionadoId;
 }

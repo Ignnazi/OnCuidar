@@ -3,11 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../core/tema/paleta.dart';
 
 class TarjetaMapa extends StatelessWidget {
-  const TarjetaMapa({
-    super.key,
-    required this.direccion,
-    required this.onTap,
-  });
+  const TarjetaMapa({super.key, required this.direccion, required this.onTap});
 
   final String direccion;
   final VoidCallback onTap;

@@ -19,15 +19,15 @@ Future<void> guardarAvanceVideo(String url, Duration avance) async {
 
 class ServicioCacheContenido {
   ServicioCacheContenido({CacheManager? gestor})
-      : _gestor =
-            gestor ??
-            CacheManager(
-              Config(
-                'material_educativo',
-                stalePeriod: const Duration(days: 365),
-                maxNrOfCacheObjects: 200,
-              ),
-            );
+    : _gestor =
+          gestor ??
+          CacheManager(
+            Config(
+              'material_educativo',
+              stalePeriod: const Duration(days: 365),
+              maxNrOfCacheObjects: 200,
+            ),
+          );
 
   final CacheManager _gestor;
 

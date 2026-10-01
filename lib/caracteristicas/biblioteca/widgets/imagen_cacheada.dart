@@ -36,8 +36,7 @@ class _ImagenCacheadaState extends ConsumerState<ImagenCacheada> {
       return Image.asset(
         url,
         fit: widget.ajuste,
-        errorBuilder: (_, _, _) =>
-            widget.reemplazo ?? const SizedBox.shrink(),
+        errorBuilder: (_, _, _) => widget.reemplazo ?? const SizedBox.shrink(),
       );
     }
     _futuro ??= ref.read(servicioCacheContenidoProvider).descargar(url);

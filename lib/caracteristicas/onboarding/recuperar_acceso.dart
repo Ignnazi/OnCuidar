@@ -32,15 +32,17 @@ class _RecuperarAccesoState extends State<RecuperarAcceso> {
   }
 
   Future<bool> _envioPorDefecto(String email) async {
-    final resultado = await FirebaseFunctions.instanceFor(
-      region: 'southamerica-west1',
-    ).httpsCallable('recoverByBackupEmail').call({'email': email}).timeout(
-          const Duration(seconds: 5),
-          onTimeout: () => throw FirebaseFunctionsException(
-            code: 'unavailable',
-            message: 'Sin conexión',
-          ),
-        );
+    final resultado =
+        await FirebaseFunctions.instanceFor(region: 'southamerica-west1')
+            .httpsCallable('recoverByBackupEmail')
+            .call({'email': email})
+            .timeout(
+              const Duration(seconds: 5),
+              onTimeout: () => throw FirebaseFunctionsException(
+                code: 'unavailable',
+                message: 'Sin conexión',
+              ),
+            );
     return resultado.data is Map && resultado.data['found'] == true;
   }
 

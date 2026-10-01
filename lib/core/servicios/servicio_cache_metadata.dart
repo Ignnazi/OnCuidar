@@ -43,7 +43,8 @@ class ServicioCacheMetadata {
     if (timestamp == null) return false;
     final momento = ahora ?? DateTime.now();
     return momento
-        .difference(DateTime.fromMillisecondsSinceEpoch(timestamp))
-        .compareTo(_validez) <= 0;
+            .difference(DateTime.fromMillisecondsSinceEpoch(timestamp))
+            .compareTo(_validez) <=
+        0;
   }
 }

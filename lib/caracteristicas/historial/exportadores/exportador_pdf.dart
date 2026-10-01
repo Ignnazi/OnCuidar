@@ -5,6 +5,7 @@ import 'package:pdf/widgets.dart' as pw;
 
 import '../../../modelos/paciente.dart';
 import '../../../modelos/registro_clinico.dart';
+import 'orden_registros.dart';
 
 PdfColor _hex(String valor) => PdfColor.fromHex(valor);
 
@@ -35,8 +36,10 @@ String _tipoLabel(String tipo) => tipo == 'extra' ? 'Extra' : 'Programado';
 
 String _sintomasTexto(List<EntradaSintoma> sintomas) {
   return sintomas
-      .map((s) =>
-          '${s.name} (${EntradaSintoma.etiquetaPara(s.intensity)}) ${s.intensity}/10')
+      .map(
+        (s) =>
+            '${s.name} (${EntradaSintoma.etiquetaPara(s.intensity)}) ${s.intensity}/10',
+      )
       .join(', ');
 }
 
@@ -261,8 +264,7 @@ pw.Widget _tablaRegistros(
   ];
 
   final datos = [
-    for (final rec in registros)
-      _filaRegistro(rec),
+    for (final rec in ordenarCronologicamente(registros)) _filaRegistro(rec),
   ];
 
   return pw.TableHelper.fromTextArray(
@@ -327,9 +329,7 @@ List<dynamic> _filaRegistro(RegistroClinico rec) {
     _hora12(rec.creadoEn),
     _tipoLabel(rec.tipoRegistro),
     _estadoLabel(rec.nivelAlerta),
-    vs?.temperature != null
-        ? '${vs!.temperature!.toStringAsFixed(1)}°C'
-        : '-',
+    vs?.temperature != null ? '${vs!.temperature!.toStringAsFixed(1)}°C' : '-',
     vs?.heartRate != null ? '${vs!.heartRate} lpm' : '-',
     vs?.oxygenSaturation != null ? '${vs!.oxygenSaturation}%' : '-',
     vs?.respiratoryRate != null ? '${vs!.respiratoryRate} rpm' : '-',
@@ -345,6 +345,7 @@ Future<Uint8List> generarPdfHistorial({
   DateTime? fechaInicio,
   DateTime? fechaFin,
   required DateTime generadoEn,
+  bool comprimir = true,
 }) async {
   final doradoOscuro = _hex('#C08808');
   final doradoClaro = _hex('#FFF4D0');
@@ -371,11 +372,10 @@ Future<Uint8List> generarPdfHistorial({
   );
   final estiloCelda = pw.TextStyle(fontSize: 7.5, color: textoPrincipal);
 
-  final inicio =
-      fechaInicio != null ? _corta(fechaInicio) : 'sin inicio';
+  final inicio = fechaInicio != null ? _corta(fechaInicio) : 'sin inicio';
   final fin = fechaFin != null ? _corta(fechaFin) : 'sin fin';
 
-  final documento = pw.Document();
+  final documento = pw.Document(compress: comprimir);
 
   documento.addPage(
     pw.MultiPage(
@@ -384,105 +384,187 @@ Future<Uint8List> generarPdfHistorial({
       header: (_) => _encabezadoPagina(generadoEn, paciente),
       footer: _piePagina,
       build: (_) {
-        final contenido = <pw.Widget>[
-          pw.SizedBox(height: 6),
-        ];
+        final contenido = <pw.Widget>[pw.SizedBox(height: 6)];
 
         if (paciente != null) {
           contenido.add(_seccionTitulo('PACIENTE', estiloSeccion, doradoClaro));
           contenido.add(pw.SizedBox(height: 6));
-          contenido
-              .add(_filaEtiquetaValor('Nombre', paciente.fullName,
-                  estiloEtiqueta, estiloValor));
+          contenido.add(
+            _filaEtiquetaValor(
+              'Nombre',
+              paciente.fullName,
+              estiloEtiqueta,
+              estiloValor,
+            ),
+          );
           if (paciente.age != null) {
-            contenido.add(_filaEtiquetaValor(
-                'Edad', '${paciente.age} años', estiloEtiqueta, estiloValor));
+            contenido.add(
+              _filaEtiquetaValor(
+                'Edad',
+                '${paciente.age} años',
+                estiloEtiqueta,
+                estiloValor,
+              ),
+            );
           }
           if (paciente.diagnosis?.isNotEmpty == true) {
-            contenido.add(_filaEtiquetaValor('Diagnóstico', paciente.diagnosis!,
-                estiloEtiqueta, estiloValor));
+            contenido.add(
+              _filaEtiquetaValor(
+                'Diagnóstico',
+                paciente.diagnosis!,
+                estiloEtiqueta,
+                estiloValor,
+              ),
+            );
           }
           if (paciente.tratamientoFase?.isNotEmpty == true) {
-            contenido.add(_filaEtiquetaValor('Fase', paciente.tratamientoFase!,
-                estiloEtiqueta, estiloValor));
+            contenido.add(
+              _filaEtiquetaValor(
+                'Fase',
+                paciente.tratamientoFase!,
+                estiloEtiqueta,
+                estiloValor,
+              ),
+            );
           }
           contenido.add(pw.SizedBox(height: 10));
         }
 
         final nombreLimpio = nombreCuidador?.trim();
         if (nombreLimpio != null && nombreLimpio.isNotEmpty) {
-          contenido
-              .add(_seccionTitulo('CUIDADOR', estiloSeccion, doradoClaro));
+          contenido.add(_seccionTitulo('CUIDADOR', estiloSeccion, doradoClaro));
           contenido.add(pw.SizedBox(height: 6));
-          contenido.add(_filaEtiquetaValor('Nombre', nombreLimpio,
-              estiloEtiqueta, estiloValor));
+          contenido.add(
+            _filaEtiquetaValor(
+              'Nombre',
+              nombreLimpio,
+              estiloEtiqueta,
+              estiloValor,
+            ),
+          );
           contenido.add(pw.SizedBox(height: 10));
         }
 
         if (paciente?.centroSaludNombre?.isNotEmpty == true) {
-          contenido
-              .add(_seccionTitulo('CENTRO DE SALUD', estiloSeccion, doradoClaro));
+          contenido.add(
+            _seccionTitulo('CENTRO DE SALUD', estiloSeccion, doradoClaro),
+          );
           contenido.add(pw.SizedBox(height: 6));
-          contenido.add(_filaEtiquetaValor('Nombre',
-              paciente!.centroSaludNombre!, estiloEtiqueta, estiloValor));
+          contenido.add(
+            _filaEtiquetaValor(
+              'Nombre',
+              paciente!.centroSaludNombre!,
+              estiloEtiqueta,
+              estiloValor,
+            ),
+          );
           if (paciente.centroSaludDireccion?.isNotEmpty == true) {
-            contenido.add(_filaEtiquetaValor('Dirección',
-                paciente.centroSaludDireccion!, estiloEtiqueta, estiloValor));
+            contenido.add(
+              _filaEtiquetaValor(
+                'Dirección',
+                paciente.centroSaludDireccion!,
+                estiloEtiqueta,
+                estiloValor,
+              ),
+            );
           }
           if (paciente.centroSaludTelefono?.isNotEmpty == true) {
-            contenido.add(_filaEtiquetaValor('Teléfono',
-                paciente.centroSaludTelefono!, estiloEtiqueta, estiloValor));
+            contenido.add(
+              _filaEtiquetaValor(
+                'Teléfono',
+                paciente.centroSaludTelefono!,
+                estiloEtiqueta,
+                estiloValor,
+              ),
+            );
           }
           contenido.add(pw.SizedBox(height: 10));
         }
 
         if (paciente?.contactoEmergenciaNombre?.isNotEmpty == true) {
-          contenido.add(_seccionTitulo(
-              'CONTACTO DE EMERGENCIA', estiloSeccion, doradoClaro));
+          contenido.add(
+            _seccionTitulo(
+              'CONTACTO DE EMERGENCIA',
+              estiloSeccion,
+              doradoClaro,
+            ),
+          );
           contenido.add(pw.SizedBox(height: 6));
-          contenido.add(_filaEtiquetaValor('Nombre',
-              paciente!.contactoEmergenciaNombre!, estiloEtiqueta, estiloValor));
+          contenido.add(
+            _filaEtiquetaValor(
+              'Nombre',
+              paciente!.contactoEmergenciaNombre!,
+              estiloEtiqueta,
+              estiloValor,
+            ),
+          );
           if (paciente.contactoEmergenciaTelefono?.isNotEmpty == true) {
-            contenido.add(_filaEtiquetaValor('Teléfono',
-                paciente.contactoEmergenciaTelefono!, estiloEtiqueta,
-                estiloValor));
+            contenido.add(
+              _filaEtiquetaValor(
+                'Teléfono',
+                paciente.contactoEmergenciaTelefono!,
+                estiloEtiqueta,
+                estiloValor,
+              ),
+            );
           }
           contenido.add(pw.SizedBox(height: 10));
         }
 
         contenido.add(_seccionTitulo('RESUMEN', estiloSeccion, doradoClaro));
         contenido.add(pw.SizedBox(height: 6));
-        contenido.add(_filaEtiquetaValor(
-            'Rango', '$inicio - $fin', estiloEtiqueta, estiloValor));
-        contenido.add(_filaEtiquetaValor(
-            'Total registros', '${registros.length}', estiloEtiqueta,
-            estiloValor));
-        contenido.add(_filaEtiquetaValor(
+        contenido.add(
+          _filaEtiquetaValor(
+            'Rango',
+            '$inicio - $fin',
+            estiloEtiqueta,
+            estiloValor,
+          ),
+        );
+        contenido.add(
+          _filaEtiquetaValor(
+            'Total registros',
+            '${registros.length}',
+            estiloEtiqueta,
+            estiloValor,
+          ),
+        );
+        contenido.add(
+          _filaEtiquetaValor(
             'Generado',
             '${_corta(generadoEn)} ${_hora12(generadoEn)}',
             estiloEtiqueta,
-            estiloValor));
+            estiloValor,
+          ),
+        );
         if (registros.isNotEmpty) {
           contenido.add(pw.SizedBox(height: 8));
-          contenido.add(
-              pw.Text('Registros por estado', style: estiloEtiqueta));
+          contenido.add(pw.Text('Registros por estado', style: estiloEtiqueta));
           contenido.add(pw.SizedBox(height: 5));
           contenido.add(_cajasRegistrosPorEstado(registros));
         }
         contenido.add(pw.SizedBox(height: 15));
 
-        contenido.add(_seccionTitulo(
-            'REGISTROS (${registros.length})', estiloSeccion, doradoClaro));
+        contenido.add(
+          _seccionTitulo(
+            'REGISTROS (${registros.length})',
+            estiloSeccion,
+            doradoClaro,
+          ),
+        );
         contenido.add(pw.SizedBox(height: 8));
 
         if (registros.isEmpty) {
-          contenido.add(pw.Text(
-            'No hay registros para el rango seleccionado.',
-            style: estiloValor,
-          ));
+          contenido.add(
+            pw.Text(
+              'No hay registros para el rango seleccionado.',
+              style: estiloValor,
+            ),
+          );
         } else {
           contenido.add(
-              _tablaRegistros(registros, estiloEncabezadoTabla, estiloCelda));
+            _tablaRegistros(registros, estiloEncabezadoTabla, estiloCelda),
+          );
         }
 
         return contenido;

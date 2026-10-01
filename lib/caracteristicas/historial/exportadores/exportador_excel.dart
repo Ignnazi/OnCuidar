@@ -4,6 +4,7 @@ import 'package:excel/excel.dart' as xlsx;
 
 import '../../../modelos/paciente.dart';
 import '../../../modelos/registro_clinico.dart';
+import 'orden_registros.dart';
 
 String _corta(DateTime fecha) {
   final dia = fecha.day.toString().padLeft(2, '0');
@@ -32,8 +33,10 @@ String _tipoLabel(String tipo) => tipo == 'extra' ? 'Extra' : 'Programado';
 
 String _sintomasTexto(List<EntradaSintoma> sintomas) {
   return sintomas
-      .map((s) =>
-          '${s.name} (${EntradaSintoma.etiquetaPara(s.intensity)}) ${s.intensity}/10')
+      .map(
+        (s) =>
+            '${s.name} (${EntradaSintoma.etiquetaPara(s.intensity)}) ${s.intensity}/10',
+      )
       .join(', ');
 }
 
@@ -45,10 +48,14 @@ void _celdaMergeFila(
   String texto,
   xlsx.CellStyle estilo,
 ) {
-  final inicio =
-      xlsx.CellIndex.indexByColumnRow(columnIndex: columnaInicio, rowIndex: fila);
-  final fin =
-      xlsx.CellIndex.indexByColumnRow(columnIndex: columnaFin, rowIndex: fila);
+  final inicio = xlsx.CellIndex.indexByColumnRow(
+    columnIndex: columnaInicio,
+    rowIndex: fila,
+  );
+  final fin = xlsx.CellIndex.indexByColumnRow(
+    columnIndex: columnaFin,
+    rowIndex: fila,
+  );
   hoja.merge(inicio, fin);
   final celda = hoja.cell(inicio);
   celda.value = xlsx.TextCellValue(texto);
@@ -69,10 +76,11 @@ void _etiquetaValor(
   celdaEtiqueta.value = xlsx.TextCellValue(etiqueta);
   celdaEtiqueta.cellStyle = estiloEtiqueta;
 
-  final inicio =
-      xlsx.CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: fila);
-  final fin =
-      xlsx.CellIndex.indexByColumnRow(columnIndex: 9, rowIndex: fila);
+  final inicio = xlsx.CellIndex.indexByColumnRow(
+    columnIndex: 1,
+    rowIndex: fila,
+  );
+  final fin = xlsx.CellIndex.indexByColumnRow(columnIndex: 9, rowIndex: fila);
   hoja.merge(inicio, fin);
   final celdaValor = hoja.cell(inicio);
   celdaValor.value = xlsx.TextCellValue(valor);
@@ -129,21 +137,45 @@ Uint8List generarExcelHistorial({
     _celdaMergeFila(hoja, fila, 0, 9, 'PACIENTE', estiloSeccion);
     fila++;
     _etiquetaValor(
-        hoja, fila, 'Nombre', paciente.fullName, estiloEtiqueta, estiloValor);
+      hoja,
+      fila,
+      'Nombre',
+      paciente.fullName,
+      estiloEtiqueta,
+      estiloValor,
+    );
     fila++;
     if (paciente.age != null) {
-      _etiquetaValor(hoja, fila, 'Edad', '${paciente.age} años',
-          estiloEtiqueta, estiloValor);
+      _etiquetaValor(
+        hoja,
+        fila,
+        'Edad',
+        '${paciente.age} años',
+        estiloEtiqueta,
+        estiloValor,
+      );
       fila++;
     }
     if (paciente.diagnosis?.isNotEmpty == true) {
-      _etiquetaValor(hoja, fila, 'Diagnóstico', paciente.diagnosis!,
-          estiloEtiqueta, estiloValor);
+      _etiquetaValor(
+        hoja,
+        fila,
+        'Diagnóstico',
+        paciente.diagnosis!,
+        estiloEtiqueta,
+        estiloValor,
+      );
       fila++;
     }
     if (paciente.tratamientoFase?.isNotEmpty == true) {
-      _etiquetaValor(hoja, fila, 'Fase', paciente.tratamientoFase!,
-          estiloEtiqueta, estiloValor);
+      _etiquetaValor(
+        hoja,
+        fila,
+        'Fase',
+        paciente.tratamientoFase!,
+        estiloEtiqueta,
+        estiloValor,
+      );
       fila++;
     }
     fila++;
@@ -152,8 +184,14 @@ Uint8List generarExcelHistorial({
   if (nombreCuidador?.trim().isNotEmpty == true) {
     _celdaMergeFila(hoja, fila, 0, 9, 'CUIDADOR', estiloSeccion);
     fila++;
-    _etiquetaValor(hoja, fila, 'Nombre', nombreCuidador!.trim(),
-        estiloEtiqueta, estiloValor);
+    _etiquetaValor(
+      hoja,
+      fila,
+      'Nombre',
+      nombreCuidador!.trim(),
+      estiloEtiqueta,
+      estiloValor,
+    );
     fila++;
     fila++;
   }
@@ -161,17 +199,35 @@ Uint8List generarExcelHistorial({
   if (paciente?.centroSaludNombre?.isNotEmpty == true) {
     _celdaMergeFila(hoja, fila, 0, 9, 'CENTRO DE SALUD', estiloSeccion);
     fila++;
-    _etiquetaValor(hoja, fila, 'Nombre', paciente!.centroSaludNombre!,
-        estiloEtiqueta, estiloValor);
+    _etiquetaValor(
+      hoja,
+      fila,
+      'Nombre',
+      paciente!.centroSaludNombre!,
+      estiloEtiqueta,
+      estiloValor,
+    );
     fila++;
     if (paciente.centroSaludDireccion?.isNotEmpty == true) {
-      _etiquetaValor(hoja, fila, 'Dirección', paciente.centroSaludDireccion!,
-          estiloEtiqueta, estiloValor);
+      _etiquetaValor(
+        hoja,
+        fila,
+        'Dirección',
+        paciente.centroSaludDireccion!,
+        estiloEtiqueta,
+        estiloValor,
+      );
       fila++;
     }
     if (paciente.centroSaludTelefono?.isNotEmpty == true) {
-      _etiquetaValor(hoja, fila, 'Teléfono', paciente.centroSaludTelefono!,
-          estiloEtiqueta, estiloValor);
+      _etiquetaValor(
+        hoja,
+        fila,
+        'Teléfono',
+        paciente.centroSaludTelefono!,
+        estiloEtiqueta,
+        estiloValor,
+      );
       fila++;
     }
     fila++;
@@ -180,17 +236,24 @@ Uint8List generarExcelHistorial({
   if (paciente?.contactoEmergenciaNombre?.isNotEmpty == true) {
     _celdaMergeFila(hoja, fila, 0, 9, 'CONTACTO DE EMERGENCIA', estiloSeccion);
     fila++;
-    _etiquetaValor(hoja, fila, 'Nombre', paciente!.contactoEmergenciaNombre!,
-        estiloEtiqueta, estiloValor);
+    _etiquetaValor(
+      hoja,
+      fila,
+      'Nombre',
+      paciente!.contactoEmergenciaNombre!,
+      estiloEtiqueta,
+      estiloValor,
+    );
     fila++;
     if (paciente.contactoEmergenciaTelefono?.isNotEmpty == true) {
       _etiquetaValor(
-          hoja,
-          fila,
-          'Teléfono',
-          paciente.contactoEmergenciaTelefono!,
-          estiloEtiqueta,
-          estiloValor);
+        hoja,
+        fila,
+        'Teléfono',
+        paciente.contactoEmergenciaTelefono!,
+        estiloEtiqueta,
+        estiloValor,
+      );
       fila++;
     }
     fila++;
@@ -200,15 +263,32 @@ Uint8List generarExcelHistorial({
   fila++;
   final inicio = fechaInicio != null ? _corta(fechaInicio) : 'sin inicio';
   final fin = fechaFin != null ? _corta(fechaFin) : 'sin fin';
-  _etiquetaValor(hoja, fila, 'Rango', '$inicio - $fin', estiloEtiqueta,
-      estiloValor);
+  _etiquetaValor(
+    hoja,
+    fila,
+    'Rango',
+    '$inicio - $fin',
+    estiloEtiqueta,
+    estiloValor,
+  );
   fila++;
-  _etiquetaValor(hoja, fila, 'Total registros', '${registros.length}',
-      estiloEtiqueta, estiloValor);
+  _etiquetaValor(
+    hoja,
+    fila,
+    'Total registros',
+    '${registros.length}',
+    estiloEtiqueta,
+    estiloValor,
+  );
   fila++;
-  _etiquetaValor(hoja, fila, 'Generado',
-      '${_corta(generadoEn)} ${_hora12(generadoEn)}', estiloEtiqueta,
-      estiloValor);
+  _etiquetaValor(
+    hoja,
+    fila,
+    'Generado',
+    '${_corta(generadoEn)} ${_hora12(generadoEn)}',
+    estiloEtiqueta,
+    estiloValor,
+  );
   fila++;
   fila++;
 
@@ -233,16 +313,14 @@ Uint8List generarExcelHistorial({
   }
   fila++;
 
-  for (final rec in registros) {
+  for (final rec in ordenarCronologicamente(registros)) {
     final vs = rec.signosVitales;
     final celdas = [
       _corta(rec.fecha),
       _hora12(rec.creadoEn),
       _tipoLabel(rec.tipoRegistro),
       _estadoLabel(rec.nivelAlerta),
-      vs?.temperature != null
-          ? '${vs!.temperature!.toStringAsFixed(1)}°C'
-          : '',
+      vs?.temperature != null ? '${vs!.temperature!.toStringAsFixed(1)}°C' : '',
       vs?.heartRate != null ? '${vs!.heartRate} lpm' : '',
       vs?.oxygenSaturation != null ? '${vs!.oxygenSaturation}%' : '',
       vs?.respiratoryRate != null ? '${vs!.respiratoryRate} rpm' : '',

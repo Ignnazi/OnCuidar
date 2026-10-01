@@ -3,8 +3,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../compartidos/widgets/dialogo_confirmacion.dart';
 import '../../core/proveedores/proveedores.dart';
+import '../../core/servicios/servicio_base_datos.dart';
 import '../../core/tema/paleta.dart';
+import '../../core/util/formato_fecha.dart';
 import '../../modelos/checklist_usuario.dart';
 
 class HojaChecklistUsuario extends ConsumerStatefulWidget {
@@ -19,46 +22,128 @@ class HojaChecklistUsuario extends ConsumerStatefulWidget {
 
 class _HojaChecklistUsuarioState extends ConsumerState<HojaChecklistUsuario> {
   late final Set<int> _marcados;
+  DateTime? _completadaEn;
   Timer? _debounce;
+  ServicioBaseDatos? _servicio;
+  String? _pacienteId;
 
   @override
   void initState() {
     super.initState();
-    _marcados = Set<int>.from(widget.checklist.indicesMarcados);
+    _marcados = widget.checklist.marcasValidas.toSet();
+    _completadaEn = widget.checklist.completadaEn;
   }
 
   @override
   void dispose() {
-    _debounce?.cancel();
+    if (_debounce?.isActive ?? false) {
+      _debounce!.cancel();
+      unawaited(_guardar().catchError((_) {}));
+    }
     super.dispose();
   }
 
+  int get _total => widget.checklist.items.length;
+
   int get _progreso => _marcados.length;
 
-  double get _porcentaje => widget.checklist.items.isEmpty
-      ? 0
-      : _marcados.length / widget.checklist.items.length;
+  double get _porcentaje => _total == 0 ? 0 : _marcados.length / _total;
+
+  bool get _completa => _total > 0 && _marcados.length >= _total;
+
+  void _capturarDestino() {
+    _servicio ??= ref.read(servicioBaseDatosProvider);
+    _pacienteId ??= ref.read(currentPatientProvider).value?.id;
+  }
 
   void _alternar(int indice) {
+    _capturarDestino();
     setState(() {
       if (!_marcados.remove(indice)) _marcados.add(indice);
     });
     _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 500), _guardar);
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      unawaited(_guardar().catchError((_) {}));
+    });
+  }
+
+  void _reiniciarAhora() {
+    _capturarDestino();
+    _debounce?.cancel();
+    setState(_marcados.clear);
+    unawaited(_guardar().catchError((_) {}));
+  }
+
+  Future<void> _reiniciar() async {
+    final ok = await mostrarDialogoConfirmacion(
+      context,
+      icono: Icons.restart_alt_rounded,
+      titulo: 'Reiniciar lista',
+      mensaje:
+          'Se borrarán las marcas guardadas de "${widget.checklist.titulo}".',
+      textoConfirmar: 'Reiniciar',
+    );
+    if (ok == true && mounted) _reiniciarAhora();
+  }
+
+  Future<void> _duplicar() async {
+    _capturarDestino();
+    final servicio = _servicio;
+    final pacienteId = _pacienteId;
+    if (servicio == null || pacienteId == null) return;
+    try {
+      await servicio.crearListaChecklist(
+        pacienteId,
+        titulo: widget.checklist.titulo,
+        items: widget.checklist.items,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'No se pudo duplicar la lista: $e',
+            style: GoogleFonts.nunito(fontSize: 14),
+          ),
+          backgroundColor: Paleta.error,
+        ),
+      );
+      return;
+    }
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Lista duplicada sin marcar',
+          style: GoogleFonts.nunito(fontSize: 14),
+        ),
+        backgroundColor: Paleta.doradoPrincipal,
+      ),
+    );
   }
 
   Future<void> _guardar() async {
-    if (!mounted) return;
-    final pacienteAsync = ref.read(currentPatientProvider);
-    final paciente = pacienteAsync.value;
-    if (paciente == null) return;
-    await ref
-        .read(servicioBaseDatosProvider)
-        .actualizarListaChecklist(
-          paciente.id,
-          widget.checklist.id,
-          indicesMarcados: _marcados.toList(),
-        );
+    final servicio = _servicio;
+    final pacienteId = _pacienteId;
+    if (servicio == null || pacienteId == null) return;
+    final marcas = filtrarMarcas(_marcados, _total);
+    DateTime? completadaEn;
+    var quitar = false;
+    if (_completa && _completadaEn == null) {
+      completadaEn = DateTime.now();
+      _completadaEn = completadaEn;
+    } else if (!_completa && _completadaEn != null) {
+      quitar = true;
+      _completadaEn = null;
+    }
+    if (mounted) setState(() {});
+    await servicio.actualizarListaChecklist(
+      pacienteId,
+      widget.checklist.id,
+      indicesMarcados: marcas,
+      completadaEn: completadaEn,
+      quitarCompletada: quitar,
+    );
   }
 
   @override
@@ -164,6 +249,8 @@ class _HojaChecklistUsuarioState extends ConsumerState<HojaChecklistUsuario> {
           if (widget.checklist.items.isNotEmpty) ...[
             const SizedBox(height: 12),
             _barraProgreso(),
+            const SizedBox(height: 6),
+            _filaEstado(),
           ],
         ],
       ),
@@ -197,6 +284,67 @@ class _HojaChecklistUsuarioState extends ConsumerState<HojaChecklistUsuario> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _filaEstado() {
+    final completada = _completadaEn != null;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(
+              completada
+                  ? Icons.check_circle_rounded
+                  : Icons.pending_outlined,
+              size: 14,
+              color: completada ? Paleta.verdeExito : Paleta.textoAyuda,
+            ),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                completada
+                    ? 'Completada el ${fechaEntrada(_completadaEn!)}'
+                    : 'Pendiente: $_progreso de $_total',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.nunito(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: completada
+                      ? Paleta.verdeExito
+                      : Paleta.textoSecundario,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        Wrap(
+          spacing: 18,
+          children: [
+            if (_progreso > 0)
+              _accion('Reiniciar', _reiniciar, 'reiniciarChecklist'),
+            _accion('Duplicar', _duplicar, 'duplicarChecklist'),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _accion(String texto, Future<void> Function() alTocar, String clave) {
+    return GestureDetector(
+      key: Key(clave),
+      onTap: () => unawaited(alTocar()),
+      child: Text(
+        texto,
+        style: GoogleFonts.nunito(
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+          color: Paleta.doradoOscuro,
+        ),
+      ),
     );
   }
 

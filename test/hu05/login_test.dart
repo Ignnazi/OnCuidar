@@ -41,8 +41,7 @@ class _CacheFalso implements ServicioCacheContenido {
   }
 
   @override
-  Future<bool> archivoDescargado(String url) async =>
-      descargados.contains(url);
+  Future<bool> archivoDescargado(String url) async => descargados.contains(url);
 
   @override
   Future<void> eliminar(String url) async {
@@ -52,11 +51,11 @@ class _CacheFalso implements ServicioCacheContenido {
 
 class _BaseSinContenido extends ServicioBaseDatos {
   _BaseSinContenido()
-      : super(
-          base: FakeFirebaseFirestore(),
-          uidPrueba: _uid,
-          cifrado: _cifradoListo(),
-        );
+    : super(
+        base: FakeFirebaseFirestore(),
+        uidPrueba: _uid,
+        cifrado: _cifradoListo(),
+      );
 
   @override
   Stream<List<MaterialEducativo>> contenidoEducativoEnTiempoReal() =>

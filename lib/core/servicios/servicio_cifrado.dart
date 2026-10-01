@@ -3,6 +3,17 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:cryptography/cryptography.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+class ClaveNoDisponibleSinConexion implements Exception {
+  const ClaveNoDisponibleSinConexion();
+
+  static const mensaje =
+      'Sin conexión y sin la clave de cifrado en este dispositivo. '
+      'Conéctate a internet para guardar datos clínicos.';
+
+  @override
+  String toString() => mensaje;
+}
+
 class ServicioCifrado {
   ServicioCifrado({this._clavePrueba});
 
@@ -41,15 +52,17 @@ class ServicioCifrado {
     try {
       await _almacen.delete(key: 'oncuidar.data-key.$uid');
     } catch (_) {}
-    final resultado = await FirebaseFunctions.instanceFor(
-      region: 'southamerica-west1',
-    ).httpsCallable('getOrCreateDataKey').call().timeout(
-          const Duration(seconds: 5),
-          onTimeout: () => throw FirebaseFunctionsException(
-            code: 'unavailable',
-            message: 'Sin conexión',
-          ),
-        );
+    final resultado =
+        await FirebaseFunctions.instanceFor(region: 'southamerica-west1')
+            .httpsCallable('getOrCreateDataKey')
+            .call()
+            .timeout(
+              const Duration(seconds: 5),
+              onTimeout: () => throw FirebaseFunctionsException(
+                code: 'unavailable',
+                message: 'Sin conexión',
+              ),
+            );
     await fijarClave(uid, (resultado.data as Map)['dataKey'] as String);
   }
 
@@ -64,6 +77,8 @@ class ServicioCifrado {
       await _almacen.write(key: 'oncuidar.data-key.$uid', value: codificada);
     }
   }
+
+  bool tieneClave(String uid) => _claveActiva != null && _uidActivo == uid;
 
   void bloquear() {
     _claveActiva = null;

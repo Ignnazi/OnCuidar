@@ -1,4 +1,10 @@
-const etiquetasFiltro = ['Todos', 'Videos', 'Guías', 'Infografías', 'Checklist'];
+const etiquetasFiltro = [
+  'Todos',
+  'Videos',
+  'Guías',
+  'Infografías',
+  'Checklist',
+];
 
 const _gruposGuia = {'Guías', 'PDFs'};
 

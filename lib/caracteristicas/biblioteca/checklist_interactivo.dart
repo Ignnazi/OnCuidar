@@ -87,8 +87,7 @@ class _ChecklistInteractivoState extends State<ChecklistInteractivo> {
         if (widget.textoIntro != null && widget.textoIntro!.trim().isNotEmpty)
           _textoIntro(),
         if (widget.items.isNotEmpty) ...[
-          if (widget.textoIntro != null &&
-              widget.textoIntro!.trim().isNotEmpty)
+          if (widget.textoIntro != null && widget.textoIntro!.trim().isNotEmpty)
             const SizedBox(height: 16),
           _barraProgreso(),
           const SizedBox(height: 14),

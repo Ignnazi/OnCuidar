@@ -69,9 +69,7 @@ class TarjetaRegistro extends StatelessWidget {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(
-                              expandido
-                                  ? Icons.expand_less
-                                  : Icons.expand_more,
+                              expandido ? Icons.expand_less : Icons.expand_more,
                               size: 18,
                               color: Paleta.doradoOscuro,
                             ),

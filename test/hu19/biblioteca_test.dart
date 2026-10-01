@@ -76,8 +76,7 @@ class _CacheFalso implements ServicioCacheContenido {
   }
 
   @override
-  Future<bool> archivoDescargado(String url) async =>
-      descargados.contains(url);
+  Future<bool> archivoDescargado(String url) async => descargados.contains(url);
 
   @override
   Future<void> eliminar(String url) async {
@@ -120,10 +119,7 @@ Widget _pantalla(
   final router = GoRouter(
     initialLocation: '/biblioteca',
     routes: [
-      GoRoute(
-        path: '/biblioteca',
-        builder: (c, s) => const BibliotecaScreen(),
-      ),
+      GoRoute(path: '/biblioteca', builder: (c, s) => const BibliotecaScreen()),
       GoRoute(
         path: '/biblioteca/:id',
         builder: (c, s) {
@@ -168,7 +164,11 @@ void main() {
   testWidgets('lista los materiales desde Firestore con su insignia', (
     tester,
   ) async {
-    final (base, _) = await _baseConContenido([_video(), _guia(), _checklist()]);
+    final (base, _) = await _baseConContenido([
+      _video(),
+      _guia(),
+      _checklist(),
+    ]);
     await _montar(tester, base, _CacheFalso());
 
     expect(find.text('Biblioteca educativa'), findsOneWidget);
@@ -185,10 +185,14 @@ void main() {
       findsOneWidget,
       reason: 'la insignia de la tarjeta dice Checklist',
     );
-    });
+  });
 
   testWidgets('la búsqueda filtra por título', (tester) async {
-    final (base, _) = await _baseConContenido([_video(), _guia(), _checklist()]);
+    final (base, _) = await _baseConContenido([
+      _video(),
+      _guia(),
+      _checklist(),
+    ]);
     await _montar(tester, base, _CacheFalso());
 
     await tester.tap(find.byKey(const Key('alternarBusquedaBiblioteca')));
@@ -204,7 +208,11 @@ void main() {
   testWidgets('el filtro por categoría muestra solo esa categoría', (
     tester,
   ) async {
-    final (base, _) = await _baseConContenido([_video(), _guia(), _checklist()]);
+    final (base, _) = await _baseConContenido([
+      _video(),
+      _guia(),
+      _checklist(),
+    ]);
     await _montar(tester, base, _CacheFalso());
 
     await tester.tap(find.text('Videos'));
@@ -221,8 +229,11 @@ void main() {
   });
 
   testWidgets('marcar favorito y filtrar por favoritos', (tester) async {
-    final (base, firestore) =
-        await _baseConContenido([_video(), _guia(), _checklist()]);
+    final (base, firestore) = await _baseConContenido([
+      _video(),
+      _guia(),
+      _checklist(),
+    ]);
     await _montar(tester, base, _CacheFalso());
 
     final tarjetaGuia = find.byWidgetPredicate(
@@ -251,17 +262,30 @@ void main() {
   });
 
   testWidgets('sin favoritos muestra estado vacío al filtrar', (tester) async {
-    final (base, _) = await _baseConContenido([_video(), _guia(), _checklist()]);
+    final (base, _) = await _baseConContenido([
+      _video(),
+      _guia(),
+      _checklist(),
+    ]);
     await _montar(tester, base, _CacheFalso());
 
     await tester.tap(find.byKey(const Key('alternarFavoritos')));
     await tester.pumpAndSettle();
 
-    expect(find.text('No tienes materiales guardados todavía.'), findsOneWidget);
+    expect(
+      find.text('No tienes materiales guardados todavía.'),
+      findsOneWidget,
+    );
   });
 
-  testWidgets('sin resultados de búsqueda muestra estado vacío', (tester) async {
-    final (base, _) = await _baseConContenido([_video(), _guia(), _checklist()]);
+  testWidgets('sin resultados de búsqueda muestra estado vacío', (
+    tester,
+  ) async {
+    final (base, _) = await _baseConContenido([
+      _video(),
+      _guia(),
+      _checklist(),
+    ]);
     await _montar(tester, base, _CacheFalso());
 
     await tester.tap(find.byKey(const Key('alternarBusquedaBiblioteca')));
@@ -275,7 +299,11 @@ void main() {
   testWidgets('tocar un checklist abre la hoja interactiva sin ir al detalle', (
     tester,
   ) async {
-    final (base, _) = await _baseConContenido([_video(), _guia(), _checklist()]);
+    final (base, _) = await _baseConContenido([
+      _video(),
+      _guia(),
+      _checklist(),
+    ]);
     String? detalleAbierto;
     await _montar(
       tester,
@@ -302,7 +330,11 @@ void main() {
   });
 
   testWidgets('tocar un video sin descarga avisa del error', (tester) async {
-    final (base, _) = await _baseConContenido([_video(), _guia(), _checklist()]);
+    final (base, _) = await _baseConContenido([
+      _video(),
+      _guia(),
+      _checklist(),
+    ]);
     final cache = _CacheFalso()
       ..fallar.add(
         'https://firebasestorage.googleapis.com/v0/b/oncuidar-v1.firebasestorage.app/o/videos%2Fprueba.mp4?alt=media',
@@ -330,9 +362,6 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
 
     expect(detalleAbierto, isNull);
-    expect(
-      find.textContaining('No se pudo preparar el video'),
-      findsOneWidget,
-    );
+    expect(find.textContaining('No se pudo preparar el video'), findsOneWidget);
   });
 }

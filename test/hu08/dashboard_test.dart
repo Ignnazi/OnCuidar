@@ -118,63 +118,66 @@ void main() {
     );
   });
 
-  testWidgets('con paciente sin registros muestra guiones, banner y estado normal', (
-    tester,
-  ) async {
-    await _montar(tester, _paciente());
+  testWidgets(
+    'con paciente sin registros muestra guiones, banner y estado normal',
+    (tester) async {
+      await _montar(tester, _paciente());
 
-    expect(find.text('Hola, María'), findsOneWidget);
-    expect(find.text('PACIENTE ACTIVO'), findsOneWidget);
-    expect(find.text('Sin registros todavía'), findsOneWidget);
-    expect(find.text('REGISTROS DE HOY'), findsOneWidget);
-    expect(find.text('0/3'), findsOneWidget);
-    expect(find.text('-- °C'), findsOneWidget);
-    expect(find.text('Normal'), findsOneWidget);
-    expect(find.text('Ver registros del día'), findsOneWidget);
-  });
+      expect(find.text('Hola, María'), findsOneWidget);
+      expect(find.text('PACIENTE ACTIVO'), findsOneWidget);
+      expect(find.text('Sin registros todavía'), findsOneWidget);
+      expect(find.text('REGISTROS DE HOY'), findsOneWidget);
+      expect(find.text('0/3'), findsOneWidget);
+      expect(find.text('-- °C'), findsOneWidget);
+      expect(find.text('Normal'), findsOneWidget);
+      expect(find.text('Ver registros del día'), findsOneWidget);
+    },
+  );
 
-  testWidgets('con paciente y registros muestra signos, banners y estado crítico', (
-    tester,
-  ) async {
-    await _montar(tester, _paciente(), registros: [_registroConSignos()]);
+  testWidgets(
+    'con paciente y registros muestra signos, banners y estado crítico',
+    (tester) async {
+      await _montar(tester, _paciente(), registros: [_registroConSignos()]);
 
-    expect(find.text('36.5 °C'), findsOneWidget);
-    expect(find.text('98 %'), findsOneWidget);
-    expect(find.text('1/3'), findsOneWidget);
-    expect(find.text('Crítico'), findsOneWidget);
-    expect(find.textContaining('hace 2 h'), findsOneWidget);
-    expect(find.text('Ver registros del día'), findsOneWidget);
-  });
+      expect(find.text('36.5 °C'), findsOneWidget);
+      expect(find.text('98 %'), findsOneWidget);
+      expect(find.text('1/3'), findsOneWidget);
+      expect(find.text('Crítico'), findsOneWidget);
+      expect(find.textContaining('hace 2 h'), findsOneWidget);
+      expect(find.text('Ver registros del día'), findsOneWidget);
+    },
+  );
 
-  testWidgets('el botón "Ver registros del día" de la tarjeta abre el historial filtrando hoy', (
-    tester,
-  ) async {
-    Map<String, dynamic>? extra;
-    var visitado = false;
+  testWidgets(
+    'el botón "Ver registros del día" de la tarjeta abre el historial filtrando hoy',
+    (tester) async {
+      Map<String, dynamic>? extra;
+      var visitado = false;
 
-    await _montar(
-      tester,
-      _paciente(),
-      registros: [_registroConSignos()],
-      alAbrirHistorial: (e) {
-        extra = e;
-        visitado = true;
-      },
-    );
+      await _montar(
+        tester,
+        _paciente(),
+        registros: [_registroConSignos()],
+        alAbrirHistorial: (e) {
+          extra = e;
+          visitado = true;
+        },
+      );
 
-    await tester.ensureVisible(find.text('Ver registros del día'));
-    await tester.tap(find.text('Ver registros del día'));
-    await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Ver registros del día'));
+      await tester.tap(find.text('Ver registros del día'));
+      await tester.pumpAndSettle();
 
-    expect(visitado, isTrue, reason: 'el botón debe abrir el historial');
-    expect(extra, isNotNull, reason: 'el botón debe filtrar por fecha');
+      expect(visitado, isTrue, reason: 'el botón debe abrir el historial');
+      expect(extra, isNotNull, reason: 'el botón debe filtrar por fecha');
 
-    final hoy = DateTime.now();
-    final filtro = extra!['filtroFecha'] as DateTime;
-    expect(filtro.year, hoy.year);
-    expect(filtro.month, hoy.month);
-    expect(filtro.day, hoy.day);
-  });
+      final hoy = DateTime.now();
+      final filtro = extra!['filtroFecha'] as DateTime;
+      expect(filtro.year, hoy.year);
+      expect(filtro.month, hoy.month);
+      expect(filtro.day, hoy.day);
+    },
+  );
 
   testWidgets('no desborda en pantalla pequeña con todos los datos', (
     tester,
@@ -223,9 +226,7 @@ void main() {
     expect(extra, isNull, reason: 'el acceso rápido no debe filtrar por fecha');
   });
 
-  testWidgets('accesos rápidos muestran los títulos compactos', (
-    tester,
-  ) async {
+  testWidgets('accesos rápidos muestran los títulos compactos', (tester) async {
     await _montar(tester, _paciente(), registros: [_registroConSignos()]);
 
     expect(find.text('Orientación'), findsOneWidget);

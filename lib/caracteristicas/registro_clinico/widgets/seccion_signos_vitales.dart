@@ -4,10 +4,7 @@ import 'tarjeta_signo.dart';
 import 'titulo_seccion.dart';
 
 class SeccionSignosVitales extends StatelessWidget {
-  const SeccionSignosVitales({
-    super.key,
-    required this.controladores,
-  });
+  const SeccionSignosVitales({super.key, required this.controladores});
 
   final List<TextEditingController> controladores;
 

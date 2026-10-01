@@ -47,9 +47,8 @@ class _DialogoCambiarPacienteState extends State<_DialogoCambiarPaciente> {
   Widget build(BuildContext context) {
     final filtrados = widget.pacientes
         .where(
-          (p) => p.fullName.toLowerCase().contains(
-            _busqueda.trim().toLowerCase(),
-          ),
+          (p) =>
+              p.fullName.toLowerCase().contains(_busqueda.trim().toLowerCase()),
         )
         .toList();
     return SafeArea(
@@ -136,8 +135,7 @@ class _DialogoCambiarPacienteState extends State<_DialogoCambiarPaciente> {
                 : ListView(
                     shrinkWrap: true,
                     padding: EdgeInsets.only(
-                      bottom:
-                          12 + MediaQuery.of(context).viewInsets.bottom,
+                      bottom: 12 + MediaQuery.of(context).viewInsets.bottom,
                     ),
                     children: [
                       for (final p in filtrados)
@@ -166,8 +164,7 @@ class _DialogoCambiarPacienteState extends State<_DialogoCambiarPaciente> {
                             ),
                           ),
                           subtitle:
-                              (p.diagnosis != null &&
-                                  p.diagnosis!.isNotEmpty)
+                              (p.diagnosis != null && p.diagnosis!.isNotEmpty)
                               ? Text(
                                   p.diagnosis!,
                                   style: GoogleFonts.nunito(
@@ -200,8 +197,7 @@ class _DialogoCambiarPacienteState extends State<_DialogoCambiarPaciente> {
                                         'paciente de todas formas?',
                                     textoConfirmar: 'Cambiar',
                                     colorConfirmar: Paleta.doradoOscuro,
-                                    iconoConfirmar:
-                                        Icons.swap_horiz_rounded,
+                                    iconoConfirmar: Icons.swap_horiz_rounded,
                                   );
                               if (confirmar != true) return;
                             }

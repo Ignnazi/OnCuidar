@@ -55,6 +55,7 @@ service cloud.firestore {
           allow read, delete: if request.auth != null && request.auth.uid == userId;
           allow create: if request.auth != null
             && request.auth.uid == userId
+            && request.resource.data.paciente_id == patientId  // el documento debe declarar al paciente de su ruta
             && !request.resource.data.keys().hasAny([
               'generalNotes', 'alertMessage',          // nombres de la especificación
               'observaciones', 'mensajeAlerta',        // nombres locales en claro
@@ -62,6 +63,7 @@ service cloud.firestore {
             ]);
           allow update: if request.auth != null
             && request.auth.uid == userId
+            && request.resource.data.paciente_id == patientId  // mismo binding que en create
             && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
               'generalNotes', 'alertMessage',
               'observaciones', 'mensajeAlerta',
@@ -74,11 +76,13 @@ service cloud.firestore {
           allow read, delete: if request.auth != null && request.auth.uid == userId;
           allow create: if request.auth != null
             && request.auth.uid == userId
+            && request.resource.data.paciente_id == patientId  // el documento debe declarar al paciente de su ruta
             && !request.resource.data.keys().hasAny([
               'titulo', 'items'  // siempre cifrados -> titulo_cifrado / items_cifrado
             ]);
           allow update: if request.auth != null
             && request.auth.uid == userId
+            && request.resource.data.paciente_id == patientId  // mismo binding que en create
             && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
               'titulo', 'items'
             ]);
@@ -89,12 +93,14 @@ service cloud.firestore {
           allow read, delete: if request.auth != null && request.auth.uid == userId;
           allow create: if request.auth != null
             && request.auth.uid == userId
+            && request.resource.data.pacienteId == patientId  // el documento debe declarar al paciente de su ruta
             && !request.resource.data.keys().hasAny([
               'titulo', 'descripcion',  // siempre cifrados -> titulo_cifrado / descripcion_cifrada
               'tipo', 'fechaHora', 'diasRepeticion', 'recurrencia', 'completadoEn'
             ]);
           allow update: if request.auth != null
             && request.auth.uid == userId
+            && request.resource.data.pacienteId == patientId  // mismo binding que en create
             && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
               'titulo', 'descripcion'
             ]);

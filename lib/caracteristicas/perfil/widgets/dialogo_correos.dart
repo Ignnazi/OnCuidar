@@ -254,10 +254,7 @@ class _DialogoCorreosState extends State<_DialogoCorreos> {
                         gradient: const LinearGradient(
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
-                          colors: [
-                            Paleta.doradoPrincipal,
-                            Paleta.doradoOscuro,
-                          ],
+                          colors: [Paleta.doradoPrincipal, Paleta.doradoOscuro],
                         ),
                         borderRadius: BorderRadius.circular(10),
                       ),

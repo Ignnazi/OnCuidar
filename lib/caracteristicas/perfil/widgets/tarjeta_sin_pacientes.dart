@@ -5,10 +5,7 @@ import '../../../compartidos/widgets/boton_principal.dart';
 import '../../../compartidos/widgets/campos_formulario.dart';
 
 class TarjetaSinPacientes extends StatelessWidget {
-  const TarjetaSinPacientes({
-    super.key,
-    required this.alAgregar,
-  });
+  const TarjetaSinPacientes({super.key, required this.alAgregar});
 
   final VoidCallback alAgregar;
 
@@ -44,10 +41,7 @@ class TarjetaSinPacientes extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 18),
-        BotonPrincipal(
-          etiqueta: 'Agregar paciente',
-          alPulsar: alAgregar,
-        ),
+        BotonPrincipal(etiqueta: 'Agregar paciente', alPulsar: alAgregar),
       ],
     );
   }

@@ -50,7 +50,9 @@ class BotonGuardar extends StatelessWidget {
                 Text(
                   guardando
                       ? 'Guardando…'
-                      : (esEdicion ? 'Actualizar registro' : 'Guardar registro'),
+                      : (esEdicion
+                            ? 'Actualizar registro'
+                            : 'Guardar registro'),
                   style: GoogleFonts.nunito(
                     fontSize: 15,
                     fontWeight: FontWeight.w800,

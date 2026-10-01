@@ -10,10 +10,13 @@ class Recordatorio {
     required this.fechaHora,
     this.diasRepeticion = const [],
     this.recurrencia,
-    this.completadoEn,
+    this.asignadoA = asignadoAPaciente,
     this.activo = true,
     required this.creadoEn,
   });
+
+  static const asignadoAPaciente = 'paciente';
+  static const asignadoACuidador = 'cuidador';
 
   final String id;
   final String pacienteId;
@@ -28,12 +31,19 @@ class Recordatorio {
 
   final String? recurrencia;
 
-  final DateTime? completadoEn;
+  final String asignadoA;
   final bool activo;
   final DateTime creadoEn;
 
   bool get esMensual => recurrencia == 'mensual';
-  bool get estaCompletado => completadoEn != null;
+  bool get esRecurrente => esMensual || diasRepeticion.isNotEmpty;
+  bool get esParaCuidador => asignadoA == asignadoACuidador;
+
+  String tituloAviso(String nombrePaciente, String etiquetaTipo) =>
+      esParaCuidador ? 'Cuidador · $etiquetaTipo' : '$nombrePaciente · $etiquetaTipo';
+
+  String get cuerpoAviso =>
+      '$titulo${descripcion != null && descripcion!.isNotEmpty ? ' · $descripcion' : ''}';
 
   Map<String, dynamic> toMap() => {
     'tipo': tipo,
@@ -43,7 +53,7 @@ class Recordatorio {
     'fechaHora': fechaHora.toIso8601String(),
     'diasRepeticion': diasRepeticion,
     if (recurrencia != null) 'recurrencia': recurrencia,
-    if (completadoEn != null) 'completadoEn': completadoEn!.toIso8601String(),
+    'asignadoA': asignadoA,
     'activo': activo,
     'creadoEn': creadoEn.toIso8601String(),
   };
@@ -63,9 +73,7 @@ class Recordatorio {
           const [],
       activo: (mapa['activo'] as bool?) ?? true,
       recurrencia: mapa['recurrencia'] as String?,
-      completadoEn: mapa['completadoEn'] == null
-          ? null
-          : _parsearFecha(mapa['completadoEn']),
+      asignadoA: (mapa['asignadoA'] as String?) ?? asignadoAPaciente,
       creadoEn: _parsearFecha(mapa['creadoEn']),
     );
   }

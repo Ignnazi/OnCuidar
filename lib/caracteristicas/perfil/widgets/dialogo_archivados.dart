@@ -16,8 +16,7 @@ Future<void> mostrarDialogoArchivados(
     builder: (ctx) => Consumer(
       builder: (context, ref, _) {
         final archivados =
-            ref.watch(archivedPatientsListProvider).value ??
-            const <Paciente>[];
+            ref.watch(archivedPatientsListProvider).value ?? const <Paciente>[];
         return DraggableScrollableSheet(
           expand: false,
           initialChildSize: 0.6,
@@ -138,10 +137,7 @@ Future<void> mostrarDialogoArchivados(
 }
 
 class _FilaArchivado extends StatelessWidget {
-  const _FilaArchivado({
-    required this.paciente,
-    required this.alDesarchivar,
-  });
+  const _FilaArchivado({required this.paciente, required this.alDesarchivar});
 
   final Paciente paciente;
   final Future<void> Function(Paciente) alDesarchivar;

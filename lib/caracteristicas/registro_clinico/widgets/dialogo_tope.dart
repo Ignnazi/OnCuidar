@@ -12,9 +12,7 @@ Future<int?> mostrarDialogoTope(
     builder: (dialogCtx) => StatefulBuilder(
       builder: (ctx, setDialogState) => AlertDialog(
         backgroundColor: Paleta.tarjeta,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         title: Text(
           'Configurar registro',
           textAlign: TextAlign.center,

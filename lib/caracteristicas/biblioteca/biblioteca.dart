@@ -132,8 +132,11 @@ class _BibliotecaScreenState extends ConsumerState<BibliotecaScreen> {
       if (!mounted) return;
       await Navigator.of(context).push(
         MaterialPageRoute<void>(
-          builder: (_) =>
-              PantallaVideo(archivo: archivo, titulo: material.title),
+          builder: (_) => PantallaVideo(
+            archivo: archivo,
+            titulo: material.title,
+            idContenido: material.id,
+          ),
         ),
       );
     } catch (e) {
@@ -522,15 +525,19 @@ class _BibliotecaScreenState extends ConsumerState<BibliotecaScreen> {
   Widget _encabezadoMisChecklists() {
     return Row(
       children: [
-        Text(
-          'Mis Checklists',
-          style: GoogleFonts.nunito(
-            fontSize: 14,
-            fontWeight: FontWeight.w700,
-            color: Paleta.textoPrincipal,
+        Expanded(
+          child: Text(
+            'Mis Checklists',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.nunito(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: Paleta.textoPrincipal,
+            ),
           ),
         ),
-        const Spacer(),
+        const SizedBox(width: 8),
         GestureDetector(
           key: const Key('agregarChecklist'),
           onTap: () => _abrirEditorChecklist(),

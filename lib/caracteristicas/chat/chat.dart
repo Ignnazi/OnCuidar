@@ -208,11 +208,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     if (titulo != null && titulo.isNotEmpty) {
       return titulo;
     }
-    final categoria = ref.read(chatActivoProvider).categoria?.trim();
-    if (categoria != null && categoria.isNotEmpty) {
-      return categoria;
-    }
-    return 'Consulta';
+    final primera = _mensajesAGuardar.where((m) => m.delUsuario).firstOrNull;
+    return tituloAutomaticoConversacion(primera?.texto ?? '');
   }
 
   void _encolarGuardado() {
@@ -922,4 +919,16 @@ class _IndicadorEscribiendoState extends State<_IndicadorEscribiendo>
       ],
     );
   }
+}
+
+const largoMaximoTituloConversacion = 40;
+
+String tituloAutomaticoConversacion(String primeraPregunta) {
+  final limpio = primeraPregunta.trim().replaceAll(RegExp(r'\s+'), ' ');
+  if (limpio.isEmpty) return 'Consulta';
+  if (limpio.length <= largoMaximoTituloConversacion) return limpio;
+  final corte = limpio.substring(0, largoMaximoTituloConversacion);
+  final ultimoEspacio = corte.lastIndexOf(' ');
+  final base = ultimoEspacio > 15 ? corte.substring(0, ultimoEspacio) : corte;
+  return '${base.trimRight()}…';
 }

@@ -23,19 +23,13 @@ Future<void> mostrarDialogoPaciente(
     backgroundColor: Colors.transparent,
     builder: (ctx) => PopScope(
       canPop: false,
-      child: _DialogoPaciente(
-        paciente: paciente,
-        servicio: servicio,
-      ),
+      child: _DialogoPaciente(paciente: paciente, servicio: servicio),
     ),
   );
 }
 
 class _DialogoPaciente extends StatefulWidget {
-  const _DialogoPaciente({
-    required this.paciente,
-    required this.servicio,
-  });
+  const _DialogoPaciente({required this.paciente, required this.servicio});
 
   final Paciente? paciente;
   final ServicioBaseDatos servicio;
@@ -138,13 +132,15 @@ class _DialogoPacienteState extends State<_DialogoPaciente> {
     final esEdicion = _esEdicion;
     final paciente = widget.paciente;
     nav.pop();
-    unawaited(_guardarEnBackground(
-      messenger,
-      servicio: servicio,
-      datos: datos,
-      esEdicion: esEdicion,
-      paciente: paciente,
-    ));
+    unawaited(
+      _guardarEnBackground(
+        messenger,
+        servicio: servicio,
+        datos: datos,
+        esEdicion: esEdicion,
+        paciente: paciente,
+      ),
+    );
   }
 
   Future<void> _guardarEnBackground(
@@ -229,10 +225,7 @@ class _DialogoPacienteState extends State<_DialogoPaciente> {
                       gradient: const LinearGradient(
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
-                        colors: [
-                          Paleta.doradoPrincipal,
-                          Paleta.doradoOscuro,
-                        ],
+                        colors: [Paleta.doradoPrincipal, Paleta.doradoOscuro],
                       ),
                       borderRadius: BorderRadius.circular(10),
                     ),
@@ -278,10 +271,7 @@ class _DialogoPacienteState extends State<_DialogoPaciente> {
                     24 + MediaQuery.of(ctx).viewInsets.bottom,
                   ),
                   children: [
-                    TituloSeccion(
-                      Icons.person_outline,
-                      'Datos del paciente',
-                    ),
+                    TituloSeccion(Icons.person_outline, 'Datos del paciente'),
                     const SizedBox(height: 10),
                     CampoFormulario(
                       controlador: _nombreController,

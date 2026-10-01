@@ -14,9 +14,7 @@ class ChipAlerta extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.92),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(
-          color: estado.color.withValues(alpha: 0.55),
-        ),
+        border: Border.all(color: estado.color.withValues(alpha: 0.55)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

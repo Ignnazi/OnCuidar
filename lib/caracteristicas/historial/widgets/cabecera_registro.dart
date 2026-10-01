@@ -7,6 +7,9 @@ import '../../../modelos/registro_clinico.dart';
 
 enum _AccionRegistro { editar, eliminar }
 
+bool esEditableHoy(RegistroClinico registro, {DateTime? ahora}) =>
+    mismoDia(registro.fecha, ahora ?? DateTime.now());
+
 class CabeceraRegistro extends StatelessWidget {
   const CabeceraRegistro({
     super.key,
@@ -67,67 +70,72 @@ class CabeceraRegistro extends StatelessWidget {
         ),
         _ChipEstadoRegistro(config: config),
         const SizedBox(width: 2),
-        PopupMenuButton<_AccionRegistro>(
-          onSelected: (accion) {
-            switch (accion) {
-              case _AccionRegistro.editar:
-                onEditar();
-              case _AccionRegistro.eliminar:
-                onEliminar();
-            }
-          },
-          itemBuilder: (context) => [
-            PopupMenuItem(
-              value: _AccionRegistro.editar,
-              child: ListTile(
-                leading:
-                    const Icon(Icons.edit_outlined, color: Paleta.doradoOscuro),
-                title: Text(
-                  'Editar registro',
-                  style: TextStyle(
+        if (esEditableHoy(registro))
+          PopupMenuButton<_AccionRegistro>(
+            onSelected: (accion) {
+              switch (accion) {
+                case _AccionRegistro.editar:
+                  onEditar();
+                case _AccionRegistro.eliminar:
+                  onEliminar();
+              }
+            },
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: _AccionRegistro.editar,
+                child: ListTile(
+                  leading: const Icon(
+                    Icons.edit_outlined,
                     color: Paleta.doradoOscuro,
-                    fontWeight: FontWeight.w700,
                   ),
+                  title: Text(
+                    'Editar registro',
+                    style: TextStyle(
+                      color: Paleta.doradoOscuro,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
                 ),
-                contentPadding: EdgeInsets.zero,
-                dense: true,
               ),
-            ),
-            PopupMenuItem(
-              value: _AccionRegistro.eliminar,
-              child: ListTile(
-                leading:
-                    const Icon(Icons.delete_outline, color: Paleta.error),
-                title: Text(
-                  'Eliminar registro',
-                  style: TextStyle(
+              PopupMenuItem(
+                value: _AccionRegistro.eliminar,
+                child: ListTile(
+                  leading: const Icon(
+                    Icons.delete_outline,
                     color: Paleta.error,
-                    fontWeight: FontWeight.w700,
                   ),
+                  title: Text(
+                    'Eliminar registro',
+                    style: TextStyle(
+                      color: Paleta.error,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
                 ),
-                contentPadding: EdgeInsets.zero,
-                dense: true,
+              ),
+            ],
+            icon: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: Paleta.doradoClaro.withValues(alpha: 0.35),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.more_vert_rounded,
+                size: 18,
+                color: Paleta.doradoOscuro,
               ),
             ),
-          ],
-          icon: Container(
-            padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              color: Paleta.doradoClaro.withValues(alpha: 0.35),
-              shape: BoxShape.circle,
+            color: Paleta.tarjeta,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(
-              Icons.more_vert_rounded,
-              size: 18,
-              color: Paleta.doradoOscuro,
-            ),
+            tooltip: 'Opciones del registro',
           ),
-          color: Paleta.tarjeta,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          tooltip: 'Opciones del registro',
-        ),
       ],
     );
   }

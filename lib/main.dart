@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -6,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'firebase_options.dart';
 import 'core/proveedores/proveedores.dart';
 import 'core/router/app_router.dart';
+import 'core/router/destino_aviso.dart';
 import 'core/tema/tema.dart';
 
 Future<void> main() async {
@@ -29,18 +32,41 @@ class _OncuidarAppState extends ConsumerState<OncuidarApp> {
   @override
   void initState() {
     super.initState();
+    _escucharAvisos();
+    var sesionPrevia = false;
     ref.read(firebaseAuthProvider).authStateChanges().listen((usuario) {
       if (usuario == null) {
+        if (!sesionPrevia) return;
+        EstadoArranque.reiniciar();
         ref.read(servicioCifradoProvider).bloquear();
         ref.read(bloqueoCifradoProvider.notifier).fijarDesbloqueado(false);
+      } else {
+        sesionPrevia = true;
+        unawaited(ref.read(orquestadorSincronizacionProvider).drenar());
       }
     });
+  }
+
+  void _escucharAvisos() {
+    final avisos = ref.read(servicioNotificacionesProvider);
+    avisos.alTocar = (payload) => abrirDesdeNotificacion(
+      payload,
+      router.go,
+      haySesion: ref.read(firebaseAuthProvider).currentUser != null,
+    );
+    unawaited(
+      avisos
+          .consumirPayloadLanzamiento()
+          .then(registrarLanzamientoPorNotificacion)
+          .catchError((_) {}),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final usuario = ref.watch(estadoAutenticacionProvider).value;
     final desbloqueado = ref.watch(bloqueoCifradoProvider);
+    if (usuario != null) ref.watch(orquestadorSincronizacionProvider);
     return MaterialApp.router(
       title: 'Oncuidar',
       debugShowCheckedModeBanner: false,

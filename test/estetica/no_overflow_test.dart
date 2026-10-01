@@ -259,7 +259,11 @@ void main() {
           marcado = tester.widget<CheckboxListTile>(opcion).value ?? false;
         }
       }
-      expect(marcado, isTrue, reason: 'No se pudo marcar "$nombre" en el panel');
+      expect(
+        marcado,
+        isTrue,
+        reason: 'No se pudo marcar "$nombre" en el panel',
+      );
     }
 
     await marcar('Falta de apetito (anorexia)');
@@ -369,7 +373,11 @@ void main() {
     final cifrado = ServicioCifrado(clavePrueba: _clavePrueba);
     final base = await _baseConCuidador(cifrado);
     final idPaciente = await base.crearPaciente(
-      Paciente(id: 'auto', fullName: 'Paciente Test', createdAt: DateTime.now()),
+      Paciente(
+        id: 'auto',
+        fullName: 'Paciente Test',
+        createdAt: DateTime.now(),
+      ),
     );
     final fecha = DateTime.now();
     await base.agregarRecordatorio(
@@ -403,7 +411,11 @@ void main() {
     final cifrado = ServicioCifrado(clavePrueba: _clavePrueba);
     final base = await _baseConCuidador(cifrado);
     await base.crearPaciente(
-      Paciente(id: 'auto', fullName: 'Paciente Test', createdAt: DateTime.now()),
+      Paciente(
+        id: 'auto',
+        fullName: 'Paciente Test',
+        createdAt: DateTime.now(),
+      ),
     );
     await tester.pumpWidget(
       _pantalla(auth, base, cifrado, const RecordatoriosScreen()),

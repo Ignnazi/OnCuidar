@@ -54,8 +54,7 @@ String _textoXml(Uint8List bytes) {
 
 List<String> _nombresHojas(Uint8List bytes) {
   final archivo = ZipDecoder().decodeBytes(bytes);
-  final workbook =
-      archivo.files.firstWhere((f) => f.name == 'xl/workbook.xml');
+  final workbook = archivo.files.firstWhere((f) => f.name == 'xl/workbook.xml');
   final xml = utf8.decode(workbook.content as List<int>);
   return [
     for (final match in RegExp(r'<sheet[^>]*name="([^"]+)"').allMatches(xml))

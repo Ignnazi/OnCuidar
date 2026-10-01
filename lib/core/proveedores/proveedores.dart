@@ -11,10 +11,13 @@ import '../../modelos/material_educativo.dart';
 import '../../modelos/paciente.dart';
 import '../../modelos/recordatorio.dart';
 import '../../modelos/registro_clinico.dart';
+import '../servicios/cola_escrituras.dart';
+import '../servicios/orquestador_sincronizacion.dart';
 import '../servicios/servicio_base_datos.dart';
 import '../servicios/servicio_cache_contenido.dart';
 import '../servicios/servicio_cache_metadata.dart';
 import '../servicios/servicio_cifrado.dart';
+import '../servicios/servicio_conectividad.dart';
 import '../servicios/servicio_notificaciones.dart';
 import '../servicios/servicio_registro.dart';
 
@@ -41,17 +44,62 @@ final bloqueoCifradoProvider = NotifierProvider<BloqueoCifradoNotifier, bool>(
   BloqueoCifradoNotifier.new,
 );
 
+final servicioConectividadProvider = Provider<ServicioConectividad>((ref) {
+  return ServicioConectividad();
+});
+
+final estadoConexionProvider = StreamProvider<bool>((ref) async* {
+  final conectividad = ref.watch(servicioConectividadProvider);
+  yield await conectividad.estaEnLinea();
+  yield* conectividad.enLinea().handleError((_) {});
+});
+
+final colaEscriturasProvider = Provider<ColaEscrituras>((ref) {
+  return ColaEscrituras();
+});
+
 final servicioBaseDatosProvider = Provider<ServicioBaseDatos>((ref) {
   final auth = ref.watch(firebaseAuthProvider);
   return ServicioBaseDatos(
     base: FirebaseFirestore.instance,
     auth: auth,
     cifrado: ref.watch(servicioCifradoProvider),
+    cola: ref.watch(colaEscriturasProvider),
+    conectividad: ref.watch(servicioConectividadProvider),
   );
 });
 
-final cuidadorProvider =
-    StreamProvider.autoDispose<Map<String, dynamic>?>((ref) {
+final resumenColaProvider = StreamProvider.autoDispose<ResumenCola>((
+  ref,
+) async* {
+  final uid = ref.watch(estadoAutenticacionProvider).value?.uid;
+  if (uid == null) {
+    yield ResumenCola.vacio;
+    return;
+  }
+  final cola = ref.watch(colaEscriturasProvider);
+  yield await cola.resumen(uid);
+  await for (final uidCambiado in cola.cambios) {
+    if (uidCambiado == uid) yield await cola.resumen(uid);
+  }
+});
+
+final orquestadorSincronizacionProvider = Provider<OrquestadorSincronizacion>((
+  ref,
+) {
+  final orquestador = OrquestadorSincronizacion(
+    cola: ref.watch(colaEscriturasProvider),
+    base: ref.watch(servicioBaseDatosProvider),
+    conectividad: ref.watch(servicioConectividadProvider),
+    uidActual: () => ref.read(firebaseAuthProvider).currentUser?.uid,
+  )..iniciar();
+  ref.onDispose(orquestador.dispose);
+  return orquestador;
+});
+
+final cuidadorProvider = StreamProvider.autoDispose<Map<String, dynamic>?>((
+  ref,
+) {
   return ref.watch(servicioBaseDatosProvider).cuidadorEnTiempoReal();
 });
 
@@ -138,7 +186,6 @@ final currentPatientProvider = StreamProvider.autoDispose<Paciente?>((
   yield pacientes.first;
 });
 
-
 final registrosClinicosProvider =
     StreamProvider.autoDispose<List<RegistroClinico>>((ref) {
       final pacienteAsync = ref.watch(currentPatientProvider);
@@ -150,7 +197,9 @@ final registrosClinicosProvider =
           .registrosClinicosEnTiempoReal(paciente.id);
     });
 
-final registroEnEdicionProvider = StateProvider<RegistroClinico?>((ref) => null);
+final registroEnEdicionProvider = StateProvider<RegistroClinico?>(
+  (ref) => null,
+);
 
 final servicioCacheContenidoProvider = Provider<ServicioCacheContenido>((ref) {
   return ServicioCacheContenido();
@@ -262,15 +311,11 @@ class SincronizacionNotifier extends Notifier<SincronizacionEstado> {
         contenidos = cacheados;
       } else {
         final base = ref.read(servicioBaseDatosProvider);
-        contenidos = await base
-            .contenidoEducativoEnTiempoReal()
-            .first
-            .timeout(const Duration(seconds: 8));
+        contenidos = await base.contenidoEducativoEnTiempoReal().first.timeout(
+          const Duration(seconds: 8),
+        );
       }
-      await _sincronizarContenido(
-        contenidos,
-        guardarCatalogo: !cacheVigente,
-      );
+      await _sincronizarContenido(contenidos, guardarCatalogo: !cacheVigente);
     } catch (_) {
       state = const SincronizacionEstado(terminada: true, fallidas: 1);
     } finally {
@@ -291,7 +336,9 @@ class SincronizacionNotifier extends Notifier<SincronizacionEstado> {
     }
     if (guardarCatalogo) {
       try {
-        await ref.read(servicioCacheMetadataProvider).guardarCatalogo(contenidos);
+        await ref
+            .read(servicioCacheMetadataProvider)
+            .guardarCatalogo(contenidos);
       } catch (_) {}
     }
     final cache = ref.read(servicioCacheContenidoProvider);
@@ -341,40 +388,40 @@ final sincronizacionBibliotecaProvider =
 
 final contenidosEducativosProvider =
     StreamProvider.autoDispose<List<MaterialEducativo>>((ref) async* {
-  final cacheMetadata = ref.watch(servicioCacheMetadataProvider);
-  final (cacheados, marca) = await cacheMetadata.obtenerCatalogoCache();
-  if (cacheados.isNotEmpty && cacheMetadata.esReciente(timestamp: marca)) {
-    yield cacheados;
-    return;
-  }
-  final base = ref.watch(servicioBaseDatosProvider);
-  try {
-    await for (final contenidos in base.contenidoEducativoEnTiempoReal()) {
+      final cacheMetadata = ref.watch(servicioCacheMetadataProvider);
+      final (cacheados, marca) = await cacheMetadata.obtenerCatalogoCache();
+      if (cacheados.isNotEmpty && cacheMetadata.esReciente(timestamp: marca)) {
+        yield cacheados;
+        return;
+      }
+      final base = ref.watch(servicioBaseDatosProvider);
       try {
-        await cacheMetadata.guardarCatalogo(contenidos);
-      } catch (_) {}
-      ref
-          .read(sincronizacionBibliotecaProvider.notifier)
-          .sincronizar(contenidos);
-      yield contenidos;
-    }
-  } catch (_) {
-    if (cacheados.isNotEmpty) {
-      yield cacheados;
-    } else {
-      rethrow;
-    }
-  }
-});
+        await for (final contenidos in base.contenidoEducativoEnTiempoReal()) {
+          try {
+            await cacheMetadata.guardarCatalogo(contenidos);
+          } catch (_) {}
+          ref
+              .read(sincronizacionBibliotecaProvider.notifier)
+              .sincronizar(contenidos);
+          yield contenidos;
+        }
+      } catch (_) {
+        if (cacheados.isNotEmpty) {
+          yield cacheados;
+        } else {
+          rethrow;
+        }
+      }
+    });
 
 final idsFavoritosProvider = StreamProvider.autoDispose<List<String>>((ref) {
   return ref.watch(servicioBaseDatosProvider).idsFavoritosEnTiempoReal();
 });
 
-final contenidoDetalleProvider =
-    FutureProvider.autoDispose.family<MaterialEducativo?, String>((ref, id) {
-  return ref.watch(servicioBaseDatosProvider).obtenerContenidoEducativo(id);
-});
+final contenidoDetalleProvider = FutureProvider.autoDispose
+    .family<MaterialEducativo?, String>((ref, id) {
+      return ref.watch(servicioBaseDatosProvider).obtenerContenidoEducativo(id);
+    });
 
 final listasChecklistProvider =
     StreamProvider.autoDispose<List<ChecklistUsuario>>((ref) {
@@ -387,25 +434,38 @@ final listasChecklistProvider =
           .listasChecklistTiempoReal(paciente.id);
     });
 
-final recordatoriosProvider = StreamProvider.autoDispose<List<Recordatorio>>(
-  (ref) {
-    final pacienteAsync = ref.watch(currentPatientProvider);
-    if (pacienteAsync is AsyncLoading) return Stream.empty();
-    final paciente = pacienteAsync.value;
-    if (paciente == null) return Stream.value(const []);
-    return ref
-        .watch(servicioBaseDatosProvider)
-        .recordatoriosEnTiempoReal(paciente.id);
-  },
-);
+final recordatoriosProvider = StreamProvider.autoDispose<List<Recordatorio>>((
+  ref,
+) {
+  final pacienteAsync = ref.watch(currentPatientProvider);
+  if (pacienteAsync is AsyncLoading) return Stream.empty();
+  final paciente = pacienteAsync.value;
+  if (paciente == null) return Stream.value(const []);
+  return ref
+      .watch(servicioBaseDatosProvider)
+      .recordatoriosEnTiempoReal(paciente.id);
+});
 
-final conversacionesProvider =
-    StreamProvider.autoDispose<List<Conversacion>>((ref) {
-      return ref.watch(servicioBaseDatosProvider).conversacionesEnTiempoReal();
-    });
+final conversacionesProvider = StreamProvider.autoDispose<List<Conversacion>>((
+  ref,
+) {
+  return ref.watch(servicioBaseDatosProvider).conversacionesEnTiempoReal();
+});
 
 final servicioNotificacionesProvider = Provider<ServicioNotificaciones>((ref) {
   final notificaciones = ServicioNotificaciones();
-  unawaited(notificaciones.inicializar());
+  unawaited(notificaciones.inicializar().catchError((_) {}));
   return notificaciones;
 });
+
+void reagendarAvisosEnSegundoPlano(
+  ServicioBaseDatos base,
+  ServicioNotificaciones notificaciones,
+) {
+  unawaited(
+    base
+        .reagendarNotificaciones(notificaciones)
+        .timeout(const Duration(seconds: 20), onTimeout: () {})
+        .catchError((_) {}),
+  );
+}

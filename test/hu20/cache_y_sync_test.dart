@@ -90,8 +90,7 @@ class _CacheFalso implements ServicioCacheContenido {
   }
 
   @override
-  Future<bool> archivoDescargado(String url) async =>
-      descargados.contains(url);
+  Future<bool> archivoDescargado(String url) async => descargados.contains(url);
 
   @override
   Future<void> eliminar(String url) async {
@@ -101,11 +100,11 @@ class _CacheFalso implements ServicioCacheContenido {
 
 class _BaseSinRed extends ServicioBaseDatos {
   _BaseSinRed()
-      : super(
-          base: FakeFirebaseFirestore(),
-          uidPrueba: _uid,
-          cifrado: ServicioCifrado(clavePrueba: _clavePrueba),
-        );
+    : super(
+        base: FakeFirebaseFirestore(),
+        uidPrueba: _uid,
+        cifrado: ServicioCifrado(clavePrueba: _clavePrueba),
+      );
 
   @override
   Stream<List<MaterialEducativo>> contenidoEducativoEnTiempoReal() {
@@ -171,7 +170,9 @@ void main() {
     test('esReciente considera viejo un catálogo de hace un día', () {
       final servicio = ServicioCacheMetadata();
       final ahora = DateTime.utc(2026, 1, 10, 12);
-      final marca = ahora.subtract(const Duration(hours: 23)).millisecondsSinceEpoch;
+      final marca = ahora
+          .subtract(const Duration(hours: 23))
+          .millisecondsSinceEpoch;
 
       expect(
         servicio.esReciente(timestamp: marca, ahora: ahora),
@@ -180,7 +181,9 @@ void main() {
       );
       expect(
         servicio.esReciente(
-          timestamp: ahora.subtract(const Duration(hours: 25)).millisecondsSinceEpoch,
+          timestamp: ahora
+              .subtract(const Duration(hours: 25))
+              .millisecondsSinceEpoch,
           ahora: ahora,
         ),
         isFalse,
@@ -193,9 +196,7 @@ void main() {
     test('descarga los adjuntos y reporta el progreso', () async {
       final cache = _CacheFalso();
       final container = ProviderContainer(
-        overrides: [
-          servicioCacheContenidoProvider.overrideWithValue(cache),
-        ],
+        overrides: [servicioCacheContenidoProvider.overrideWithValue(cache)],
       );
       addTearDown(container.dispose);
 
@@ -222,48 +223,51 @@ void main() {
   });
 
   group('sincronizarAlIniciarSesion', () {
-    test('descarga archivo, miniatura e imagen, y guarda el catálogo', () async {
-      final base = await _baseConContenido([
-        _videoConImagenes(),
-        _guia(),
-        _checklist(),
-      ]);
-      final cache = _CacheFalso();
-      final metadata = ServicioCacheMetadata();
-      final container = ProviderContainer(
-        overrides: [
-          servicioBaseDatosProvider.overrideWith((_) => base),
-          servicioCacheContenidoProvider.overrideWithValue(cache),
-          servicioCacheMetadataProvider.overrideWithValue(metadata),
-        ],
-      );
-      addTearDown(container.dispose);
+    test(
+      'descarga archivo, miniatura e imagen, y guarda el catálogo',
+      () async {
+        final base = await _baseConContenido([
+          _videoConImagenes(),
+          _guia(),
+          _checklist(),
+        ]);
+        final cache = _CacheFalso();
+        final metadata = ServicioCacheMetadata();
+        final container = ProviderContainer(
+          overrides: [
+            servicioBaseDatosProvider.overrideWith((_) => base),
+            servicioCacheContenidoProvider.overrideWithValue(cache),
+            servicioCacheMetadataProvider.overrideWithValue(metadata),
+          ],
+        );
+        addTearDown(container.dispose);
 
-      await container
-          .read(sincronizacionBibliotecaProvider.notifier)
-          .sincronizarAlIniciarSesion();
+        await container
+            .read(sincronizacionBibliotecaProvider.notifier)
+            .sincronizarAlIniciarSesion();
 
-      final estado = container.read(sincronizacionBibliotecaProvider);
-      expect(estado.terminada, isTrue);
-      expect(estado.activa, isFalse);
-      expect(estado.conErrores, isFalse);
-      expect(estado.total, 4);
-      expect(estado.completadas, 4);
-      expect(
-        cache.descargados,
-        containsAll([_urlVideo, _urlPdf, _urlMiniatura, _urlImagen]),
-      );
+        final estado = container.read(sincronizacionBibliotecaProvider);
+        expect(estado.terminada, isTrue);
+        expect(estado.activa, isFalse);
+        expect(estado.conErrores, isFalse);
+        expect(estado.total, 4);
+        expect(estado.completadas, 4);
+        expect(
+          cache.descargados,
+          containsAll([_urlVideo, _urlPdf, _urlMiniatura, _urlImagen]),
+        );
 
-      final (cacheados, marca) = await metadata.obtenerCatalogoCache();
-      expect(marca, isNotNull);
-      expect(
-        cacheados.map((c) => c.id),
-        containsAll([
-          'videos-como-medir-la-fiebre',
-          'guias-manual-de-control-de-sintomas',
-        ]),
-      );
-    });
+        final (cacheados, marca) = await metadata.obtenerCatalogoCache();
+        expect(marca, isNotNull);
+        expect(
+          cacheados.map((c) => c.id),
+          containsAll([
+            'videos-como-medir-la-fiebre',
+            'guias-manual-de-control-de-sintomas',
+          ]),
+        );
+      },
+    );
 
     test('no re-descarga lo que ya está en caché', () async {
       final base = await _baseConContenido([_videoConImagenes(), _guia()]);
@@ -355,10 +359,14 @@ void main() {
         ],
       );
       addTearDown(container.dispose);
-      final subscripcion = container.listen(contenidosEducativosProvider, (_, _) {});
+      final subscripcion = container.listen(
+        contenidosEducativosProvider,
+        (_, _) {},
+      );
 
-      final contenidos =
-          await container.read(contenidosEducativosProvider.future);
+      final contenidos = await container.read(
+        contenidosEducativosProvider.future,
+      );
       expect(
         contenidos.map((c) => c.id),
         containsAll([
@@ -396,13 +404,20 @@ void main() {
         ],
       );
       addTearDown(container.dispose);
-      final subscripcion = container.listen(contenidosEducativosProvider, (_, _) {});
+      final subscripcion = container.listen(
+        contenidosEducativosProvider,
+        (_, _) {},
+      );
 
-      final contenidos =
-          await container.read(contenidosEducativosProvider.future);
+      final contenidos = await container.read(
+        contenidosEducativosProvider.future,
+      );
       expect(
         contenidos.map((c) => c.id),
-        containsAll(['videos-como-medir-la-fiebre', 'guias-manual-de-control-de-sintomas']),
+        containsAll([
+          'videos-como-medir-la-fiebre',
+          'guias-manual-de-control-de-sintomas',
+        ]),
         reason: 'sin red se ofrece la copia local reciente',
       );
       subscripcion.close();

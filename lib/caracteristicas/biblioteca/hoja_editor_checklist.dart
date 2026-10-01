@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/proveedores/proveedores.dart';
 import '../../core/servicios/servicio_base_datos.dart';
+import '../../core/servicios/servicio_cifrado.dart';
 import '../../core/tema/paleta.dart';
 import '../../core/util/estilos.dart';
 import '../../modelos/checklist_usuario.dart';
@@ -34,8 +35,8 @@ class _HojaEditorChecklistState extends ConsumerState<HojaEditorChecklist> {
     );
     _controlesItems = widget.checklist != null
         ? widget.checklist!.items
-            .map((item) => TextEditingController(text: item))
-            .toList()
+              .map((item) => TextEditingController(text: item))
+              .toList()
         : [TextEditingController(), TextEditingController()];
   }
 
@@ -78,18 +79,32 @@ class _HojaEditorChecklistState extends ConsumerState<HojaEditorChecklist> {
 
     final messenger = ScaffoldMessenger.of(context);
     final base = ref.read(servicioBaseDatosProvider);
-    final esEdicion = _esEdicion;
-    final idEdicion = widget.checklist?.id;
+    final original = widget.checklist;
+    final idEdicion = original?.id;
+    try {
+      await base.verificarEscrituraDisponible();
+    } on ClaveNoDisponibleSinConexion catch (e) {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(e.toString(), style: GoogleFonts.nunito(fontSize: 14)),
+          backgroundColor: Paleta.error,
+        ),
+      );
+      return;
+    }
+    if (!mounted) return;
     Navigator.of(context).pop();
-    unawaited(_guardarEnBackground(
-      messenger,
-      base,
-      pacienteId: paciente.id,
-      titulo: titulo,
-      items: items,
-      esEdicion: esEdicion,
-      idEdicion: idEdicion,
-    ));
+    unawaited(
+      _guardarEnBackground(
+        messenger,
+        base,
+        pacienteId: paciente.id,
+        titulo: titulo,
+        items: items,
+        original: original,
+        idEdicion: idEdicion,
+      ),
+    );
   }
 
   Future<void> _guardarEnBackground(
@@ -98,16 +113,22 @@ class _HojaEditorChecklistState extends ConsumerState<HojaEditorChecklist> {
     required String pacienteId,
     required String titulo,
     required List<String> items,
-    required bool esEdicion,
+    required ChecklistUsuario? original,
     required String? idEdicion,
   }) async {
+    final esEdicion = original != null && idEdicion != null;
     try {
-      if (esEdicion && idEdicion != null) {
+      if (esEdicion) {
         await base.actualizarListaChecklist(
           pacienteId,
           idEdicion,
           titulo: titulo,
           items: items,
+          indicesMarcados: recalcularMarcas(
+            itemsAnteriores: original.items,
+            marcasAnteriores: original.indicesMarcados,
+            itemsNuevos: items,
+          ),
         );
       } else {
         await base.crearListaChecklist(
@@ -162,12 +183,7 @@ class _HojaEditorChecklistState extends ConsumerState<HojaEditorChecklist> {
                   key: _formKey,
                   child: ListView(
                     controller: scrollController,
-                    padding: EdgeInsets.fromLTRB(
-                      20,
-                      16,
-                      20,
-                      fondo + 24,
-                    ),
+                    padding: EdgeInsets.fromLTRB(20, 16, 20, fondo + 24),
                     children: [
                       Text(
                         'Título',
@@ -300,9 +316,7 @@ class _HojaEditorChecklistState extends ConsumerState<HojaEditorChecklist> {
                             elevation: 0,
                           ),
                           child: Text(
-                            _esEdicion
-                                ? 'Guardar cambios'
-                                : 'Crear checklist',
+                            _esEdicion ? 'Guardar cambios' : 'Crear checklist',
                             style: GoogleFonts.nunito(
                               fontSize: 15,
                               fontWeight: FontWeight.w700,
@@ -375,11 +389,7 @@ class _HojaEditorChecklistState extends ConsumerState<HojaEditorChecklist> {
                 color: Paleta.textoPrincipal.withValues(alpha: 0.08),
                 shape: BoxShape.circle,
               ),
-              child: Icon(
-                Icons.close,
-                size: 18,
-                color: Paleta.textoSecundario,
-              ),
+              child: Icon(Icons.close, size: 18, color: Paleta.textoSecundario),
             ),
           ),
         ],

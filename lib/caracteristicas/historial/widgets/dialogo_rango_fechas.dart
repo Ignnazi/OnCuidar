@@ -10,10 +10,8 @@ Future<({DateTime? inicio, DateTime? fin})?> mostrarDialogoRangoFechas(
 }) {
   return showDialog<({DateTime? inicio, DateTime? fin})>(
     context: context,
-    builder: (_) => _DialogoRangoFechas(
-      fechaInicio: fechaInicio,
-      fechaFin: fechaFin,
-    ),
+    builder: (_) =>
+        _DialogoRangoFechas(fechaInicio: fechaInicio, fechaFin: fechaFin),
   );
 }
 
@@ -71,9 +69,7 @@ class _DialogoRangoFechasState extends State<_DialogoRangoFechas> {
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(24),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       backgroundColor: Paleta.tarjeta,
       insetPadding: const EdgeInsets.symmetric(horizontal: 28),
       child: Padding(
@@ -243,10 +239,7 @@ class _CampoFechaDialogo extends StatelessWidget {
           color: Paleta.doradoOscuro,
         ),
         hintText: 'DD/MM/AAAA',
-        hintStyle: GoogleFonts.nunito(
-          fontSize: 13,
-          color: Paleta.textoAyuda,
-        ),
+        hintStyle: GoogleFonts.nunito(fontSize: 13, color: Paleta.textoAyuda),
         counterText: '',
         prefixIcon: Icon(
           Icons.calendar_today_outlined,

@@ -55,9 +55,7 @@ class EncabezadoGradiente extends StatelessWidget {
               child: ClipPath(
                 clipper: const _ClipperOla(profundidad: _profundidadOla),
                 child: const DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: Paleta.degradadoCabecera,
-                  ),
+                  decoration: BoxDecoration(gradient: Paleta.degradadoCabecera),
                 ),
               ),
             ),
@@ -87,9 +85,7 @@ class EncabezadoGradiente extends StatelessWidget {
                               child: _logoRedondo(),
                             )
                           else
-                            IgnorePointer(
-                              child: _logoRedondo(),
-                            ),
+                            IgnorePointer(child: _logoRedondo()),
                           const SizedBox(width: 10),
                           IgnorePointer(child: _contenidoTitulo()),
                         ],
@@ -113,11 +109,7 @@ class EncabezadoGradiente extends StatelessWidget {
                       color: Colors.black.withValues(alpha: 0.10),
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(
-                      iconoRetroceso,
-                      color: Colors.white,
-                      size: 20,
-                    ),
+                    child: Icon(iconoRetroceso, color: Colors.white, size: 20),
                   ),
                 ),
               ),
@@ -140,10 +132,7 @@ class EncabezadoGradiente extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         shape: BoxShape.circle,
-        border: Border.all(
-          color: Paleta.doradoClaro,
-          width: 1.5,
-        ),
+        border: Border.all(color: Paleta.doradoClaro, width: 1.5),
         boxShadow: [
           BoxShadow(
             color: Paleta.doradoOscuro.withValues(alpha: 0.25),
@@ -152,12 +141,7 @@ class EncabezadoGradiente extends StatelessWidget {
           ),
         ],
       ),
-      child: Image(
-        image: logo!,
-        width: 28,
-        height: 28,
-        fit: BoxFit.contain,
-      ),
+      child: Image(image: logo!, width: 28, height: 28, fit: BoxFit.contain),
     );
   }
 

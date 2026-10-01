@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:oncuidar/caracteristicas/chat/chat.dart';
+import 'package:oncuidar/caracteristicas/faq/datos_faq.dart';
 import 'package:oncuidar/core/proveedores/proveedores.dart';
 import 'package:oncuidar/core/servicios/servicio_base_datos.dart';
 import 'package:oncuidar/core/servicios/servicio_cifrado.dart';
@@ -169,7 +170,7 @@ void main() {
   });
 
   testWidgets(
-    'una conversación nueva persiste el nombre por defecto de la categoría',
+    'una conversación nueva se titula con la primera pregunta recortada',
     (tester) async {
       final base = await _base();
       await _montar(tester, base);
@@ -180,7 +181,11 @@ void main() {
 
       final convs = await base.conversacionesEnTiempoReal().first;
       expect(convs, hasLength(1));
-      expect(convs.single.titulo, 'Fiebre');
+      expect(
+        convs.single.titulo,
+        tituloAutomaticoConversacion(preguntasFrecuentes.first.pregunta),
+      );
+      expect(convs.single.titulo, startsWith('¿Qué temperatura'));
       expect(convs.single.mensajes.length, greaterThanOrEqualTo(2));
     },
   );

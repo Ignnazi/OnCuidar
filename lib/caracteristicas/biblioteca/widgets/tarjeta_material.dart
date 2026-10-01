@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/tema/paleta.dart';
 import '../../../modelos/material_educativo.dart';
@@ -99,11 +99,7 @@ class TarjetaMaterial extends StatelessWidget {
                 ),
               ),
             ),
-          Positioned(
-            top: 8,
-            left: 8,
-            child: _insignia(),
-          ),
+          Positioned(top: 8, left: 8, child: _insignia()),
           if (descargado && material.fileUrl != null)
             Positioned(
               top: 8,

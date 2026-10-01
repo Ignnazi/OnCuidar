@@ -79,15 +79,17 @@ class MotorReglasClinicas {
       }
     }
 
-    final activos = sintomas
-        .where((s) => s.intensity >= 1)
-        .toList();
+    final activos = sintomas.where((s) => s.intensity >= 1).toList();
     final insoportables = activos.where((s) => s.intensity >= 9).length;
-    final intensos =
-        activos.where((s) => s.intensity >= 7 && s.intensity <= 8).length;
-    final moderados =
-        activos.where((s) => s.intensity >= 4 && s.intensity <= 6).length;
-    final leves = activos.where((s) => s.intensity >= 1 && s.intensity <= 3).length;
+    final intensos = activos
+        .where((s) => s.intensity >= 7 && s.intensity <= 8)
+        .length;
+    final moderados = activos
+        .where((s) => s.intensity >= 4 && s.intensity <= 6)
+        .length;
+    final leves = activos
+        .where((s) => s.intensity >= 1 && s.intensity <= 3)
+        .length;
     final total = activos.length;
 
     if (insoportables >= 1) {

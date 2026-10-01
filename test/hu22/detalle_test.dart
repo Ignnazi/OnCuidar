@@ -28,7 +28,8 @@ MaterialEducativo _guia() => MaterialEducativo(
   title: 'Manual de Control de Síntomas',
   category: 'Guías',
   topic: 'Cuidados Paliativos',
-  body: '# Dolor\nAdministra el analgésico según horario.\n\n# Náuseas\nOfrece comidas pequeñas.',
+  body:
+      '# Dolor\nAdministra el analgésico según horario.\n\n# Náuseas\nOfrece comidas pequeñas.',
   imageUrl: 'https://localhost/imagen.jpg',
   fileUrl:
       'https://firebasestorage.googleapis.com/v0/b/oncuidar-v1.firebasestorage.app/o/Guias%2Fprueba.pdf?alt=media',
@@ -62,8 +63,7 @@ class _CacheFalso implements ServicioCacheContenido {
   }
 
   @override
-  Future<bool> archivoDescargado(String url) async =>
-      descargados.contains(url);
+  Future<bool> archivoDescargado(String url) async => descargados.contains(url);
 
   @override
   Future<void> eliminar(String url) async {
@@ -98,11 +98,7 @@ Future<(ServicioBaseDatos, FakeFirebaseFirestore)> _baseConContenido(
   return (base, firestore);
 }
 
-Widget _pantalla(
-  ServicioBaseDatos base,
-  _CacheFalso cache,
-  String id,
-) {
+Widget _pantalla(ServicioBaseDatos base, _CacheFalso cache, String id) {
   final router = GoRouter(
     initialLocation: '/biblioteca/$id',
     routes: [
@@ -171,7 +167,10 @@ void main() {
     expect(find.text('Cuidados Paliativos'), findsWidgets);
     expect(find.text('Guía'), findsOneWidget);
     expect(find.text('Dolor'), findsOneWidget);
-    expect(find.text('Administra el analgésico según horario.'), findsOneWidget);
+    expect(
+      find.text('Administra el analgésico según horario.'),
+      findsOneWidget,
+    );
     expect(find.text('Náuseas'), findsOneWidget);
     expect(find.text('Abrir archivo adjunto'), findsOneWidget);
   });
@@ -234,10 +233,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
 
-    expect(
-      find.textContaining('Error al abrir el archivo'),
-      findsOneWidget,
-    );
+    expect(find.textContaining('Error al abrir el archivo'), findsOneWidget);
   });
 
   testWidgets('el detalle de un checklist muestra la lista interactiva', (
@@ -251,7 +247,9 @@ void main() {
     expect(find.text('0/1'), findsOneWidget);
   });
 
-  testWidgets('un material inexistente muestra el estado vacío', (tester) async {
+  testWidgets('un material inexistente muestra el estado vacío', (
+    tester,
+  ) async {
     final (base, _) = await _baseConContenido([_simple()]);
     await _montar(tester, base, _CacheFalso(), 'id-inexistente');
 

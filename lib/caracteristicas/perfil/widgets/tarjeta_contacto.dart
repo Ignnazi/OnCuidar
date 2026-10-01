@@ -148,10 +148,7 @@ class TarjetaContacto extends StatelessWidget {
             ),
             if (tieneDireccion) ...[
               const SizedBox(height: 10),
-              TarjetaMapa(
-                direccion: direccion!,
-                onTap: alAbrirMapa ?? () {},
-              ),
+              TarjetaMapa(direccion: direccion!, onTap: alAbrirMapa ?? () {}),
             ],
           ],
         ),

@@ -220,7 +220,8 @@ class TarjetaPacienteActivo extends StatelessWidget {
                       _TarjetaContactoSeccion(
                         icono: Icons.emergency_outlined,
                         etiqueta: 'Contacto de emergencia',
-                        titulo: paciente.contactoEmergenciaNombre ??
+                        titulo:
+                            paciente.contactoEmergenciaNombre ??
                             'Contacto de emergencia',
                         direccion: '',
                         telefono: paciente.contactoEmergenciaTelefono ?? '',

@@ -48,7 +48,6 @@ class _BienvenidaState extends State<Bienvenida> {
         backgroundColor: Paleta.crema,
         body: Stack(
           children: [
-
             Positioned.fill(
               child: SingleChildScrollView(
                 padding: EdgeInsets.fromLTRB(

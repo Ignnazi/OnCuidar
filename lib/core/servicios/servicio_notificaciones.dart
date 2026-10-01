@@ -16,6 +16,19 @@ class ServicioNotificaciones {
 
   bool _inicializado = false;
 
+  static const rutaAviso = '/recordatorios';
+
+  void Function(String? payload)? alTocar;
+
+  String? _payloadLanzamiento;
+
+  Future<String?> consumirPayloadLanzamiento() async {
+    if (!_inicializado) await inicializar();
+    final payload = _payloadLanzamiento;
+    _payloadLanzamiento = null;
+    return payload;
+  }
+
   Future<void> inicializar() async {
     if (_inicializado) return;
     tz.initializeTimeZones();
@@ -32,7 +45,19 @@ class ServicioNotificaciones {
       iOS: ajustesIos,
     );
 
-    await _plugin.initialize(settings: ajustes);
+    await _plugin.initialize(
+      settings: ajustes,
+      onDidReceiveNotificationResponse: (respuesta) =>
+          alTocar?.call(respuesta.payload),
+    );
+    try {
+      final detalles = await _plugin.getNotificationAppLaunchDetails();
+      if (detalles?.didNotificationLaunchApp ?? false) {
+        _payloadLanzamiento = detalles?.notificationResponse?.payload;
+      }
+    } catch (e) {
+      log('No se pudo leer el lanzamiento por notificación: $e');
+    }
 
     _inicializado = true;
     log('ServicioNotificaciones inicializado');
@@ -92,11 +117,11 @@ class ServicioNotificaciones {
     List<String> diasRepeticion,
   ) {
     final ahora = tz.TZDateTime.now(tz.local);
-    var candidato = tz.TZDateTime(
+    final candidato = tz.TZDateTime(
       tz.local,
-      horaProgramada.year,
-      horaProgramada.month,
-      horaProgramada.day,
+      ahora.year,
+      ahora.month,
+      ahora.day,
       horaProgramada.hour,
       horaProgramada.minute,
     );
@@ -105,7 +130,7 @@ class ServicioNotificaciones {
               ..removeWhere((d) => d == null))
             .toSet();
 
-    for (var i = 0; i < 7; i++) {
+    for (var i = 0; i <= 7; i++) {
       final prueba = candidato.add(Duration(days: i));
       if (objetivos.contains(prueba.weekday) && prueba.isAfter(ahora)) {
         return prueba;
@@ -253,6 +278,7 @@ class ServicioNotificaciones {
         ),
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
         matchDateTimeComponents: repetir,
+        payload: rutaAviso,
       );
     } catch (e) {
       log('Error programando notificación $id: $e');

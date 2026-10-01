@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/proveedores/proveedores.dart';
+import '../../core/router/destino_aviso.dart';
 import '../../core/servicios/servicio_base_datos.dart';
 import '../../core/tema/paleta.dart';
 import '../../compartidos/widgets/dialogo_confirmacion.dart';
@@ -52,6 +53,9 @@ class _PerfilCuidadorState extends ConsumerState<PerfilCuidador> {
           const Duration(seconds: 5),
         );
       }
+      if (datos['respaldoPendienteServidor'] == true) {
+        datos = await _reintentarRespaldo(base, datos);
+      }
       if (!mounted) return;
       setState(() => _cuidador = datos);
     } catch (_) {
@@ -80,6 +84,32 @@ class _PerfilCuidadorState extends ConsumerState<PerfilCuidador> {
       await base.sincronizarCorreoPrincipal(correoPendiente);
       await base.limpiarCambioCorreoPendiente();
     }
+  }
+
+  Future<Map<String, dynamic>> _reintentarRespaldo(
+    ServicioBaseDatos base,
+    Map<String, dynamic> datos,
+  ) async {
+    var confirmado = false;
+    try {
+      confirmado = await base.reintentarRegistroRespaldo().timeout(
+        const Duration(seconds: 8),
+      );
+    } catch (_) {}
+    if (confirmado) {
+      return {...datos, 'respaldoPendienteServidor': false};
+    }
+    if (mounted) {
+      ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Tu correo de respaldo aún no se registra en el servidor. '
+            'Lo reintentaremos al volver a abrir tu perfil.',
+          ),
+        ),
+      );
+    }
+    return datos;
   }
 
   @override
@@ -115,6 +145,7 @@ class _PerfilCuidadorState extends ConsumerState<PerfilCuidador> {
         ref.read(firebaseAuthProvider).currentUser?.email?.trim() ?? '';
     final correoPrincipal =
         ((_cuidador?['email'] as String?)?.trim() ?? emailAuth);
+    final pendiente = _cuidador?['pendienteCorreo'] as Map?;
 
     return TarjetaPerfilCuidador(
       nombre: nombre,
@@ -125,6 +156,10 @@ class _PerfilCuidadorState extends ConsumerState<PerfilCuidador> {
       correoRespaldo: (correoRespaldo != null && correoRespaldo.isNotEmpty)
           ? correoRespaldo
           : null,
+      correoPrincipalPendiente: pendiente?['tipo'] == 'principal'
+          ? pendiente!['correo'] as String?
+          : null,
+      respaldoPendiente: _cuidador?['respaldoPendienteServidor'] == true,
       onEditarDatos: _dialogoEditarCuidador,
       onEditarCorreoPrincipal: () => _dialogoCorreos(editarPrincipal: true),
       onEditarCorreoRespaldo: () => _dialogoCorreos(editarRespaldo: true),
@@ -214,6 +249,7 @@ class _PerfilCuidadorState extends ConsumerState<PerfilCuidador> {
     } catch (_) {
       // Si falla, se sigue igual.
     }
+    EstadoArranque.reiniciar();
     if (mounted && context.mounted) context.go('/bienvenida');
   }
 }

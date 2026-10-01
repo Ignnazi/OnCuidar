@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../core/router/destino_aviso.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/proveedores/proveedores.dart';
 import '../../core/tema/paleta.dart';
@@ -47,6 +48,14 @@ class _IniciarSesionState extends ConsumerState<IniciarSesion> {
       ref
           .read(sincronizacionBibliotecaProvider.notifier)
           .sincronizarAlIniciarSesion();
+      try {
+        reagendarAvisosEnSegundoPlano(
+          ref.read(servicioBaseDatosProvider),
+          ref.read(servicioNotificacionesProvider),
+        );
+      } catch (_) {
+        // Si falla, se sigue igual.
+      }
 
       if (mounted) {
         FocusManager.instance.primaryFocus?.unfocus();
@@ -56,7 +65,7 @@ class _IniciarSesionState extends ConsumerState<IniciarSesion> {
             backgroundColor: Paleta.doradoPrincipal,
           ),
         );
-        context.go('/dashboard');
+        context.go(EstadoArranque.consumirDestino());
       }
     } on FirebaseAuthException catch (e) {
       if (!mounted) return;

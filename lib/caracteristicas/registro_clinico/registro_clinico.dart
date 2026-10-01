@@ -10,6 +10,7 @@ import '../../core/catalogos/catalogo_sintomas.dart';
 import '../../core/proveedores/proveedores.dart';
 import '../../core/servicios/motor_reglas_clinicas.dart';
 import '../../core/servicios/rangos_signos.dart';
+import '../../core/servicios/servicio_cifrado.dart';
 import '../../core/tema/paleta.dart';
 import '../../core/util/formato_fecha.dart';
 import '../../modelos/paciente.dart';
@@ -59,6 +60,7 @@ class _RegistroClinicoScreenState extends ConsumerState<RegistroClinicoScreen> {
   final Map<String, int> _intensidades = {};
   final Map<String, String> _otroTexto = {};
   RegistroClinico? _registroEdicion;
+  bool _guardando = false;
 
   @override
   void initState() {
@@ -149,7 +151,7 @@ class _RegistroClinicoScreenState extends ConsumerState<RegistroClinicoScreen> {
     final ahora = DateTime.now();
     var contador = 0;
     for (final r in registros) {
-      if (mismoDia(r.fecha, ahora)) {
+      if (r.tipoRegistro == 'programado' && mismoDia(r.fecha, ahora)) {
         contador++;
       }
     }
@@ -231,10 +233,9 @@ class _RegistroClinicoScreenState extends ConsumerState<RegistroClinicoScreen> {
       valorInicial: paciente.maximoRegistrosDia,
     );
     if (valor == null || !mounted) return;
-    await ref.read(servicioBaseDatosProvider).actualizarPaciente(
-      paciente.id,
-      {'maximo_registros_dia': valor},
-    );
+    await ref.read(servicioBaseDatosProvider).actualizarPaciente(paciente.id, {
+      'maximo_registros_dia': valor,
+    });
     if (mounted) {
       _mostrarSnack(
         'Tope actualizado a $valor',
@@ -260,8 +261,7 @@ class _RegistroClinicoScreenState extends ConsumerState<RegistroClinicoScreen> {
       return rangoFrecuenciaCardiaca.mensaje;
     }
     final o2 = int.tryParse(_o2Controller.text.trim());
-    if (o2 != null &&
-        (o2 > rangoSaturacion.max || o2 < rangoSaturacion.min)) {
+    if (o2 != null && (o2 > rangoSaturacion.max || o2 < rangoSaturacion.min)) {
       return rangoSaturacion.mensaje;
     }
     final frecuenciaRespiratoria = int.tryParse(
@@ -316,21 +316,21 @@ class _RegistroClinicoScreenState extends ConsumerState<RegistroClinicoScreen> {
           ? null
           : _observacionesController.text.trim(),
       nivelAlerta: alerta.nivel,
-      mensajeAlerta: alerta.mensajes.isEmpty
-          ? null
-          : alerta.mensajes.join(' '),
+      mensajeAlerta: alerta.mensajes.isEmpty ? null : alerta.mensajes.join(' '),
     );
-    final base = ref.read(servicioBaseDatosProvider);
-    _snackCon(
-      messenger,
-      esEdicion ? 'Registro actualizado' : 'Guardado correctamente',
-      color: Paleta.doradoPrincipal,
-      icono: Icons.check_circle,
-    );
-    _reiniciarFormulario();
-    unawaited(() async {
+    if (_guardando) return;
+    setState(() => _guardando = true);
+    try {
+      final base = ref.read(servicioBaseDatosProvider);
       try {
         await base.guardarRegistroClinico(paciente.id, registro);
+      } on ClaveNoDisponibleSinConexion catch (e) {
+        _mostrarSnack(
+          e.toString(),
+          color: Paleta.error,
+          icono: Icons.lock_outline,
+        );
+        return;
       } catch (e) {
         messenger.showSnackBar(
           SnackBar(
@@ -343,7 +343,7 @@ class _RegistroClinicoScreenState extends ConsumerState<RegistroClinicoScreen> {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    'Error al guardar: $e',
+                    'No se pudo guardar. Tu registro sigue en el formulario.',
                     style: GoogleFonts.nunito(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
@@ -355,8 +355,21 @@ class _RegistroClinicoScreenState extends ConsumerState<RegistroClinicoScreen> {
             ),
           ),
         );
+        return;
       }
-    }());
+      final enLinea = ref.read(estadoConexionProvider).value ?? true;
+      _snackCon(
+        messenger,
+        enLinea
+            ? (esEdicion ? 'Registro actualizado' : 'Guardado correctamente')
+            : 'Guardado en este dispositivo. Se enviará al recuperar la red.',
+        color: Paleta.doradoPrincipal,
+        icono: Icons.check_circle,
+      );
+      _reiniciarFormulario();
+    } finally {
+      if (mounted) setState(() => _guardando = false);
+    }
   }
 
   void _reiniciarFormulario() {
@@ -470,9 +483,7 @@ class _RegistroClinicoScreenState extends ConsumerState<RegistroClinicoScreen> {
                         },
                       ),
                     const SizedBox(height: 20),
-                    SeccionSignosVitales(
-                      controladores: _controladoresSignos,
-                    ),
+                    SeccionSignosVitales(controladores: _controladoresSignos),
                     const SizedBox(height: 20),
                     SeccionSintomas(
                       seleccionados: _seleccionados,
@@ -499,7 +510,7 @@ class _RegistroClinicoScreenState extends ConsumerState<RegistroClinicoScreen> {
                     IndicadorAlerta(alerta: _evaluarAlerta()),
                     const SizedBox(height: 16),
                     BotonGuardar(
-                      guardando: false,
+                      guardando: _guardando,
                       esEdicion: _registroEdicion != null,
                       onPressed: _guardar,
                     ),

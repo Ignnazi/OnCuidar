@@ -55,8 +55,9 @@ class _SelectorMultiSintomaState extends State<SelectorMultiSintoma> {
           .map((item) => item.nombre)
           .toList();
     }
-    final nombresCatalogo =
-        catalogoUnificado.map((item) => item.nombre).toSet();
+    final nombresCatalogo = catalogoUnificado
+        .map((item) => item.nombre)
+        .toSet();
     final seleccionExtra = widget.seleccionados
         .where((nombre) => !nombresCatalogo.contains(nombre))
         .toList();

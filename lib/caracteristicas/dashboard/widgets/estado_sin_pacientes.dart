@@ -12,7 +12,8 @@ class EstadoSinPacientes extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final alto = MediaQuery.of(context).size.height -
+    final alto =
+        MediaQuery.of(context).size.height -
         MediaQuery.of(context).padding.top -
         _altoEncabezado -
         48;

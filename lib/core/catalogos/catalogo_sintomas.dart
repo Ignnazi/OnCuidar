@@ -23,8 +23,7 @@ class EsasSintoma {
           other.esOtro == esOtro;
 
   @override
-  int get hashCode =>
-      Object.hash(nombre, etiqueta0, etiqueta10, esOtro);
+  int get hashCode => Object.hash(nombre, etiqueta0, etiqueta10, esOtro);
 }
 
 const List<EsasSintoma> catalogoEsasR = [
@@ -87,10 +86,7 @@ const List<EsasSintoma> catalogoEsasR = [
 ];
 
 class SintomaPediatrico {
-  const SintomaPediatrico({
-    required this.nombre,
-    required this.patologias,
-  });
+  const SintomaPediatrico({required this.nombre, required this.patologias});
 
   final String nombre;
   final List<String> patologias;
@@ -107,10 +103,7 @@ class SintomaPediatrico {
   }
 
   @override
-  int get hashCode => Object.hash(
-    nombre,
-    Object.hashAll(patologias),
-  );
+  int get hashCode => Object.hash(nombre, Object.hashAll(patologias));
 }
 
 const List<SintomaPediatrico> catalogoSintomasPediatricos = [
@@ -130,38 +123,20 @@ const List<SintomaPediatrico> catalogoSintomasPediatricos = [
     nombre: 'Fatiga o cansancio',
     patologias: ['LLA', 'Generales'],
   ),
-  SintomaPediatrico(
-    nombre: 'Debilidad',
-    patologias: ['LLA', 'Linfoma'],
-  ),
-  SintomaPediatrico(
-    nombre: 'Sangrado',
-    patologias: ['LLA'],
-  ),
-  SintomaPediatrico(
-    nombre: 'Pérdida de peso',
-    patologias: ['LLA', 'Linfoma'],
-  ),
+  SintomaPediatrico(nombre: 'Debilidad', patologias: ['LLA', 'Linfoma']),
+  SintomaPediatrico(nombre: 'Sangrado', patologias: ['LLA']),
+  SintomaPediatrico(nombre: 'Pérdida de peso', patologias: ['LLA', 'Linfoma']),
   SintomaPediatrico(
     nombre: 'Falta de apetito (anorexia)',
     patologias: ['Tumor de Wilms', 'Generales'],
   ),
-  SintomaPediatrico(
-    nombre: 'Náuseas',
-    patologias: ['Tumor de Wilms'],
-  ),
-  SintomaPediatrico(
-    nombre: 'Vómitos',
-    patologias: ['Tumores SNC'],
-  ),
+  SintomaPediatrico(nombre: 'Náuseas', patologias: ['Tumor de Wilms']),
+  SintomaPediatrico(nombre: 'Vómitos', patologias: ['Tumores SNC']),
   SintomaPediatrico(
     nombre: 'Diarrea',
     patologias: ['Neuroblastoma', 'Generales'],
   ),
-  SintomaPediatrico(
-    nombre: 'Mareos',
-    patologias: ['Tumores SNC'],
-  ),
+  SintomaPediatrico(nombre: 'Mareos', patologias: ['Tumores SNC']),
   SintomaPediatrico(
     nombre: 'Problemas de equilibrio',
     patologias: ['Tumores SNC'],
@@ -174,18 +149,9 @@ const List<SintomaPediatrico> catalogoSintomasPediatricos = [
     nombre: 'Dolor de cabeza (cefalea)',
     patologias: ['Tumores SNC'],
   ),
-  SintomaPediatrico(
-    nombre: 'Mucositis',
-    patologias: ['Generales'],
-  ),
-  SintomaPediatrico(
-    nombre: 'Caída de cabello',
-    patologias: ['Generales'],
-  ),
-  SintomaPediatrico(
-    nombre: 'Sudoración nocturna',
-    patologias: ['Linfoma'],
-  ),
+  SintomaPediatrico(nombre: 'Mucositis', patologias: ['Generales']),
+  SintomaPediatrico(nombre: 'Caída de cabello', patologias: ['Generales']),
+  SintomaPediatrico(nombre: 'Sudoración nocturna', patologias: ['Linfoma']),
   SintomaPediatrico(
     nombre: 'Ganglios linfáticos inflamados',
     patologias: ['Linfoma'],

@@ -13,6 +13,8 @@ class TarjetaPerfilCuidador extends StatelessWidget {
     required this.telefono,
     required this.correoPrincipal,
     this.correoRespaldo,
+    this.correoPrincipalPendiente,
+    this.respaldoPendiente = false,
     required this.onEditarDatos,
     required this.onEditarCorreoPrincipal,
     required this.onEditarCorreoRespaldo,
@@ -24,6 +26,8 @@ class TarjetaPerfilCuidador extends StatelessWidget {
   final String telefono;
   final String correoPrincipal;
   final String? correoRespaldo;
+  final String? correoPrincipalPendiente;
+  final bool respaldoPendiente;
   final VoidCallback onEditarDatos;
   final VoidCallback onEditarCorreoPrincipal;
   final VoidCallback onEditarCorreoRespaldo;
@@ -70,6 +74,8 @@ class TarjetaPerfilCuidador extends StatelessWidget {
                       child: _TarjetaAutenticacion(
                         correoPrincipal: correoPrincipal,
                         correoRespaldo: correoRespaldo,
+                        correoPrincipalPendiente: correoPrincipalPendiente,
+                        respaldoPendiente: respaldoPendiente,
                         onEditarPrincipal: onEditarCorreoPrincipal,
                         onEditarRespaldo: onEditarCorreoRespaldo,
                       ),
@@ -251,12 +257,16 @@ class _TarjetaAutenticacion extends StatelessWidget {
   const _TarjetaAutenticacion({
     required this.correoPrincipal,
     this.correoRespaldo,
+    this.correoPrincipalPendiente,
+    this.respaldoPendiente = false,
     required this.onEditarPrincipal,
     required this.onEditarRespaldo,
   });
 
   final String correoPrincipal;
   final String? correoRespaldo;
+  final String? correoPrincipalPendiente;
+  final bool respaldoPendiente;
   final VoidCallback onEditarPrincipal;
   final VoidCallback onEditarRespaldo;
 
@@ -294,6 +304,12 @@ class _TarjetaAutenticacion extends StatelessWidget {
                       : correoPrincipal,
                   valorAusente: correoPrincipal.isEmpty,
                 ),
+                if (correoPrincipalPendiente != null &&
+                    correoPrincipalPendiente!.isNotEmpty)
+                  _AvisoPendiente(
+                    key: const Key('pendientePrincipal'),
+                    texto: 'Pendiente de confirmar: $correoPrincipalPendiente',
+                  ),
                 const SizedBox(height: 10),
                 _FilaCorreo(
                   icono: Icons.mark_email_read_outlined,
@@ -303,6 +319,11 @@ class _TarjetaAutenticacion extends StatelessWidget {
                       : 'No configurado',
                   valorAusente: !respaldoConfigurado,
                 ),
+                if (respaldoPendiente && respaldoConfigurado)
+                  _AvisoPendiente(
+                    key: const Key('pendienteRespaldo'),
+                    texto: 'Pendiente de confirmar: $correoRespaldo',
+                  ),
               ],
             ),
           ),
@@ -429,6 +450,41 @@ class _FilaCorreo extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _AvisoPendiente extends StatelessWidget {
+  const _AvisoPendiente({super.key, required this.texto});
+
+  final String texto;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 44, top: 4),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.schedule_rounded,
+            size: 14,
+            color: Paleta.doradoOscuro,
+          ),
+          const SizedBox(width: 4),
+          Expanded(
+            child: Text(
+              texto,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.nunito(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: Paleta.doradoOscuro,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -108,7 +108,10 @@ class _GestionPacientesState extends ConsumerState<GestionPacientes> {
     try {
       await ref
           .read(servicioBaseDatosProvider)
-          .desarchivarPaciente(paciente.id);
+          .desarchivarPaciente(
+            paciente.id,
+            notif: ref.read(servicioNotificacionesProvider),
+          );
       if (mounted) {
         messenger.showSnackBar(
           SnackBar(
@@ -173,7 +176,12 @@ class _GestionPacientesState extends ConsumerState<GestionPacientes> {
     if (confirmar != true || !mounted) return;
     final messenger = ScaffoldMessenger.of(context);
     try {
-      await ref.read(servicioBaseDatosProvider).archivarPaciente(paciente.id);
+      await ref
+          .read(servicioBaseDatosProvider)
+          .archivarPaciente(
+            paciente.id,
+            notif: ref.read(servicioNotificacionesProvider),
+          );
       if (mounted) {
         messenger.showSnackBar(
           SnackBar(
@@ -210,7 +218,12 @@ class _GestionPacientesState extends ConsumerState<GestionPacientes> {
     final messenger = ScaffoldMessenger.of(context);
     final eraActivo = ref.read(currentPatientProvider).value?.id == paciente.id;
     try {
-      await ref.read(servicioBaseDatosProvider).eliminarPaciente(paciente.id);
+      await ref
+          .read(servicioBaseDatosProvider)
+          .eliminarPaciente(
+            paciente.id,
+            notif: ref.read(servicioNotificacionesProvider),
+          );
       if (eraActivo) {
         final restantes =
             (ref.read(patientsListProvider).value ?? const <Paciente>[])

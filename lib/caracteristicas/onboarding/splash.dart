@@ -4,13 +4,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/proveedores/proveedores.dart';
+import '../../core/router/destino_aviso.dart';
 import '../../core/tema/paleta.dart';
 import '../../compartidos/widgets/marca.dart';
 
 class Splash extends ConsumerStatefulWidget {
-  const Splash({super.key, required this.alFinalizar});
+  const Splash({super.key, required this.alFinalizar, this.destino});
 
   final VoidCallback alFinalizar;
+
+  final String? destino;
 
   @override
   ConsumerState<Splash> createState() => _SplashState();
@@ -79,10 +82,22 @@ class _SplashState extends ConsumerState<Splash>
     try {
       await ref.read(servicioCifradoProvider).asegurarClave(usuario.uid);
       ref.read(bloqueoCifradoProvider.notifier).fijarDesbloqueado(true);
+      _reagendarAvisos();
     } catch (_) {
       // Si falla, se sigue igual.
     } finally {
       if (!_esperaClave.isCompleted) _esperaClave.complete();
+    }
+  }
+
+  void _reagendarAvisos() {
+    try {
+      reagendarAvisosEnSegundoPlano(
+        ref.read(servicioBaseDatosProvider),
+        ref.read(servicioNotificacionesProvider),
+      );
+    } catch (_) {
+      // Si falla, se sigue igual.
     }
   }
 
@@ -96,9 +111,15 @@ class _SplashState extends ConsumerState<Splash>
       );
       if (!mounted) return;
     }
+    EstadoArranque.completado = true;
+    final destino =
+        destinoInternoSeguro(widget.destino) ??
+        destinoInternoSeguro(EstadoArranque.destinoPendiente);
     if (_haySesion) {
-      context.go('/dashboard');
+      EstadoArranque.destinoPendiente = null;
+      context.go(destino ?? '/dashboard');
     } else {
+      EstadoArranque.destinoPendiente = destino;
       widget.alFinalizar();
     }
   }

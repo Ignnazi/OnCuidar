@@ -251,9 +251,9 @@ void main() {
         reason: 'los síntomas no deben viajar en claro',
       );
       final signosCifrados = doc['signos_vitales_cifrado'] as String;
-      final signosMapa = jsonDecode(
-        await cifrado.descifrar(_uid, signosCifrados),
-      ) as Map<String, dynamic>;
+      final signosMapa =
+          jsonDecode(await cifrado.descifrar(_uid, signosCifrados))
+              as Map<String, dynamic>;
       expect(
         (signosMapa['temperature'] as num).toDouble(),
         40.0,
@@ -330,6 +330,56 @@ void main() {
       extras,
       hasLength(1),
       reason: 'el cuarto registro del día debe quedar como "extra"',
+    );
+  });
+
+  testWidgets('los registros extra no consumen el tope de programados', (
+    tester,
+  ) async {
+    _taller(tester);
+    final cifrado = ServicioCifrado(clavePrueba: _clavePrueba);
+    final (base, firestore) = await _baseConDatos(cifrado);
+    final idPaciente = await _idPacienteUnico(firestore);
+    final ahora = DateTime.now();
+    const tipos = ['programado', 'extra', 'extra'];
+    for (var i = 0; i < tipos.length; i++) {
+      await base.guardarRegistroClinico(
+        idPaciente,
+        RegistroClinico(
+          id: 'r$i',
+          pacienteId: idPaciente,
+          fecha: ahora,
+          creadoEn: ahora,
+          tipoRegistro: tipos[i],
+        ),
+      );
+    }
+    await tester.pumpWidget(_pantalla(cifrado, base));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Programado 2/3'),
+      findsOneWidget,
+      reason: 'con 1 programado y 2 extras el próximo programado es el 2 de 3',
+    );
+
+    await _tocarGuardar(tester);
+    expect(find.text('Guardado correctamente'), findsOneWidget);
+
+    final registros = await firestore
+        .collection('users')
+        .doc(_uid)
+        .collection('patients')
+        .doc(idPaciente)
+        .collection('clinicalRecords')
+        .get();
+    final programados = registros.docs
+        .where((d) => d.data()['tipoRegistro'] == 'programado')
+        .toList();
+    expect(
+      programados,
+      hasLength(2),
+      reason: 'con 1 programado y 2 extras el nuevo sigue siendo programado',
     );
   });
 
@@ -413,8 +463,7 @@ void main() {
         reason: 'sin signos ingresados no se escribe el campo',
       );
       var sintomas = await _sintomasDescifrados(cifrado, doc);
-      var dolorGuardado =
-          sintomas.singleWhere((s) => s['name'] == 'Dolor');
+      var dolorGuardado = sintomas.singleWhere((s) => s['name'] == 'Dolor');
       expect(
         dolorGuardado['intensity'],
         0,
@@ -712,7 +761,10 @@ void main() {
     await tester.tap(chipLla);
     await _irAInicioLista(tester);
 
-    await _revelarEnLista(tester, find.text('Dolor de huesos y articulaciones'));
+    await _revelarEnLista(
+      tester,
+      find.text('Dolor de huesos y articulaciones'),
+    );
     expect(find.text('Dolor de huesos y articulaciones'), findsOneWidget);
     expect(find.text('Vómitos'), findsNothing);
 

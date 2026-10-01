@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../compartidos/widgets/dialogo_confirmacion.dart';
 import '../../compartidos/widgets/encabezado_gradiente.dart';
 import '../../core/proveedores/proveedores.dart';
+import '../../core/servicios/servicio_cifrado.dart';
 import '../../core/servicios/servicio_notificaciones.dart';
 import '../../core/tema/paleta.dart';
 import '../../core/util/estilos.dart';
@@ -53,7 +54,9 @@ String _diaCorto(String dia) => switch (dia) {
 };
 
 class RecordatoriosScreen extends ConsumerStatefulWidget {
-  const RecordatoriosScreen({super.key});
+  const RecordatoriosScreen({super.key, this.abrirNuevo = false});
+
+  final bool abrirNuevo;
 
   @override
   ConsumerState<RecordatoriosScreen> createState() =>
@@ -68,6 +71,11 @@ class _RecordatoriosScreenState extends ConsumerState<RecordatoriosScreen> {
   void initState() {
     super.initState();
     _cargarEstadoSilencio();
+    if (widget.abrirNuevo) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _dialogoRecordatorio();
+      });
+    }
   }
 
   Future<void> _cargarEstadoSilencio() async {
@@ -367,8 +375,9 @@ class _RecordatoriosScreenState extends ConsumerState<RecordatoriosScreen> {
   Widget _tarjetaRecordatorio(Recordatorio r) {
     final (:icono, :color) = _tipoRecordatorio(r.tipo);
     final dias = r.diasRepeticion.map(_diaCorto).toList();
-    final nombrePaciente =
-        ref.read(currentPatientProvider).value?.fullName ?? '';
+    final nombrePaciente = r.esParaCuidador
+        ? 'Cuidador'
+        : ref.read(currentPatientProvider).value?.fullName ?? '';
     return Opacity(
       opacity: _silenciadas ? 0.55 : 1.0,
       child: Container(
@@ -413,12 +422,9 @@ class _RecordatoriosScreenState extends ConsumerState<RecordatoriosScreen> {
                     style: GoogleFonts.nunito(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
-                      color: r.activo && !r.estaCompletado
+                      color: r.activo
                           ? Paleta.textoPrincipal
                           : Paleta.textoSecundario,
-                      decoration: r.estaCompletado
-                          ? TextDecoration.lineThrough
-                          : null,
                     ),
                   ),
                   if (r.descripcion != null && r.descripcion!.isNotEmpty) ...[
@@ -469,7 +475,9 @@ class _RecordatoriosScreenState extends ConsumerState<RecordatoriosScreen> {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        hora12(r.fechaHora),
+                        r.esRecurrente
+                            ? hora12(r.fechaHora)
+                            : '${fechacorta(r.fechaHora)} · ${hora12(r.fechaHora)}',
                         style: GoogleFonts.nunito(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
@@ -478,6 +486,10 @@ class _RecordatoriosScreenState extends ConsumerState<RecordatoriosScreen> {
                       ),
                     ],
                   ),
+                  if (r.esMensual) ...[
+                    const SizedBox(height: 6),
+                    _chipDiaTarjeta('Cada mes el día ${r.fechaHora.day}', r.activo),
+                  ],
                   if (dias.isNotEmpty) ...[
                     const SizedBox(height: 6),
                     if (dias.length == 7) ...[
@@ -609,8 +621,20 @@ class _RecordatoriosScreenState extends ConsumerState<RecordatoriosScreen> {
     );
   }
 
-  String _cuerpo(Recordatorio r) =>
-      '${r.titulo}${r.descripcion != null && r.descripcion!.isNotEmpty ? ' · ${r.descripcion}' : ''}';
+  Future<void> _programarAviso(
+    ServicioNotificaciones notif,
+    String nombrePaciente,
+    Recordatorio r,
+  ) {
+    return notif.programar(
+      id: ServicioNotificaciones.idSeguro(r.id),
+      titulo: r.tituloAviso(nombrePaciente, _etiquetaTipo(r.tipo)),
+      cuerpo: r.cuerpoAviso,
+      fechaHora: r.fechaHora,
+      diasRepeticion: r.diasRepeticion,
+      mensual: r.esMensual,
+    );
+  }
 
   Future<void> _alternarActivo(Recordatorio r) async {
     final paciente = ref.read(currentPatientProvider).value;
@@ -623,19 +647,11 @@ class _RecordatoriosScreenState extends ConsumerState<RecordatoriosScreen> {
             paciente.id,
             r.id,
             activo: nuevoActivo,
-            quitarCompletado: nuevoActivo,
           );
       final notif = ref.read(servicioNotificacionesProvider);
       if (nuevoActivo) {
         await notif.solicitarPermiso();
-        await notif.programar(
-          id: ServicioNotificaciones.idSeguro(r.id),
-          titulo: '${paciente.fullName} · ${_etiquetaTipo(r.tipo)}',
-          cuerpo: _cuerpo(r),
-          fechaHora: r.fechaHora,
-          diasRepeticion: r.diasRepeticion,
-          mensual: r.esMensual,
-        );
+        await _programarAviso(notif, paciente.fullName, r);
       } else {
         await notif.cancelar(ServicioNotificaciones.idSeguro(r.id));
       }
@@ -732,6 +748,20 @@ class _RecordatoriosScreenState extends ConsumerState<RecordatoriosScreen> {
     var modoRepeticion = existente?.recurrencia == 'mensual'
         ? 'mensual'
         : (dias.isEmpty ? 'unavez' : 'semanal');
+    var asignadoA = existente?.asignadoA ?? Recordatorio.asignadoAPaciente;
+    final ahoraDialogo = DateTime.now();
+    final hoyDia = DateTime(
+      ahoraDialogo.year,
+      ahoraDialogo.month,
+      ahoraDialogo.day,
+    );
+    var fecha = existente == null
+        ? hoyDia
+        : DateTime(
+            existente.fechaHora.year,
+            existente.fechaHora.month,
+            existente.fechaHora.day,
+          );
 
     final guardado = await showDialog<bool>(
       context: context,
@@ -814,6 +844,33 @@ class _RecordatoriosScreenState extends ConsumerState<RecordatoriosScreen> {
                   ),
                 ),
                 const SizedBox(height: 14),
+                _etiquetaSeccion('Dirigido a'),
+                const SizedBox(height: 6),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    _chipModoRepeticion(
+                      Recordatorio.asignadoAPaciente,
+                      'Paciente',
+                      asignadoA == Recordatorio.asignadoAPaciente,
+                      () => setDialogState(
+                        () => asignadoA = Recordatorio.asignadoAPaciente,
+                      ),
+                      clave: const Key('asignado_paciente'),
+                    ),
+                    _chipModoRepeticion(
+                      Recordatorio.asignadoACuidador,
+                      'Cuidador',
+                      asignadoA == Recordatorio.asignadoACuidador,
+                      () => setDialogState(
+                        () => asignadoA = Recordatorio.asignadoACuidador,
+                      ),
+                      clave: const Key('asignado_cuidador'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
                 _etiquetaSeccion('Hora'),
                 const SizedBox(height: 6),
                 _selectorHora(ctx, hora, (h) => setDialogState(() => hora = h)),
@@ -828,7 +885,10 @@ class _RecordatoriosScreenState extends ConsumerState<RecordatoriosScreen> {
                       'unavez',
                       'Una vez',
                       modoRepeticion == 'unavez',
-                      () => setDialogState(() => modoRepeticion = 'unavez'),
+                      () => setDialogState(() {
+                        modoRepeticion = 'unavez';
+                        if (fecha.isBefore(hoyDia)) fecha = hoyDia;
+                      }),
                     ),
                     _chipModoRepeticion(
                       'semanal',
@@ -866,10 +926,25 @@ class _RecordatoriosScreenState extends ConsumerState<RecordatoriosScreen> {
                       ],
                     ),
                   ),
-                ] else if (modoRepeticion == 'mensual') ...[
+                ],
+                if (modoRepeticion != 'semanal') ...[
+                  const SizedBox(height: 12),
+                  _etiquetaSeccion(
+                    modoRepeticion == 'mensual' ? 'Día del mes' : 'Fecha',
+                  ),
+                  const SizedBox(height: 6),
+                  _selectorFecha(
+                    ctx,
+                    fecha,
+                    hoyDia,
+                    (f) => setDialogState(() => fecha = f),
+                  ),
+                ],
+                if (modoRepeticion == 'mensual') ...[
                   const SizedBox(height: 10),
                   Text(
-                    'Se recordará cada mes el día ${DateTime.now().day} a la hora indicada.',
+                    'Se recordará cada mes el día ${fecha.day} a la hora indicada.',
+                    key: const Key('textoDiaMensual'),
                     style: GoogleFonts.nunito(
                       fontSize: 12,
                       color: Paleta.textoSecundario,
@@ -923,18 +998,23 @@ class _RecordatoriosScreenState extends ConsumerState<RecordatoriosScreen> {
     final paciente = ref.read(currentPatientProvider).value;
     if (paciente == null) return;
 
-    final dia = DateTime.now();
     final fechaHora = DateTime(
-      dia.year,
-      dia.month,
-      dia.day,
+      fecha.year,
+      fecha.month,
+      fecha.day,
       hora.hour,
       hora.minute,
     );
     final base = ref.read(servicioBaseDatosProvider);
     final notif = ref.read(servicioNotificacionesProvider);
     final mensual = modoRepeticion == 'mensual';
-    final diasGuardar = mensual ? const <String>[] : List<String>.from(dias);
+    final diasGuardar = mensual || modoRepeticion == 'unavez'
+        ? const <String>[]
+        : List<String>.from(dias);
+    final titulo = tituloCtrl.text.trim();
+    final descripcion = descCtrl.text.trim().isEmpty
+        ? null
+        : descCtrl.text.trim();
 
     try {
       if (esNuevo) {
@@ -942,47 +1022,60 @@ class _RecordatoriosScreenState extends ConsumerState<RecordatoriosScreen> {
           id: '',
           pacienteId: paciente.id,
           tipo: tipo,
-          titulo: tituloCtrl.text.trim(),
-          descripcion: descCtrl.text.trim().isEmpty
-              ? null
-              : descCtrl.text.trim(),
+          titulo: titulo,
+          descripcion: descripcion,
           fechaHora: fechaHora,
           diasRepeticion: diasGuardar,
           recurrencia: mensual ? 'mensual' : null,
+          asignadoA: asignadoA,
           activo: true,
           creadoEn: DateTime.now(),
         );
         final docId = await base.agregarRecordatorio(paciente.id, r);
         await notif.solicitarPermiso();
-        await notif.programar(
-          id: ServicioNotificaciones.idSeguro(docId),
-          titulo: '${paciente.fullName} · ${_etiquetaTipo(r.tipo)}',
-          cuerpo: _cuerpo(r),
-          fechaHora: r.fechaHora,
-          diasRepeticion: diasGuardar,
-          mensual: mensual,
+        await _programarAviso(
+          notif,
+          paciente.fullName,
+          Recordatorio(
+            id: docId,
+            pacienteId: r.pacienteId,
+            tipo: r.tipo,
+            titulo: r.titulo,
+            descripcion: r.descripcion,
+            fechaHora: r.fechaHora,
+            diasRepeticion: r.diasRepeticion,
+            recurrencia: r.recurrencia,
+            asignadoA: r.asignadoA,
+            creadoEn: r.creadoEn,
+          ),
         );
       } else {
         await base.actualizarRecordatorio(
           paciente.id,
           existente.id,
           tipo: tipo,
-          titulo: tituloCtrl.text.trim(),
+          titulo: titulo,
           descripcion: descCtrl.text.trim(),
           fechaHora: fechaHora,
           diasRepeticion: diasGuardar,
           recurrencia: mensual ? 'mensual' : '',
+          asignadoA: asignadoA,
+        );
+        final actualizado = Recordatorio(
+          id: existente.id,
+          pacienteId: paciente.id,
+          tipo: tipo,
+          titulo: titulo,
+          descripcion: descripcion,
+          fechaHora: fechaHora,
+          diasRepeticion: diasGuardar,
+          recurrencia: mensual ? 'mensual' : null,
+          asignadoA: asignadoA,
+          creadoEn: existente.creadoEn,
         );
         await notif.cancelar(ServicioNotificaciones.idSeguro(existente.id));
         if (existente.activo) {
-          await notif.programar(
-            id: ServicioNotificaciones.idSeguro(existente.id),
-            titulo: '${paciente.fullName} · ${_etiquetaTipo(tipo)}',
-            cuerpo: tituloCtrl.text.trim(),
-            fechaHora: fechaHora,
-            diasRepeticion: diasGuardar,
-            mensual: mensual,
-          );
+          await _programarAviso(notif, paciente.fullName, actualizado);
         }
       }
       if (mounted) {
@@ -996,6 +1089,8 @@ class _RecordatoriosScreenState extends ConsumerState<RecordatoriosScreen> {
           ),
         );
       }
+    } on ClaveNoDisponibleSinConexion catch (e) {
+      if (mounted) _snackError(e.toString());
     } catch (_) {
       if (mounted) _snackError('No se pudo guardar el recordatorio.');
     }
@@ -1005,10 +1100,11 @@ class _RecordatoriosScreenState extends ConsumerState<RecordatoriosScreen> {
     String modo,
     String etiqueta,
     bool activo,
-    VoidCallback alPulsar,
-  ) {
+    VoidCallback alPulsar, {
+    Key? clave,
+  }) {
     return GestureDetector(
-      key: Key('modoRepeticion_$modo'),
+      key: clave ?? Key('modoRepeticion_$modo'),
       onTap: alPulsar,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
@@ -1093,6 +1189,59 @@ class _RecordatoriosScreenState extends ConsumerState<RecordatoriosScreen> {
             const SizedBox(width: 10),
             Text(
               MaterialLocalizations.of(ctx).formatTimeOfDay(hora),
+              style: GoogleFonts.nunito(
+                fontSize: 14,
+                color: Paleta.textoPrincipal,
+              ),
+            ),
+            const Spacer(),
+            const Icon(
+              Icons.keyboard_arrow_down,
+              size: 18,
+              color: Paleta.textoSecundario,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _selectorFecha(
+    BuildContext ctx,
+    DateTime fecha,
+    DateTime hoy,
+    ValueChanged<DateTime> alElegir,
+  ) {
+    return GestureDetector(
+      key: const Key('campoFechaRecordatorio'),
+      onTap: () async {
+        final elegida = await showDatePicker(
+          context: ctx,
+          initialDate: fecha,
+          firstDate: fecha.isBefore(hoy) ? fecha : hoy,
+          lastDate: DateTime(hoy.year + 5, hoy.month, hoy.day),
+        );
+        if (elegida != null) alElegir(elegida);
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: Paleta.fondoEntrada,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: Paleta.doradoPrincipal.withValues(alpha: 0.25),
+          ),
+        ),
+        child: Row(
+          children: [
+            const Icon(
+              Icons.event_rounded,
+              size: 18,
+              color: Paleta.textoSecundario,
+            ),
+            const SizedBox(width: 10),
+            Text(
+              fechalarga(fecha),
               style: GoogleFonts.nunito(
                 fontSize: 14,
                 color: Paleta.textoPrincipal,
