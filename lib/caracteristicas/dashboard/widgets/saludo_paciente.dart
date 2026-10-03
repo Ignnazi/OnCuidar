@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/tema/paleta.dart';
+import '../../../core/util/conteo_registros.dart';
 import '../../../core/util/formato_fecha.dart';
 import '../../../modelos/paciente.dart';
 import '../../../modelos/registro_clinico.dart';
@@ -11,20 +12,19 @@ class SaludoPaciente extends StatelessWidget {
     required this.nombreCuidador,
     required this.paciente,
     required this.registros,
-    this.meta = 3,
   });
 
   final String nombreCuidador;
   final Paciente paciente;
   final List<RegistroClinico> registros;
 
-  final int meta;
+  int get meta => paciente.maximoRegistrosDia;
 
   @override
   Widget build(BuildContext context) {
-    final cuantos = registros
-        .where((r) => mismoDia(r.fecha, DateTime.now()))
-        .length;
+    final hoy = DateTime.now();
+    final cuantos = contarProgramadosDelDia(registros, hoy);
+    final extras = contarExtrasDelDia(registros, hoy);
     final ultimo = registros.isEmpty ? null : registros.first;
 
     return Container(
@@ -99,7 +99,7 @@ class SaludoPaciente extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              _progresoRegistrosHoy(context, cuantos),
+              _progresoRegistrosHoy(cuantos, extras),
             ],
           ),
           Container(
@@ -134,7 +134,7 @@ class SaludoPaciente extends StatelessWidget {
     );
   }
 
-  Widget _progresoRegistrosHoy(BuildContext context, int cuantos) {
+  Widget _progresoRegistrosHoy(int cuantos, int extras) {
     final barraCompleta = cuantos >= meta;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.end,
@@ -176,10 +176,10 @@ class SaludoPaciente extends StatelessWidget {
                 ],
               ),
             ),
-            if (cuantos > meta) ...[
+            if (extras > 0) ...[
               const SizedBox(width: 5),
               Text(
-                '+${cuantos - meta}',
+                '+$extras extra',
                 style: GoogleFonts.nunito(
                   fontSize: 10.5,
                   fontWeight: FontWeight.w800,

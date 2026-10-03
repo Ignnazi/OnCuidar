@@ -102,10 +102,10 @@ class ServicioRegistro {
 
         await _baseDatos.crearPaciente(datos.paciente);
       } catch (_) {
+        await _baseDatos.limpiarRegistro(uid);
         try {
           await credential.user?.delete();
         } catch (_) {}
-        await _baseDatos.limpiarRegistro(uid);
         rethrow;
       }
 

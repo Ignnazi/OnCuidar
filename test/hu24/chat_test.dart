@@ -1,13 +1,19 @@
+import 'dart:async';
+
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:oncuidar/caracteristicas/chat/chat.dart';
+import 'package:oncuidar/caracteristicas/chat/chat_activo_provider.dart';
 import 'package:oncuidar/caracteristicas/faq/datos_faq.dart';
 import 'package:oncuidar/core/proveedores/proveedores.dart';
 import 'package:oncuidar/core/servicios/servicio_base_datos.dart';
 import 'package:oncuidar/core/servicios/servicio_cifrado.dart';
+import 'package:oncuidar/modelos/conversacion.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 const _clavePrueba = 'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=';
@@ -58,7 +64,82 @@ Future<void> _montar(WidgetTester tester, ServicioBaseDatos base) async {
   await tester.pumpAndSettle();
 }
 
+(ProviderContainer, StreamController<User?>) _contenedorConSesion() {
+  final usuarioA = MockUser(uid: 'uid-a', email: 'a@correo.cl');
+  final flujo = StreamController<User?>();
+  final contenedor = ProviderContainer(
+    overrides: [
+      firebaseAuthProvider.overrideWithValue(
+        MockFirebaseAuth(signedIn: true, mockUser: usuarioA),
+      ),
+      estadoAutenticacionProvider.overrideWith((_) => flujo.stream),
+    ],
+  );
+  contenedor.listen(estadoAutenticacionProvider, (_, _) {});
+  addTearDown(contenedor.dispose);
+  addTearDown(() => unawaited(flujo.close()));
+  return (contenedor, flujo);
+}
+
+Future<void> _cambiarUsuario(StreamController<User?> flujo, User? u) async {
+  flujo.add(u);
+  await Future<void>.delayed(Duration.zero);
+}
+
 void main() {
+  group('Chat activo al cambiar de usuario', () {
+    test('al cambiar de A a B el chat en memoria queda vacío', () async {
+      SharedPreferences.setMockInitialValues({});
+      final (contenedor, flujo) = _contenedorConSesion();
+      final notifier = contenedor.read(chatActivoProvider.notifier);
+      await _cambiarUsuario(flujo, MockUser(uid: 'uid-a'));
+
+      notifier.nueva();
+      notifier.agregarMensaje(
+        const MensajeConversacion(texto: 'Dato privado de A', delUsuario: true),
+      );
+      notifier.fijarId('conv-a');
+      expect(contenedor.read(chatActivoProvider).mensajes, hasLength(2));
+
+      await _cambiarUsuario(flujo, MockUser(uid: 'uid-b'));
+
+      final estado = contenedor.read(chatActivoProvider);
+      expect(estado.mensajes, isEmpty);
+      expect(estado.conversacionId, isNull);
+    });
+
+    test('el id guardado de A no se restaura para B', () async {
+      SharedPreferences.setMockInitialValues({
+        claveConversacionActiva: 'conv-antigua',
+      });
+      final (contenedor, flujo) = _contenedorConSesion();
+      final notifier = contenedor.read(chatActivoProvider.notifier);
+      await _cambiarUsuario(flujo, MockUser(uid: 'uid-a'));
+
+      notifier.fijarId('conv-a');
+      await Future<void>.delayed(Duration.zero);
+      expect(await notifier.idGuardado(), 'conv-a');
+
+      await _cambiarUsuario(flujo, MockUser(uid: 'uid-b'));
+
+      final notifierB = contenedor.read(chatActivoProvider.notifier);
+      expect(await notifierB.idGuardado(), isNull);
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getString(claveConversacionActiva), isNull);
+    });
+
+    test('cerrar sesión también vacía el chat en memoria', () async {
+      SharedPreferences.setMockInitialValues({});
+      final (contenedor, flujo) = _contenedorConSesion();
+      final notifier = contenedor.read(chatActivoProvider.notifier);
+      notifier.nueva();
+
+      await _cambiarUsuario(flujo, null);
+
+      expect(contenedor.read(chatActivoProvider).mensajes, isEmpty);
+    });
+  });
+
   testWidgets('muestra bienvenida, título fijo y sugerencias frecuentes', (
     tester,
   ) async {

@@ -193,6 +193,41 @@ void main() {
     expect(find.text('Dashboard'), findsNothing);
   });
 
+  testWidgets('credencial invalida muestra correo o contrasena incorrectos', (
+    tester,
+  ) async {
+    await _pantallaAlta(tester);
+    final auth = MockFirebaseAuth();
+    final cifrado = _cifradoListo();
+    final base = await _baseConCuidador(cifrado);
+    whenCalling(
+          Invocation.method(#signInWithEmailAndPassword, null, {
+            #email: 'ana@correo.cl',
+            #password: 'malaclave',
+          }),
+        )
+        .on(auth)
+        .thenThrow(
+          FirebaseAuthException(
+            code: 'invalid-credential',
+            message: 'The supplied auth credential is incorrect',
+          ),
+        );
+    await tester.pumpWidget(_pantallaLogin(auth, base, cifrado));
+    await tester.pumpAndSettle();
+
+    await _ingresarCredenciales(
+      tester,
+      email: 'ana@correo.cl',
+      password: 'malaclave',
+    );
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Iniciar sesión'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Correo o contraseña incorrectos.'), findsOneWidget);
+    expect(find.text('Dashboard'), findsNothing);
+  });
+
   testWidgets('recuperar contrasena envia correo de restablecimiento', (
     tester,
   ) async {

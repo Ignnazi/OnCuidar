@@ -32,6 +32,16 @@ final estadoAutenticacionProvider = StreamProvider<User?>((ref) {
   return ref.watch(firebaseAuthProvider).authStateChanges();
 });
 
+final uidSesionProvider = Provider<String?>((ref) {
+  final auth = ref.watch(estadoAutenticacionProvider);
+  if (auth.hasValue) return auth.value?.uid;
+  try {
+    return ref.read(firebaseAuthProvider).currentUser?.uid;
+  } catch (_) {
+    return null;
+  }
+});
+
 class BloqueoCifradoNotifier extends Notifier<bool> {
   @override
   bool build() => false;

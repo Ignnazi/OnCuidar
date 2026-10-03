@@ -35,6 +35,17 @@ RegistroClinico _registroConSignos() {
   );
 }
 
+RegistroClinico _registroDeHoy(String id, String tipo) {
+  final ahora = DateTime.now();
+  return RegistroClinico(
+    id: id,
+    pacienteId: 'paciente-1',
+    fecha: ahora,
+    creadoEn: ahora,
+    tipoRegistro: tipo,
+  );
+}
+
 Widget _pantalla({
   required Paciente? paciente,
   List<RegistroClinico> registros = const [],
@@ -143,6 +154,48 @@ void main() {
       expect(find.text('Ver registros del día'), findsOneWidget);
     },
   );
+
+  testWidgets('la meta del contador es el máximo diario del paciente', (
+    tester,
+  ) async {
+    final paciente = Paciente(
+      id: 'paciente-1',
+      fullName: 'Paciente Test',
+      createdAt: DateTime.now(),
+      maximoRegistrosDia: 5,
+    );
+    await _montar(
+      tester,
+      paciente,
+      registros: [
+        _registroDeHoy('r1', 'programado'),
+        _registroDeHoy('r2', 'programado'),
+      ],
+    );
+
+    expect(find.text('2/5'), findsOneWidget);
+    expect(find.text('2/3'), findsNothing);
+  });
+
+  testWidgets('los registros extra se indican aparte sin sumar al contador', (
+    tester,
+  ) async {
+    await _montar(
+      tester,
+      _paciente(),
+      registros: [
+        _registroDeHoy('r1', 'programado'),
+        _registroDeHoy('r2', 'programado'),
+        _registroDeHoy('r3', 'programado'),
+        _registroDeHoy('r4', 'extra'),
+        _registroDeHoy('r5', 'extra'),
+      ],
+    );
+
+    expect(find.text('3/3'), findsOneWidget);
+    expect(find.text('+2 extra'), findsOneWidget);
+    expect(find.text('5/3'), findsNothing);
+  });
 
   testWidgets(
     'el botón "Ver registros del día" de la tarjeta abre el historial filtrando hoy',
