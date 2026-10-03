@@ -12,7 +12,7 @@ import '../../core/servicios/motor_reglas_clinicas.dart';
 import '../../core/servicios/rangos_signos.dart';
 import '../../core/servicios/servicio_cifrado.dart';
 import '../../core/tema/paleta.dart';
-import '../../core/util/formato_fecha.dart';
+import '../../core/util/conteo_registros.dart';
 import '../../modelos/paciente.dart';
 import '../../modelos/registro_clinico.dart';
 import 'widgets/boton_guardar.dart';
@@ -147,16 +147,8 @@ class _RegistroClinicoScreenState extends ConsumerState<RegistroClinicoScreen> {
   EvaluacionAlerta _evaluarAlerta() =>
       MotorReglasClinicas.evaluar(_signosActuales(), _sintomas);
 
-  int _registrosHoy(List<RegistroClinico> registros) {
-    final ahora = DateTime.now();
-    var contador = 0;
-    for (final r in registros) {
-      if (r.tipoRegistro == 'programado' && mismoDia(r.fecha, ahora)) {
-        contador++;
-      }
-    }
-    return contador;
-  }
+  int _registrosHoy(List<RegistroClinico> registros) =>
+      contarProgramadosDelDia(registros, DateTime.now());
 
   String _tipoEfectivo(int registrosHoy, int tope) {
     if (_tipoRegistro == 'programado' && registrosHoy >= tope) {

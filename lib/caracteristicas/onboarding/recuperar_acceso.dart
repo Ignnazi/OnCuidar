@@ -8,10 +8,13 @@ import '../../compartidos/widgets/marca.dart';
 import '../../core/tema/paleta.dart';
 import '../../core/utilidades/validacion_correo.dart';
 
+bool interpretarRespuestaRecuperacion(Object? data) =>
+    data is Map && data['ok'] == true;
+
 class RecuperarAcceso extends StatefulWidget {
   const RecuperarAcceso({super.key, this.onSubmit});
 
-  final Future<bool> Function(String email)? onSubmit;
+  final Future<void> Function(String email)? onSubmit;
 
   @override
   State<RecuperarAcceso> createState() => _RecuperarAccesoState();
@@ -22,7 +25,6 @@ class _RecuperarAccesoState extends State<RecuperarAcceso> {
   final _correoController = TextEditingController();
   bool _cargando = false;
   bool _enviado = false;
-  bool _encontrado = false;
   String? _errorMensaje;
 
   @override
@@ -31,7 +33,7 @@ class _RecuperarAccesoState extends State<RecuperarAcceso> {
     super.dispose();
   }
 
-  Future<bool> _envioPorDefecto(String email) async {
+  Future<void> _envioPorDefecto(String email) async {
     final resultado =
         await FirebaseFunctions.instanceFor(region: 'southamerica-west1')
             .httpsCallable('recoverByBackupEmail')
@@ -43,7 +45,9 @@ class _RecuperarAccesoState extends State<RecuperarAcceso> {
                 message: 'Sin conexión',
               ),
             );
-    return resultado.data is Map && resultado.data['found'] == true;
+    if (!interpretarRespuestaRecuperacion(resultado.data)) {
+      throw StateError('Respuesta inesperada del servidor');
+    }
   }
 
   Future<void> _recuperarAcceso() async {
@@ -54,21 +58,19 @@ class _RecuperarAccesoState extends State<RecuperarAcceso> {
     });
 
     try {
-      final encontrado = await (widget.onSubmit ?? _envioPorDefecto)(
+      await (widget.onSubmit ?? _envioPorDefecto)(
         _correoController.text.trim(),
       );
       if (!mounted) return;
       setState(() {
         _cargando = false;
         _enviado = true;
-        _encontrado = encontrado;
       });
     } on FirebaseFunctionsException catch (e) {
       if (!mounted) return;
       setState(() {
         _cargando = false;
         _enviado = false;
-        _encontrado = false;
         _errorMensaje =
             (e.code == 'unavailable' || e.code == 'deadline-exceeded')
             ? 'Sin conexión. Verifica tu internet e intenta de nuevo.'
@@ -79,13 +81,12 @@ class _RecuperarAccesoState extends State<RecuperarAcceso> {
       setState(() {
         _cargando = false;
         _enviado = false;
-        _encontrado = false;
         _errorMensaje = 'No se pudo completar. Intenta de nuevo.';
       });
     }
   }
 
-  bool get _bloquearEnvios => _cargando || (_enviado && _encontrado);
+  bool get _bloquearEnvios => _cargando || _enviado;
 
   @override
   Widget build(BuildContext context) {
@@ -186,9 +187,7 @@ class _RecuperarAccesoState extends State<RecuperarAcceso> {
                                   ),
                                 )
                               : Text(
-                                  _enviado && _encontrado
-                                      ? 'Enlace enviado'
-                                      : 'Enviar enlace',
+                                  _enviado ? 'Enlace enviado' : 'Enviar enlace',
                                   style: GoogleFonts.nunito(
                                     fontSize: 15,
                                     fontWeight: FontWeight.w700,
@@ -197,19 +196,12 @@ class _RecuperarAccesoState extends State<RecuperarAcceso> {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      if (_enviado && _encontrado) ...[
+                      if (_enviado) ...[
                         const _PanelEstado(
                           color: Paleta.doradoPrincipal,
                           icono: Icons.mark_email_read_outlined,
                           texto:
-                              '¡Listo! Te enviamos un enlace a tu correo de respaldo. Revisa tu bandeja de entrada (y el spam).',
-                        ),
-                      ] else if (_enviado && !_encontrado) ...[
-                        const _PanelEstado(
-                          color: Paleta.error,
-                          icono: Icons.person_off_outlined,
-                          texto:
-                              'Ese correo de respaldo no está asociado a ninguna cuenta. Verifica e intenta de nuevo.',
+                              'Si ese correo de respaldo está asociado a una cuenta, te enviamos un enlace para restablecer la contraseña. Revisa tu bandeja de entrada (y el spam).',
                         ),
                       ] else if (_errorMensaje != null) ...[
                         _PanelEstado(

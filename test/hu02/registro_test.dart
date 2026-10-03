@@ -1,4 +1,5 @@
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -378,6 +379,49 @@ void main() {
       );
     },
   );
+
+  test(
+    'alta fallida borra primero el documento y después el usuario de Auth',
+    () async {
+      final eventos = <String>[];
+      final auth = _AuthQueRegistra(eventos);
+      final firestore = FakeFirebaseFirestore();
+      final servicio = ServicioRegistro(
+        auth: auth,
+        cifrado: _cifradoListo(),
+        baseDatos: _BaseQueFallaAlCrearPaciente(
+          firestore: firestore,
+          auth: auth,
+          eventos: eventos,
+        ),
+        registrarCorreoRespaldo: (_) async {},
+      );
+
+      final resultado = await servicio.registrar(
+        DatosRegistro(
+          nombre: 'Ana Torres',
+          correo: 'ana@correo.cl',
+          telefono: '+56 9 1111 2222',
+          relacion: 'Madre',
+          contrasena: 'secreto123',
+          paciente: Paciente(
+            id: 'auto',
+            fullName: 'Paciente Ana',
+            createdAt: DateTime.now(),
+          ),
+        ),
+      );
+
+      expect(resultado, isA<RegistroFallido>());
+      expect(eventos, ['firestore', 'auth']);
+      final usuarios = await firestore.collection('users').get();
+      expect(
+        usuarios.docs,
+        isEmpty,
+        reason: 'el documento del alta fallida no debe quedar huérfano',
+      );
+    },
+  );
 }
 
 class _ServicioFallido extends ServicioBaseDatos {
@@ -387,5 +431,82 @@ class _ServicioFallido extends ServicioBaseDatos {
   @override
   Future<void> crearCuidador(Map<String, dynamic> datos) async {
     throw Exception('fallo firestore');
+  }
+}
+
+// ignore: must_be_immutable
+class _UsuarioQueRegistra extends MockUser {
+  _UsuarioQueRegistra({required super.uid, required this.alBorrar})
+    : super(email: 'ana@correo.cl');
+
+  final Future<void> Function() alBorrar;
+
+  @override
+  Future<void> delete() => alBorrar();
+}
+
+class _Credencial implements UserCredential {
+  _Credencial(this.user);
+
+  @override
+  final User user;
+
+  @override
+  AdditionalUserInfo? get additionalUserInfo => null;
+
+  @override
+  AuthCredential? get credential => null;
+}
+
+class _AuthQueRegistra extends MockFirebaseAuth {
+  _AuthQueRegistra(this.eventos);
+
+  final List<String> eventos;
+
+  @override
+  Future<UserCredential> createUserWithEmailAndPassword({
+    required String email,
+    required String password,
+  }) async {
+    await super.createUserWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
+    return _Credencial(
+      _UsuarioQueRegistra(
+        uid: currentUser!.uid,
+        alBorrar: () async {
+          eventos.add('auth');
+          await signOut();
+        },
+      ),
+    );
+  }
+}
+
+class _BaseQueFallaAlCrearPaciente extends ServicioBaseDatos {
+  _BaseQueFallaAlCrearPaciente({
+    required FakeFirebaseFirestore firestore,
+    required FirebaseAuth auth,
+    required this.eventos,
+  }) : _auth = auth,
+       super(base: firestore, auth: auth, cifrado: _cifradoListo());
+
+  final FirebaseAuth _auth;
+  final List<String> eventos;
+
+  @override
+  Future<String> crearPaciente(Paciente paciente) async {
+    throw Exception('fallo firestore');
+  }
+
+  @override
+  Future<void> limpiarRegistro(String uid) async {
+    if (_auth.currentUser == null) {
+      eventos.add('firestore-sin-sesion');
+      return;
+    }
+    eventos.add('firestore');
+    await super.limpiarRegistro(uid);
   }
 }

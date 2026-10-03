@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:oncuidar/caracteristicas/onboarding/recuperar_acceso.dart';
 
 const _mensajeEnviado =
-    '¡Listo! Te enviamos un enlace a tu correo de respaldo. Revisa tu bandeja de entrada (y el spam).';
+    'Si ese correo de respaldo está asociado a una cuenta, te enviamos un enlace para restablecer la contraseña. Revisa tu bandeja de entrada (y el spam).';
 const _mensajeNoEncontrado =
     'Ese correo de respaldo no está asociado a ninguna cuenta. Verifica e intenta de nuevo.';
 const _mensajeSinConexion =
@@ -54,19 +54,33 @@ bool _campoDeshabilitado(WidgetTester tester) {
 }
 
 void main() {
-  testWidgets('correo asociado muestra "enviado" y bloquea el reenvio', (
+  group('interpretarRespuestaRecuperacion', () {
+    test('la respuesta anti-enumeracion {ok: true} es exito', () {
+      expect(interpretarRespuestaRecuperacion({'ok': true}), isTrue);
+    });
+
+    test('no depende del campo found', () {
+      expect(
+        interpretarRespuestaRecuperacion({'ok': true, 'found': false}),
+        isTrue,
+      );
+    });
+
+    test('una respuesta sin ok o vacia no es exito', () {
+      expect(interpretarRespuestaRecuperacion(null), isFalse);
+      expect(interpretarRespuestaRecuperacion('ok'), isFalse);
+      expect(interpretarRespuestaRecuperacion({'ok': false}), isFalse);
+    });
+  });
+
+  testWidgets('envio sin error muestra mensaje neutro y bloquea el reenvio', (
     tester,
   ) async {
     await _pantallaAlta(tester);
     final emailsEnviados = <String>[];
     await tester.pumpWidget(
       _pantalla(
-        RecuperarAcceso(
-          onSubmit: (email) async {
-            emailsEnviados.add(email);
-            return true;
-          },
-        ),
+        RecuperarAcceso(onSubmit: (email) async => emailsEnviados.add(email)),
       ),
     );
     await tester.pumpAndSettle();
@@ -75,45 +89,13 @@ void main() {
 
     expect(emailsEnviados, ['ana@correo.cl']);
     expect(find.text(_mensajeEnviado), findsOneWidget);
+    expect(find.text(_mensajeNoEncontrado), findsNothing);
     expect(
       find.byType(TextField),
       findsOneWidget,
     ); // El formulario NO desaparece
     expect(_botonDeshabilitado(tester), isTrue);
     expect(_campoDeshabilitado(tester), isTrue);
-  });
-
-  testWidgets('correo no asociado lo indica y permite reintentar', (
-    tester,
-  ) async {
-    await _pantallaAlta(tester);
-    var llamadas = 0;
-    await tester.pumpWidget(
-      _pantalla(
-        RecuperarAcceso(
-          onSubmit: (_) async {
-            llamadas++;
-            return false;
-          },
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    await _ingresarCorreoYEnviar(tester, email: 'nadie@correo.cl');
-
-    expect(llamadas, 1);
-    expect(find.text(_mensajeNoEncontrado), findsOneWidget);
-    expect(find.text(_mensajeEnviado), findsNothing);
-    expect(
-      tester
-          .widget<ElevatedButton>(
-            find.widgetWithText(ElevatedButton, 'Enviar enlace'),
-          )
-          .onPressed,
-      isNotNull,
-    );
-    expect(_campoDeshabilitado(tester), isFalse);
   });
 
   testWidgets(
@@ -140,6 +122,7 @@ void main() {
             .onPressed,
         isNotNull,
       );
+      expect(_campoDeshabilitado(tester), isFalse);
     },
   );
 
@@ -165,14 +148,7 @@ void main() {
     await _pantallaAlta(tester);
     var enviado = false;
     await tester.pumpWidget(
-      _pantalla(
-        RecuperarAcceso(
-          onSubmit: (_) async {
-            enviado = true;
-            return true;
-          },
-        ),
-      ),
+      _pantalla(RecuperarAcceso(onSubmit: (_) async => enviado = true)),
     );
     await tester.pumpAndSettle();
 

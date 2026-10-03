@@ -1,9 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../core/proveedores/proveedores.dart';
 import '../../modelos/conversacion.dart';
 import '../faq/datos_faq.dart';
 
 const claveConversacionActiva = 'chat_conversacion_activa';
+
+String claveConversacionActivaDe(String uid) =>
+    '${claveConversacionActiva}_$uid';
 
 class ChatActivoEstado {
   const ChatActivoEstado({
@@ -21,16 +25,34 @@ class ChatActivoEstado {
 
 class ChatActivoNotifier extends Notifier<ChatActivoEstado> {
   @override
-  ChatActivoEstado build() => const ChatActivoEstado();
+  ChatActivoEstado build() {
+    ref.watch(uidSesionProvider);
+    return const ChatActivoEstado();
+  }
+
+  Future<String?> idGuardado() async {
+    final uid = ref.read(uidSesionProvider);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(claveConversacionActiva);
+      if (uid == null) return null;
+      return prefs.getString(claveConversacionActivaDe(uid));
+    } catch (_) {
+      return null;
+    }
+  }
 
   Future<void> _persistirId() async {
+    final uid = ref.read(uidSesionProvider);
+    if (uid == null) return;
     try {
       final prefs = await SharedPreferences.getInstance();
       final id = state.conversacionId;
+      final clave = claveConversacionActivaDe(uid);
       if (id == null) {
-        await prefs.remove(claveConversacionActiva);
+        await prefs.remove(clave);
       } else {
-        await prefs.setString(claveConversacionActiva, id);
+        await prefs.setString(clave, id);
       }
     } catch (_) {
       // Si falla, se sigue igual.

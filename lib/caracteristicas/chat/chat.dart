@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../compartidos/widgets/encabezado_gradiente.dart';
 import '../../core/proveedores/proveedores.dart';
 import '../../core/tema/paleta.dart';
@@ -56,8 +55,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       return;
     }
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final id = prefs.getString(claveConversacionActiva);
+      final id = await ref.read(chatActivoProvider.notifier).idGuardado();
       if (id != null && id.isNotEmpty) {
         final conversaciones = await ref
             .read(conversacionesProvider.future)
