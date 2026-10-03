@@ -70,7 +70,6 @@ final List<PreguntaBase> preguntasFrecuentes = [
         'Ofrece alimentos bien cocidos y de procedencia confiable. Evita los '
         'crudos, ahumados o sin pasteurizar, y las frutas sin pelar. El agua '
         'debe ser hervida o embotellada.',
-    contenidoRelacionadoId: 'pdfs-guia-de-alimentacion-durante-el-tratamiento',
     claves: [
       'aliment',
       'comida',

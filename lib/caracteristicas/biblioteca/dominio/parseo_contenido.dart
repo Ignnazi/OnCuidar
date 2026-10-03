@@ -20,23 +20,3 @@ List<BloqueContenido> parsearCuerpo(String cuerpo) {
   }
   return bloques;
 }
-
-List<String> parsearItemsChecklist(String cuerpo) {
-  final items = <String>[];
-  for (final linea in cuerpo.split('\n')) {
-    final texto = linea.trim();
-    if (texto.isEmpty) continue;
-    if (texto.startsWith('- ')) items.add(texto.substring(2).trim());
-  }
-  return items;
-}
-
-String textoInformativoChecklist(String cuerpo) {
-  final lineas = <String>[];
-  for (final linea in cuerpo.split('\n')) {
-    final texto = linea.trim();
-    if (texto.isEmpty || texto.startsWith('- ')) continue;
-    lineas.add(texto);
-  }
-  return lineas.join('\n');
-}

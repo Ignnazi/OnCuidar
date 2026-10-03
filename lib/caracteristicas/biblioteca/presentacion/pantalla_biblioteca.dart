@@ -8,18 +8,20 @@ import 'package:oncuidar/app/tema/paleta.dart';
 import 'package:oncuidar/caracteristicas/biblioteca/datos/proveedores_biblioteca.dart';
 import 'package:oncuidar/caracteristicas/biblioteca/dominio/categorias.dart';
 import 'package:oncuidar/caracteristicas/biblioteca/dominio/material_educativo.dart';
-import 'package:oncuidar/caracteristicas/biblioteca/dominio/parseo_contenido.dart';
+import 'package:oncuidar/caracteristicas/biblioteca/dominio/secciones_biblioteca.dart';
 import 'package:oncuidar/caracteristicas/biblioteca/presentacion/acciones_material.dart';
 import 'package:oncuidar/caracteristicas/biblioteca/presentacion/pantalla_video.dart';
+import 'package:oncuidar/caracteristicas/biblioteca/presentacion/pantalla_visor_imagen.dart';
 import 'package:oncuidar/caracteristicas/biblioteca/presentacion/proveedores_biblioteca.dart';
-import 'package:oncuidar/caracteristicas/biblioteca/presentacion/widgets/checklist_interactivo.dart';
-import 'package:oncuidar/caracteristicas/biblioteca/presentacion/widgets/dialogo_imagen_ampliable.dart';
+import 'package:oncuidar/caracteristicas/biblioteca/presentacion/widgets/encabezado_seccion.dart';
 import 'package:oncuidar/caracteristicas/biblioteca/presentacion/widgets/tarjeta_material.dart';
 import 'package:oncuidar/compartido/widgets/buscador.dart';
 import 'package:oncuidar/compartido/widgets/encabezado_gradiente.dart';
 
 class BibliotecaScreen extends ConsumerStatefulWidget {
-  const BibliotecaScreen({super.key});
+  const BibliotecaScreen({super.key, this.abrirId});
+
+  final String? abrirId;
 
   @override
   ConsumerState<BibliotecaScreen> createState() => _BibliotecaScreenState();
@@ -30,9 +32,19 @@ class _BibliotecaScreenState extends ConsumerState<BibliotecaScreen> {
   String _filtro = 'Todos';
   bool _soloFavoritos = false;
   bool _buscando = false;
-  final Set<String> _urlsVerificadas = {};
   final Set<String> _urlsDescargando = {};
   final _controladorBusqueda = TextEditingController();
+  late bool _abrirPendiente = widget.abrirId != null;
+
+  void _abrirSolicitado(List<MaterialEducativo> items) {
+    if (!_abrirPendiente) return;
+    _abrirPendiente = false;
+    final material = items.where((m) => m.id == widget.abrirId).firstOrNull;
+    if (material == null) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(_abrirMaterial(material));
+    });
+  }
 
   List<MaterialEducativo> _filtrar(
     List<MaterialEducativo> items,
@@ -60,32 +72,9 @@ class _BibliotecaScreenState extends ConsumerState<BibliotecaScreen> {
     });
   }
 
-  Future<void> _verificarDescargas(List<MaterialEducativo> items) async {
-    try {
-      final cache = ref.read(servicioCacheContenidoProvider);
-      for (final material in items) {
-        final url = material.urlArchivo;
-        if (url == null || url.isEmpty || _urlsVerificadas.contains(url)) {
-          continue;
-        }
-        _urlsVerificadas.add(url);
-        final descargado = await cache.archivoDescargado(url);
-        if (descargado) {
-          ref
-              .read(contenidosDescargadosProvider.notifier)
-              .marcarDescargado(url);
-        }
-      }
-    } catch (_) {}
-  }
-
   Future<void> _abrirMaterial(MaterialEducativo material) async {
     if (material.esVideo) {
       await _reproducirVideo(material);
-      return;
-    }
-    if (material.esChecklist) {
-      _abrirChecklist(material);
       return;
     }
     final url = material.urlArchivo;
@@ -95,17 +84,17 @@ class _BibliotecaScreenState extends ConsumerState<BibliotecaScreen> {
     }
     final imagen = material.urlImagen;
     if (imagen != null && imagen.isNotEmpty) {
-      _mostrarInfografia(imagen, material.titulo);
+      unawaited(
+        abrirVisorImagen(
+          context,
+          url: imagen,
+          titulo: material.titulo,
+          idMaterial: material.id,
+        ),
+      );
       return;
     }
     if (context.mounted) unawaited(context.push('/biblioteca/${material.id}'));
-  }
-
-  void _mostrarInfografia(String url, String titulo) {
-    showDialog<void>(
-      context: context,
-      builder: (ctx) => DialogoImagenAmpliable(url: url, titulo: titulo),
-    );
   }
 
   Future<void> _reproducirVideo(MaterialEducativo material) async {
@@ -165,28 +154,12 @@ class _BibliotecaScreenState extends ConsumerState<BibliotecaScreen> {
       await abrirArchivoMaterial(
         ref,
         context,
-        url,
+        material,
         alDescargar: aviso.hideCurrentSnackBar,
       );
     } finally {
       if (mounted) setState(() => _urlsDescargando.remove(url));
     }
-  }
-
-  void _abrirChecklist(MaterialEducativo material) {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (_) => ChecklistInteractivo(
-        titulo: material.titulo,
-        items: parsearItemsChecklist(material.cuerpo),
-        textoIntro: textoInformativoChecklist(material.cuerpo),
-        enHoja: true,
-      ),
-    );
   }
 
   @override
@@ -199,7 +172,6 @@ class _BibliotecaScreenState extends ConsumerState<BibliotecaScreen> {
   Widget build(BuildContext context) {
     final contenidosAsync = ref.watch(contenidosEducativosProvider);
     final favoritosAsync = ref.watch(idsFavoritosProvider);
-    final descargados = ref.watch(contenidosDescargadosProvider);
     final favoritos = favoritosAsync.value ?? <String>[];
 
     return Scaffold(
@@ -229,7 +201,7 @@ class _BibliotecaScreenState extends ConsumerState<BibliotecaScreen> {
                 mensaje: 'No se pudieron cargar los materiales.',
               ),
               data: (items) {
-                _verificarDescargas(items);
+                _abrirSolicitado(items);
                 final filtrados = _filtrar(items, favoritos.toSet());
                 return Padding(
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
@@ -240,7 +212,7 @@ class _BibliotecaScreenState extends ConsumerState<BibliotecaScreen> {
                       const SizedBox(height: 10),
                       _filaFiltros(),
                       const SizedBox(height: 6),
-                      Expanded(child: _lista(filtrados, descargados)),
+                      Expanded(child: _lista(filtrados)),
                     ],
                   ),
                 );
@@ -332,6 +304,7 @@ class _BibliotecaScreenState extends ConsumerState<BibliotecaScreen> {
           final etiqueta = etiquetasFiltro[i];
           final seleccionado = _filtro == etiqueta;
           return GestureDetector(
+            key: Key('filtro_$etiqueta'),
             onTap: () => setState(() => _filtro = etiqueta),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
@@ -364,7 +337,7 @@ class _BibliotecaScreenState extends ConsumerState<BibliotecaScreen> {
     );
   }
 
-  Widget _lista(List<MaterialEducativo> filtrados, Set<String> descargados) {
+  Widget _lista(List<MaterialEducativo> filtrados) {
     if (filtrados.isEmpty) {
       return _EstadoVacio(
         mensaje: _soloFavoritos
@@ -372,22 +345,29 @@ class _BibliotecaScreenState extends ConsumerState<BibliotecaScreen> {
             : 'No se encontraron materiales.',
       );
     }
+    final secciones = _filtro == 'Todos'
+        ? agruparPorSeccion(filtrados)
+        : [SeccionBiblioteca(titulo: '', materiales: filtrados)];
     return ListView(
       padding: const EdgeInsets.only(top: 4),
       children: [
-        for (final material in filtrados)
-          _tarjetaMaterial(material, descargados),
+        for (final seccion in secciones) ...[
+          if (seccion.titulo.isNotEmpty)
+            EncabezadoSeccion(
+              titulo: seccion.titulo,
+              cantidad: seccion.materiales.length,
+            ),
+          for (final material in seccion.materiales) _tarjetaMaterial(material),
+        ],
       ],
     );
   }
 
-  Widget _tarjetaMaterial(MaterialEducativo material, Set<String> descargados) {
-    final url = material.urlArchivo;
+  Widget _tarjetaMaterial(MaterialEducativo material) {
     return TarjetaMaterial(
       material: material,
       esFavorito:
           ref.read(idsFavoritosProvider).value?.contains(material.id) ?? false,
-      descargado: url != null && descargados.contains(url),
       alTocar: () => _abrirMaterial(material),
       alAlternarFavorito: () {
         unawaited(alternarFavoritoMaterial(ref, context, material.id));

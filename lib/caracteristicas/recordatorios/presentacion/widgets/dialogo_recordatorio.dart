@@ -47,7 +47,7 @@ class _DialogoRecordatorioState extends State<_DialogoRecordatorio> {
   late TimeOfDay _hora;
   late final List<String> _dias;
   late String _modoRepeticion;
-  late String _asignadoA;
+  late final String _asignadoA;
   late final DateTime _hoy;
   late DateTime _fecha;
 
@@ -168,31 +168,6 @@ class _DialogoRecordatorioState extends State<_DialogoRecordatorio> {
                   color: Paleta.textoAyuda,
                 ),
               ),
-            ),
-            const SizedBox(height: 14),
-            const EtiquetaSeccionRecordatorio('Dirigido a'),
-            const SizedBox(height: 6),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                _ChipOpcion(
-                  clave: const Key('asignado_paciente'),
-                  etiqueta: 'Paciente',
-                  activo: _asignadoA == Recordatorio.asignadoAPaciente,
-                  alPulsar: () => setState(
-                    () => _asignadoA = Recordatorio.asignadoAPaciente,
-                  ),
-                ),
-                _ChipOpcion(
-                  clave: const Key('asignado_cuidador'),
-                  etiqueta: 'Cuidador',
-                  activo: _asignadoA == Recordatorio.asignadoACuidador,
-                  alPulsar: () => setState(
-                    () => _asignadoA = Recordatorio.asignadoACuidador,
-                  ),
-                ),
-              ],
             ),
             const SizedBox(height: 14),
             const EtiquetaSeccionRecordatorio('Hora'),

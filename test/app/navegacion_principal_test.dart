@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:oncuidar/app/navegacion_principal.dart';
+import 'package:oncuidar/app/proveedores_navegacion.dart';
 import 'package:oncuidar/nucleo/proveedores.dart';
 
 Widget _pantalla(String nombre) =>
@@ -97,5 +98,23 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Pantalla de chat'), findsOneWidget);
+  });
+
+  testWidgets('a pantalla completa la barra inferior se oculta', (
+    tester,
+  ) async {
+    await tester.pumpWidget(_app());
+    await tester.pumpAndSettle();
+    final contenedor = ProviderScope.containerOf(
+      tester.element(find.text('Pantalla de inicio')),
+    );
+
+    contenedor.read(pantallaCompletaProvider.notifier).fijar(true);
+    await tester.pumpAndSettle();
+    expect(find.text('Aprende'), findsNothing);
+
+    contenedor.read(pantallaCompletaProvider.notifier).fijar(false);
+    await tester.pumpAndSettle();
+    expect(find.text('Aprende'), findsOneWidget);
   });
 }

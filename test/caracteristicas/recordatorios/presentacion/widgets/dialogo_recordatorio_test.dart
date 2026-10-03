@@ -86,43 +86,6 @@ Future<void> _elegirAccion(
 
 void main() {
   group('Asignación del recordatorio', () {
-    testWidgets(
-      'dirigirlo al cuidador guarda la asignación y nombra el aviso',
-      (tester) async {
-        final (base, firestore) = await baseRecordatorios();
-        final idPaciente = await crearPacienteRecordatorios(base);
-        final notif = NotificacionesFalsas();
-        await _montar(tester, _pantalla(base, notif));
-
-        await tester.tap(find.byKey(const Key('tarjetaRapida_medicamento')));
-        await tester.pumpAndSettle();
-        await tester.enterText(
-          find.byKey(const Key('campoTituloRecordatorio')),
-          'Mi control',
-        );
-        await tester.tap(find.byKey(const Key('asignado_cuidador')));
-        await tester.pumpAndSettle();
-        await tester.tap(find.byKey(const Key('confirmarRecordatorio')));
-        await tester.pumpAndSettle();
-
-        final docs = await firestore
-            .collection('usuarios')
-            .doc(uidRecordatorios)
-            .collection('pacientes')
-            .doc(idPaciente)
-            .collection('recordatorios')
-            .get();
-        final payload = await _payload(
-          firestore,
-          idPaciente,
-          docs.docs.single.id,
-        );
-        expect(payload['asignadoA'], 'cuidador');
-        expect(notif.programados.single['titulo'], 'Cuidador · Medicamento');
-        expect(find.text('Cuidador'), findsOneWidget);
-      },
-    );
-
     testWidgets('por defecto va dirigido al paciente', (tester) async {
       final (base, firestore) = await baseRecordatorios();
       final idPaciente = await crearPacienteRecordatorios(base);

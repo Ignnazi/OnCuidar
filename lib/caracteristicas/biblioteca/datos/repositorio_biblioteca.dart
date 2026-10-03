@@ -38,31 +38,37 @@ class RepositorioBiblioteca {
   }
 
   Future<void> alternarFavorito(String materialId) async {
-    var favoritos = <String>[];
+    final actuales = await _idsFavoritosGuardados();
+    await fijarFavorito(materialId, favorito: !actuales.contains(materialId));
+  }
+
+  Future<void> fijarFavorito(String materialId, {required bool favorito}) {
+    final cambio = favorito
+        ? FieldValue.arrayUnion([materialId])
+        : FieldValue.arrayRemove([materialId]);
+    return bd.sinEsperarSinRed(
+      () =>
+          bd.docUsuario.set({'idsFavoritos': cambio}, SetOptions(merge: true)),
+    );
+  }
+
+  Future<List<String>> _idsFavoritosGuardados() async {
     try {
       final doc = await bd.docUsuario.get(
         const GetOptions(source: Source.cache),
       );
-      final datos = doc.data() as Map<String, dynamic>?;
-      favoritos = List<String>.from(datos?['idsFavoritos'] ?? const []);
+      return _idsDe(doc);
     } catch (_) {
       try {
-        final doc = await bd.docUsuario.get();
-        final datos = doc.data() as Map<String, dynamic>?;
-        favoritos = List<String>.from(datos?['idsFavoritos'] ?? const []);
+        return _idsDe(await bd.docUsuario.get());
       } catch (_) {
-        favoritos = const [];
+        return const [];
       }
     }
-    if (favoritos.contains(materialId)) {
-      favoritos.remove(materialId);
-    } else {
-      favoritos.add(materialId);
-    }
-    await bd.sinEsperarSinRed(
-      () => bd.docUsuario.set({
-        'idsFavoritos': favoritos,
-      }, SetOptions(merge: true)),
-    );
+  }
+
+  List<String> _idsDe(DocumentSnapshot doc) {
+    final datos = doc.data() as Map<String, dynamic>?;
+    return List<String>.from(datos?['idsFavoritos'] ?? const []);
   }
 }
