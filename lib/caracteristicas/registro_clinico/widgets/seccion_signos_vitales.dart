@@ -13,7 +13,10 @@ class SeccionSignosVitales extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        TituloSeccion('Signos vitales', icono: Icons.monitor_heart_rounded),
+        const TituloSeccion(
+          'Signos vitales',
+          icono: Icons.monitor_heart_rounded,
+        ),
         const SizedBox(height: 12),
         Row(
           children: [

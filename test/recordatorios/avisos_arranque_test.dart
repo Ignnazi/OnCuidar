@@ -102,7 +102,9 @@ void main() {
     ) async {
       final base = await _baseConRecordatorio();
       final notif = NotificacionesFalsas();
-      await tester.pumpWidget(_appSplash(_overrides(_auth(conSesion: true), base, notif)));
+      await tester.pumpWidget(
+        _appSplash(_overrides(_auth(conSesion: true), base, notif)),
+      );
       await tester.pump(const Duration(seconds: 3));
       await tester.pump(const Duration(milliseconds: 500));
 
@@ -222,7 +224,9 @@ void main() {
       registrarLanzamientoPorNotificacion(
         await notif.consumirPayloadLanzamiento(),
       );
-      await tester.pumpWidget(_appSplash(_overrides(_auth(conSesion: true), base, notif)));
+      await tester.pumpWidget(
+        _appSplash(_overrides(_auth(conSesion: true), base, notif)),
+      );
       await tester.pump(const Duration(seconds: 3));
       await tester.pump(const Duration(milliseconds: 500));
 
@@ -236,7 +240,9 @@ void main() {
       final base = await _baseConRecordatorio();
       registrarLanzamientoPorNotificacion('/recordatorios');
       await tester.pumpWidget(
-        _appSplash(_overrides(MockFirebaseAuth(), base, NotificacionesFalsas())),
+        _appSplash(
+          _overrides(MockFirebaseAuth(), base, NotificacionesFalsas()),
+        ),
       );
       await tester.pump(const Duration(seconds: 3));
       await tester.pump(const Duration(milliseconds: 500));

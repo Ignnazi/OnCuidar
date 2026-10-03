@@ -14,8 +14,8 @@ import 'package:oncuidar/core/servicios/orquestador_sincronizacion.dart';
 import 'package:oncuidar/core/servicios/servicio_base_datos.dart';
 import 'package:oncuidar/core/servicios/servicio_cifrado.dart';
 import 'package:oncuidar/modelos/paciente.dart';
-import 'package:oncuidar/modelos/registro_clinico.dart';
 import 'package:oncuidar/modelos/recordatorio.dart';
+import 'package:oncuidar/modelos/registro_clinico.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'ayudas_offline.dart';
@@ -321,7 +321,8 @@ void main() {
       expect(
         antesDeDrenar.exists,
         isTrue,
-        reason: 'sin red el recordatorio se ve de inmediato y además queda en la cola',
+        reason:
+            'sin red el recordatorio se ve de inmediato y además queda en la cola',
       );
 
       await ent.base.actualizarRecordatorio(

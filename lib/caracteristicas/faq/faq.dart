@@ -341,7 +341,7 @@ class _FaqScreenState extends State<FaqScreen> {
                 ? Container(
                     width: double.infinity,
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
-                    decoration: BoxDecoration(
+                    decoration: const BoxDecoration(
                       border: Border(
                         top: BorderSide(color: Paleta.bordeTarjeta),
                       ),

@@ -241,7 +241,7 @@ class _CampoFechaDialogo extends StatelessWidget {
         hintText: 'DD/MM/AAAA',
         hintStyle: GoogleFonts.nunito(fontSize: 13, color: Paleta.textoAyuda),
         counterText: '',
-        prefixIcon: Icon(
+        prefixIcon: const Icon(
           Icons.calendar_today_outlined,
           size: 18,
           color: Paleta.doradoOscuro,

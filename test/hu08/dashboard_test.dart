@@ -59,10 +59,6 @@ Widget _pantalla({
           return const Scaffold(body: Text('Historial'));
         },
       ),
-      GoRoute(
-        path: '/proximamente',
-        builder: (c, s) => const Scaffold(body: Text('Proximamente')),
-      ),
     ],
   );
   return ProviderScope(

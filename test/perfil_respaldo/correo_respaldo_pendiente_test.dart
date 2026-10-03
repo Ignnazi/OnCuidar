@@ -32,21 +32,24 @@ void main() {
     registrados = [];
   });
 
-  test('si el servidor falla deja la marca pendiente y devuelve false', () async {
-    base.registrarCorreoRespaldoServidor = (_) async =>
-        throw Exception('sin conexión');
+  test(
+    'si el servidor falla deja la marca pendiente y devuelve false',
+    () async {
+      base.registrarCorreoRespaldoServidor = (_) async =>
+          throw Exception('sin conexión');
 
-    final confirmado = await base.cambiarCorreoRespaldo(
-      contrasena: 'clave-valida',
-      nuevoCorreo: 'Respaldo@Test.cl',
-    );
+      final confirmado = await base.cambiarCorreoRespaldo(
+        contrasena: 'clave-valida',
+        nuevoCorreo: 'Respaldo@Test.cl',
+      );
 
-    expect(confirmado, isFalse);
-    final datos = await docCuidador();
-    expect(datos?['respaldo_pendiente_servidor'], isTrue);
-    expect(datos?['correo_respaldo_cifrado'], isNotNull);
-    expect(datos?.containsKey('correo_respaldo_hash'), isFalse);
-  });
+      expect(confirmado, isFalse);
+      final datos = await docCuidador();
+      expect(datos?['respaldo_pendiente_servidor'], isTrue);
+      expect(datos?['correo_respaldo_cifrado'], isNotNull);
+      expect(datos?.containsKey('correo_respaldo_hash'), isFalse);
+    },
+  );
 
   test('reintentar registra el correo normalizado y limpia la marca', () async {
     base.registrarCorreoRespaldoServidor = (_) async =>

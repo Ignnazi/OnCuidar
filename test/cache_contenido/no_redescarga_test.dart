@@ -67,31 +67,37 @@ void main() {
     expect(segundo.path, primero.path);
   });
 
-  test('repetir la sincronización de varios archivos no descarga de nuevo', () async {
-    final urls = [
-      'https://sitio.cl/video.mp4',
-      'https://sitio.cl/guia.pdf',
-      'https://sitio.cl/info.png',
-    ];
-    for (final url in urls) {
-      await servicio.descargar(url);
-    }
-    expect(gestor.descargas, 3);
-
-    for (var vuelta = 0; vuelta < 3; vuelta++) {
+  test(
+    'repetir la sincronización de varios archivos no descarga de nuevo',
+    () async {
+      final urls = [
+        'https://sitio.cl/video.mp4',
+        'https://sitio.cl/guia.pdf',
+        'https://sitio.cl/info.png',
+      ];
       for (final url in urls) {
         await servicio.descargar(url);
       }
-    }
-    expect(gestor.descargas, 3, reason: 'ya estaban guardados');
-  });
+      expect(gestor.descargas, 3);
 
-  test('si el archivo guardado desapareció del disco se vuelve a bajar', () async {
-    await servicio.descargar('https://sitio.cl/video.mp4');
-    await gestor.guardados['https://sitio.cl/video.mp4']!.delete();
+      for (var vuelta = 0; vuelta < 3; vuelta++) {
+        for (final url in urls) {
+          await servicio.descargar(url);
+        }
+      }
+      expect(gestor.descargas, 3, reason: 'ya estaban guardados');
+    },
+  );
 
-    await servicio.descargar('https://sitio.cl/video.mp4');
+  test(
+    'si el archivo guardado desapareció del disco se vuelve a bajar',
+    () async {
+      await servicio.descargar('https://sitio.cl/video.mp4');
+      await gestor.guardados['https://sitio.cl/video.mp4']!.delete();
 
-    expect(gestor.descargas, 2);
-  });
+      await servicio.descargar('https://sitio.cl/video.mp4');
+
+      expect(gestor.descargas, 2);
+    },
+  );
 }

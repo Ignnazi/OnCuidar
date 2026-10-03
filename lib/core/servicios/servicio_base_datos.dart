@@ -400,10 +400,7 @@ class ServicioBaseDatos {
     await _confirmarBorrado(docPaciente.delete());
   }
 
-  static const subcoleccionesPaciente = [
-    'clinicalRecords',
-    'recordatorios',
-  ];
+  static const subcoleccionesPaciente = ['clinicalRecords', 'recordatorios'];
 
   Future<void> _borrarColeccionEnLotes(CollectionReference coleccion) async {
     while (true) {
@@ -993,7 +990,7 @@ class ServicioBaseDatos {
     if (cifrado != null && cifrado.isNotEmpty) {
       try {
         final texto = await _cifrado.descifrar(_uid, cifrado);
-        return (jsonDecode(texto) as Map<String, dynamic>);
+        return jsonDecode(texto) as Map<String, dynamic>;
       } catch (e, pila) {
         if (estricto) rethrow;
         debugPrint('No se pudo descifrar datos_cifrados: $e\n$pila');

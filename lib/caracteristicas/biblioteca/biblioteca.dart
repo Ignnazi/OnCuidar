@@ -6,7 +6,6 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:open_filex/open_filex.dart';
 import '../../compartidos/widgets/encabezado_gradiente.dart';
-import '../../core/configuracion/entrega_semana.dart';
 import '../../core/proveedores/proveedores.dart';
 import '../../core/tema/paleta.dart';
 import '../../core/util/estilos.dart';
@@ -80,11 +79,6 @@ class _BibliotecaScreenState extends ConsumerState<BibliotecaScreen> {
   }
 
   Future<void> _abrirMaterial(MaterialEducativo material) async {
-    if (!habilitadaDesdeSemana(3) &&
-        (material.esVideo || material.esChecklist)) {
-      context.push('/proximamente?titulo=${material.title}');
-      return;
-    }
     if (material.esVideo) {
       await _reproducirVideo(material);
       return;
@@ -103,7 +97,7 @@ class _BibliotecaScreenState extends ConsumerState<BibliotecaScreen> {
       _mostrarInfografia(imagen, material.title);
       return;
     }
-    if (context.mounted) context.push('/biblioteca/${material.id}');
+    if (context.mounted) unawaited(context.push('/biblioteca/${material.id}'));
   }
 
   void _mostrarInfografia(String url, String titulo) {
@@ -116,7 +110,9 @@ class _BibliotecaScreenState extends ConsumerState<BibliotecaScreen> {
   Future<void> _reproducirVideo(MaterialEducativo material) async {
     final url = material.fileUrl;
     if (url == null || url.isEmpty) {
-      if (context.mounted) context.push('/biblioteca/${material.id}');
+      if (context.mounted) {
+        unawaited(context.push('/biblioteca/${material.id}'));
+      }
       return;
     }
     if (_urlsDescargando.contains(url)) return;
@@ -230,7 +226,7 @@ class _BibliotecaScreenState extends ConsumerState<BibliotecaScreen> {
           EncabezadoGradiente(
             titulo: 'Biblioteca educativa',
             subtitulo: 'Aprende y prepárate',
-            logo: AssetImage('assets/images/OnCuidar.png'),
+            logo: const AssetImage('assets/images/OnCuidar.png'),
             tamanoTitulo: 20,
             alto: 100,
             reservaDerecha: 104,
@@ -246,7 +242,7 @@ class _BibliotecaScreenState extends ConsumerState<BibliotecaScreen> {
           Expanded(
             child: contenidosAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => _EstadoVacio(
+              error: (e, _) => const _EstadoVacio(
                 mensaje: 'No se pudieron cargar los materiales.',
               ),
               data: (items) {
@@ -261,9 +257,7 @@ class _BibliotecaScreenState extends ConsumerState<BibliotecaScreen> {
                       const SizedBox(height: 10),
                       _filaFiltros(),
                       const SizedBox(height: 6),
-                      Expanded(
-                        child: _lista(filtrados, descargados),
-                      ),
+                      Expanded(child: _lista(filtrados, descargados)),
                     ],
                   ),
                 );
@@ -444,10 +438,7 @@ class _BibliotecaScreenState extends ConsumerState<BibliotecaScreen> {
     );
   }
 
-  Widget _lista(
-    List<MaterialEducativo> filtrados,
-    Set<String> descargados,
-  ) {
+  Widget _lista(List<MaterialEducativo> filtrados, Set<String> descargados) {
     if (filtrados.isEmpty) {
       return _EstadoVacio(
         mensaje: _soloFavoritos

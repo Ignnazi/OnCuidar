@@ -169,11 +169,11 @@ InputDecoration decoracionEntrada({
     fillColor: Paleta.fondoEntrada,
     border: OutlineInputBorder(
       borderRadius: BorderRadius.circular(16),
-      borderSide: BorderSide(color: Paleta.bordeTarjeta),
+      borderSide: const BorderSide(color: Paleta.bordeTarjeta),
     ),
     enabledBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(16),
-      borderSide: BorderSide(color: Paleta.bordeTarjeta),
+      borderSide: const BorderSide(color: Paleta.bordeTarjeta),
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(16),

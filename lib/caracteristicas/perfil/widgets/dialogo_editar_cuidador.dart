@@ -3,10 +3,11 @@ import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../../core/tema/paleta.dart';
+
 import '../../../compartidos/widgets/boton_principal.dart';
 import '../../../compartidos/widgets/campos_formulario.dart';
 import '../../../compartidos/widgets/titulo_seccion.dart';
+import '../../../core/tema/paleta.dart';
 
 Future<void> mostrarDialogoEditarCuidador(
   BuildContext context, {
@@ -221,7 +222,10 @@ class _DialogoEditarCuidadorState extends State<_DialogoEditarCuidador> {
                       24 + MediaQuery.of(ctx).viewInsets.bottom,
                     ),
                     children: [
-                      TituloSeccion(Icons.person_outline, 'Datos personales'),
+                      const TituloSeccion(
+                        Icons.person_outline,
+                        'Datos personales',
+                      ),
                       const SizedBox(height: 10),
                       CampoFormulario(
                         controlador: _nombreController,

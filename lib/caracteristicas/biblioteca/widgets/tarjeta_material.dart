@@ -106,7 +106,7 @@ class TarjetaMaterial extends StatelessWidget {
               right: 8,
               child: Container(
                 padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   color: Paleta.doradoOscuro,
                   shape: BoxShape.circle,
                 ),

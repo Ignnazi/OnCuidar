@@ -90,27 +90,24 @@ void main() {
     ]);
   });
 
-  test(
-    'el PDF ordena los registros de más antiguo a más reciente',
-    () async {
-      final base = DateTime(2026, 9, 10, 8);
-      final bytes = await generarPdfHistorial(
-        registros: [
-          _registro('zzz', 'p', base.add(const Duration(days: 2))),
-          _registro('aaa', 'p', base),
-        ],
-        paciente: null,
-        generadoEn: DateTime(2026, 9, 18),
-        comprimir: false,
-      );
-      final texto = String.fromCharCodes(bytes);
-      expect(texto, isNot(contains('MEDICAMENTOS')));
-      final primero = texto.indexOf('obs-aaa');
-      final ultimo = texto.indexOf('obs-zzz');
-      expect(primero, isNonNegative);
-      expect(ultimo, greaterThan(primero), reason: 'el más antiguo va primero');
-    },
-  );
+  test('el PDF ordena los registros de más antiguo a más reciente', () async {
+    final base = DateTime(2026, 9, 10, 8);
+    final bytes = await generarPdfHistorial(
+      registros: [
+        _registro('zzz', 'p', base.add(const Duration(days: 2))),
+        _registro('aaa', 'p', base),
+      ],
+      paciente: null,
+      generadoEn: DateTime(2026, 9, 18),
+      comprimir: false,
+    );
+    final texto = String.fromCharCodes(bytes);
+    expect(texto, isNot(contains('MEDICAMENTOS')));
+    final primero = texto.indexOf('obs-aaa');
+    final ultimo = texto.indexOf('obs-zzz');
+    expect(primero, isNonNegative);
+    expect(ultimo, greaterThan(primero), reason: 'el más antiguo va primero');
+  });
 
   test(
     'la consulta por rango trae todo el rango, ascendente y del paciente',

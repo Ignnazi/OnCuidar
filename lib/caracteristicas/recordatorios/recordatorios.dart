@@ -488,7 +488,10 @@ class _RecordatoriosScreenState extends ConsumerState<RecordatoriosScreen> {
                   ),
                   if (r.esMensual) ...[
                     const SizedBox(height: 6),
-                    _chipDiaTarjeta('Cada mes el día ${r.fechaHora.day}', r.activo),
+                    _chipDiaTarjeta(
+                      'Cada mes el día ${r.fechaHora.day}',
+                      r.activo,
+                    ),
                   ],
                   if (dias.isNotEmpty) ...[
                     const SizedBox(height: 6),
@@ -643,11 +646,7 @@ class _RecordatoriosScreenState extends ConsumerState<RecordatoriosScreen> {
     try {
       await ref
           .read(servicioBaseDatosProvider)
-          .actualizarRecordatorio(
-            paciente.id,
-            r.id,
-            activo: nuevoActivo,
-          );
+          .actualizarRecordatorio(paciente.id, r.id, activo: nuevoActivo);
       final notif = ref.read(servicioNotificacionesProvider);
       if (nuevoActivo) {
         await notif.solicitarPermiso();
@@ -744,7 +743,7 @@ class _RecordatoriosScreenState extends ConsumerState<RecordatoriosScreen> {
       hour: existente?.fechaHora.hour ?? 9,
       minute: existente?.fechaHora.minute ?? 0,
     );
-    var dias = List<String>.from(existente?.diasRepeticion ?? _todosLosDias);
+    final dias = List<String>.from(existente?.diasRepeticion ?? _todosLosDias);
     var modoRepeticion = existente?.recurrencia == 'mensual'
         ? 'mensual'
         : (dias.isEmpty ? 'unavez' : 'semanal');
@@ -1312,7 +1311,7 @@ class _RecordatoriosScreenState extends ConsumerState<RecordatoriosScreen> {
     );
   }
 
-  void _abrirSelectorHora(
+  Future<void> _abrirSelectorHora(
     BuildContext ctx,
     TimeOfDay actual,
     ValueChanged<TimeOfDay> alElegir,

@@ -52,7 +52,7 @@ class Dashboard extends ConsumerWidget {
                 const SizedBox(height: 14),
                 TarjetaSignosVitales(registros: registros),
                 const SizedBox(height: 22),
-                AccesosRapidos(),
+                const AccesosRapidos(),
               ],
             ),
           ),
@@ -73,14 +73,14 @@ class Dashboard extends ConsumerWidget {
               child: child,
             ),
           ),
-          Positioned(
+          const Positioned(
             top: 0,
             left: 0,
             right: 0,
             child: EncabezadoGradiente(
               titulo: 'OnCuidar',
               subtitulo: 'Tu espacio de cuidado',
-              logo: const AssetImage('assets/images/OnCuidar.png'),
+              logo: AssetImage('assets/images/OnCuidar.png'),
               alto: 100,
             ),
           ),

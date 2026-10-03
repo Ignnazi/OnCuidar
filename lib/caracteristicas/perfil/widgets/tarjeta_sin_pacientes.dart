@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../../core/tema/paleta.dart';
+
 import '../../../compartidos/widgets/boton_principal.dart';
 import '../../../compartidos/widgets/campos_formulario.dart';
+import '../../../core/tema/paleta.dart';
 
 class TarjetaSinPacientes extends StatelessWidget {
   const TarjetaSinPacientes({super.key, required this.alAgregar});

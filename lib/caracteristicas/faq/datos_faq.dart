@@ -11,7 +11,7 @@ const mensajeSinCoincidencia =
     'médico de tu niño.';
 
 final List<PreguntaBase> preguntasFrecuentes = [
-  PreguntaBase(
+  const PreguntaBase(
     id: 'fiebre',
     categoria: 'Fiebre',
     pregunta:
@@ -35,7 +35,7 @@ final List<PreguntaBase> preguntasFrecuentes = [
       'vómitos',
     ],
   ),
-  PreguntaBase(
+  const PreguntaBase(
     id: 'cateter',
     categoria: 'Catéter',
     pregunta: '¿Cómo debo cuidar el catéter y qué hago si se moja o se sale?',
@@ -62,7 +62,7 @@ final List<PreguntaBase> preguntasFrecuentes = [
       'infección',
     ],
   ),
-  PreguntaBase(
+  const PreguntaBase(
     id: 'alimentacion',
     categoria: 'Alimentación',
     pregunta: '¿Qué alimentos debo evitar y qué agua es segura?',

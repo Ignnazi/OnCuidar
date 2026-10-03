@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+
+import '../../../compartidos/widgets/chip_franja.dart';
+import '../../../compartidos/widgets/tarjeta_dato.dart';
 import '../../../core/tema/paleta.dart';
 import '../../../core/utilidades/rut_utils.dart';
 import '../../../modelos/paciente.dart';
-import '../../../compartidos/widgets/chip_franja.dart';
-import '../../../compartidos/widgets/tarjeta_dato.dart';
 import 'tarjeta_contacto.dart';
 
 enum _AccionPaciente {

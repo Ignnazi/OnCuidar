@@ -3,7 +3,7 @@ library;
 final RegExp _soloDigitosK = RegExp(r'^[0-9kK]$');
 
 String formatearRut(String valor) {
-  var limpio = valor.replaceAll(RegExp(r'[^0-9kK]'), '').toUpperCase();
+  final limpio = valor.replaceAll(RegExp(r'[^0-9kK]'), '').toUpperCase();
   if (limpio.isEmpty) return '';
   if (limpio.length == 1) return limpio;
 

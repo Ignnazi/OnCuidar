@@ -81,10 +81,10 @@ class CabeceraRegistro extends StatelessWidget {
               }
             },
             itemBuilder: (context) => [
-              PopupMenuItem(
+              const PopupMenuItem(
                 value: _AccionRegistro.editar,
                 child: ListTile(
-                  leading: const Icon(
+                  leading: Icon(
                     Icons.edit_outlined,
                     color: Paleta.doradoOscuro,
                   ),
@@ -99,13 +99,10 @@ class CabeceraRegistro extends StatelessWidget {
                   dense: true,
                 ),
               ),
-              PopupMenuItem(
+              const PopupMenuItem(
                 value: _AccionRegistro.eliminar,
                 child: ListTile(
-                  leading: const Icon(
-                    Icons.delete_outline,
-                    color: Paleta.error,
-                  ),
+                  leading: Icon(Icons.delete_outline, color: Paleta.error),
                   title: Text(
                     'Eliminar registro',
                     style: TextStyle(

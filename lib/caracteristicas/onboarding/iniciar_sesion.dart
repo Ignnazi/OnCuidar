@@ -1,14 +1,17 @@
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../core/router/destino_aviso.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../core/proveedores/proveedores.dart';
-import '../../core/tema/paleta.dart';
-import '../../core/utilidades/validacion_correo.dart';
+
 import '../../compartidos/widgets/campos_formulario.dart';
 import '../../compartidos/widgets/encabezado_gradiente.dart';
+import '../../core/proveedores/proveedores.dart';
+import '../../core/router/destino_aviso.dart';
+import '../../core/tema/paleta.dart';
+import '../../core/utilidades/validacion_correo.dart';
 
 class IniciarSesion extends ConsumerStatefulWidget {
   const IniciarSesion({super.key});
@@ -45,9 +48,11 @@ class _IniciarSesionState extends ConsumerState<IniciarSesion> {
 
       await ref.read(servicioCifradoProvider).asegurarClave(uid);
       ref.read(bloqueoCifradoProvider.notifier).fijarDesbloqueado(true);
-      ref
-          .read(sincronizacionBibliotecaProvider.notifier)
-          .sincronizarAlIniciarSesion();
+      unawaited(
+        ref
+            .read(sincronizacionBibliotecaProvider.notifier)
+            .sincronizarAlIniciarSesion(),
+      );
       try {
         reagendarAvisosEnSegundoPlano(
           ref.read(servicioBaseDatosProvider),
@@ -213,7 +218,7 @@ class _IniciarSesionState extends ConsumerState<IniciarSesion> {
                         icono: Icons.login_rounded,
                         titulo: 'Acceso',
                         hijos: [
-                          EtiquetaCampo(texto: 'Correo electrónico'),
+                          const EtiquetaCampo(texto: 'Correo electrónico'),
                           const SizedBox(height: 8),
                           CampoFormulario(
                             controlador: _correoController,
@@ -232,7 +237,7 @@ class _IniciarSesionState extends ConsumerState<IniciarSesion> {
                             },
                           ),
                           const SizedBox(height: 16),
-                          EtiquetaCampo(texto: 'Contraseña'),
+                          const EtiquetaCampo(texto: 'Contraseña'),
                           const SizedBox(height: 8),
                           CampoFormulario(
                             controlador: _contrasenaController,
@@ -377,14 +382,14 @@ class _IniciarSesionState extends ConsumerState<IniciarSesion> {
                 ),
               ),
             ),
-            Positioned(
+            const Positioned(
               top: 0,
               left: 0,
               right: 0,
               child: EncabezadoGradiente(
                 titulo: 'Iniciar sesión',
                 subtitulo: 'Bienvenido a tu espacio de cuidado',
-                logo: const AssetImage('assets/images/OnCuidar.png'),
+                logo: AssetImage('assets/images/OnCuidar.png'),
                 tamanoTitulo: 20,
                 alto: 100,
               ),

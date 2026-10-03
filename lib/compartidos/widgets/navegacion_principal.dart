@@ -33,8 +33,7 @@ class _NavegacionPrincipalState extends ConsumerState<NavegacionPrincipal> {
     if (widget.ubicacion == '/chat') {
       return 1;
     }
-    if (widget.ubicacion == '/proximamente' ||
-        widget.ubicacion == '/biblioteca' ||
+    if (widget.ubicacion == '/biblioteca' ||
         widget.ubicacion.startsWith('/biblioteca/')) {
       return 3;
     }
@@ -49,12 +48,14 @@ class _NavegacionPrincipalState extends ConsumerState<NavegacionPrincipal> {
         if (widget.ubicacion == '/chat') break;
         context.push('/chat');
       case 2:
-        if (widget.ubicacion == '/registro-clinico')
+        if (widget.ubicacion == '/registro-clinico') {
           break;
+        }
         context.push('/registro-clinico');
       case 3:
-        if (widget.ubicacion.startsWith('/biblioteca'))
+        if (widget.ubicacion.startsWith('/biblioteca')) {
           break;
+        }
         context.push('/biblioteca');
       case 4:
         widget.shell.goBranch(1, initialLocation: true);
@@ -68,10 +69,7 @@ class _NavegacionPrincipalState extends ConsumerState<NavegacionPrincipal> {
       body: widget.child,
       bottomNavigationBar: Column(
         mainAxisSize: MainAxisSize.min,
-        children: [
-          const BannerConexion(),
-          _barraNavegacion(),
-        ],
+        children: [const BannerConexion(), _barraNavegacion()],
       ),
     );
   }

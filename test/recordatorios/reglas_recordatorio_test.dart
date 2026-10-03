@@ -73,7 +73,11 @@ Future<Map<String, dynamic>> _payload(
       as Map<String, dynamic>;
 }
 
-Future<void> _elegirAccion(WidgetTester tester, String id, String accion) async {
+Future<void> _elegirAccion(
+  WidgetTester tester,
+  String id,
+  String accion,
+) async {
   await tester.tap(find.byKey(Key('menuRecordatorio_$id')));
   await tester.pumpAndSettle();
   await tester.tap(find.byKey(Key('accion${accion}_$id')));
@@ -82,42 +86,45 @@ Future<void> _elegirAccion(WidgetTester tester, String id, String accion) async 
 
 void main() {
   group('Asignación en documentos anteriores', () {
-    test('un recordatorio guardado sin asignadoA va dirigido al paciente', () async {
-      final (base, firestore) = await baseRecordatorios();
-      final idPaciente = await crearPacienteRecordatorios(base);
-      final cifrado = ServicioCifrado(clavePrueba: clavePruebaRecordatorios);
-      await cifrado.fijarClave(uidRecordatorios, clavePruebaRecordatorios);
-      await firestore
-          .collection('users')
-          .doc(uidRecordatorios)
-          .collection('patients')
-          .doc(idPaciente)
-          .collection('recordatorios')
-          .doc('anterior')
-          .set({
-            'pacienteId': idPaciente,
-            'activo': true,
-            'creadoEn': DateTime(2026, 1, 1).toIso8601String(),
-            'version_encriptacion': 3,
-            'titulo_cifrado': await cifrado.cifrar(
-              uidRecordatorios,
-              'Jarabe de la mañana',
-            ),
-            'datos_cifrados': await cifrado.cifrar(
-              uidRecordatorios,
-              jsonEncode(<String, dynamic>{
-                'tipo': 'medicamento',
-                'fechaHora': DateTime(2026, 12, 1, 9).toIso8601String(),
-                'diasRepeticion': <String>[],
-              }),
-            ),
-          });
+    test(
+      'un recordatorio guardado sin asignadoA va dirigido al paciente',
+      () async {
+        final (base, firestore) = await baseRecordatorios();
+        final idPaciente = await crearPacienteRecordatorios(base);
+        final cifrado = ServicioCifrado(clavePrueba: clavePruebaRecordatorios);
+        await cifrado.fijarClave(uidRecordatorios, clavePruebaRecordatorios);
+        await firestore
+            .collection('users')
+            .doc(uidRecordatorios)
+            .collection('patients')
+            .doc(idPaciente)
+            .collection('recordatorios')
+            .doc('anterior')
+            .set({
+              'pacienteId': idPaciente,
+              'activo': true,
+              'creadoEn': DateTime(2026, 1, 1).toIso8601String(),
+              'version_encriptacion': 3,
+              'titulo_cifrado': await cifrado.cifrar(
+                uidRecordatorios,
+                'Jarabe de la mañana',
+              ),
+              'datos_cifrados': await cifrado.cifrar(
+                uidRecordatorios,
+                jsonEncode(<String, dynamic>{
+                  'tipo': 'medicamento',
+                  'fechaHora': DateTime(2026, 12, 1, 9).toIso8601String(),
+                  'diasRepeticion': <String>[],
+                }),
+              ),
+            });
 
-      final leidos = await base.recordatoriosEnTiempoReal(idPaciente).first;
-      expect(leidos.single.titulo, 'Jarabe de la mañana');
-      expect(leidos.single.asignadoA, Recordatorio.asignadoAPaciente);
-      expect(leidos.single.esParaCuidador, isFalse);
-    });
+        final leidos = await base.recordatoriosEnTiempoReal(idPaciente).first;
+        expect(leidos.single.titulo, 'Jarabe de la mañana');
+        expect(leidos.single.asignadoA, Recordatorio.asignadoAPaciente);
+        expect(leidos.single.esParaCuidador, isFalse);
+      },
+    );
   });
 
   group('Asignación al editar', () {
@@ -139,7 +146,10 @@ void main() {
       await tester.tap(find.byKey(const Key('confirmarRecordatorio')));
       await tester.pumpAndSettle();
 
-      expect((await _payload(firestore, idPaciente, id))['asignadoA'], 'cuidador');
+      expect(
+        (await _payload(firestore, idPaciente, id))['asignadoA'],
+        'cuidador',
+      );
       expect(notif.programados.last['titulo'], 'Cuidador · Medicamento');
       expect(find.text('Cuidador'), findsOneWidget);
     });

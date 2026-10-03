@@ -3,11 +3,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
+import '../../compartidos/widgets/dialogo_confirmacion.dart';
 import '../../core/proveedores/proveedores.dart';
 import '../../core/router/destino_aviso.dart';
 import '../../core/servicios/servicio_base_datos.dart';
 import '../../core/tema/paleta.dart';
-import '../../compartidos/widgets/dialogo_confirmacion.dart';
 import 'widgets/boton_cerrar_sesion.dart';
 import 'widgets/dialogo_correos.dart';
 import 'widgets/dialogo_editar_cuidador.dart';
@@ -127,7 +128,7 @@ class _PerfilCuidadorState extends ConsumerState<PerfilCuidador> {
         else ...[
           _tarjetaPerfil(),
           const SizedBox(height: 28),
-          PieVersion(),
+          const PieVersion(),
           const SizedBox(height: 8),
           BotonCerrarSesion(cargando: _cerrandoSesion, alPulsar: _cerrarSesion),
         ],
@@ -144,7 +145,7 @@ class _PerfilCuidadorState extends ConsumerState<PerfilCuidador> {
     final emailAuth =
         ref.read(firebaseAuthProvider).currentUser?.email?.trim() ?? '';
     final correoPrincipal =
-        ((_cuidador?['email'] as String?)?.trim() ?? emailAuth);
+        (_cuidador?['email'] as String?)?.trim() ?? emailAuth;
     final pendiente = _cuidador?['pendienteCorreo'] as Map?;
 
     return TarjetaPerfilCuidador(
@@ -224,7 +225,7 @@ class _PerfilCuidadorState extends ConsumerState<PerfilCuidador> {
     );
   }
 
-  void _cerrarSesion() async {
+  Future<void> _cerrarSesion() async {
     final confirmar = await mostrarDialogoConfirmacion(
       context,
       icono: Icons.logout_rounded,

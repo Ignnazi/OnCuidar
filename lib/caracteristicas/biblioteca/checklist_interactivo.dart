@@ -63,7 +63,7 @@ class _ChecklistInteractivoState extends State<ChecklistInteractivo> {
                   padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
                   child: _textoIntro(),
                 ),
-              Divider(height: 1, color: Paleta.bordeTarjeta),
+              const Divider(height: 1, color: Paleta.bordeTarjeta),
               Expanded(
                 child: ListView.builder(
                   controller: scrollController,
@@ -165,7 +165,7 @@ class _ChecklistInteractivoState extends State<ChecklistInteractivo> {
                     color: Paleta.textoPrincipal.withValues(alpha: 0.08),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(
+                  child: const Icon(
                     Icons.close,
                     size: 18,
                     color: Paleta.textoSecundario,

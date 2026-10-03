@@ -184,11 +184,11 @@ void main() {
 
     test('con conexión se escribe directo y la cola queda vacía', () async {
       final e = await _crearEntorno(enLinea: true);
-      final id = await e.base.agregarRecordatorio('pacienteA', _recordatorio('pacienteA'));
-      final doc = await e
-          .coleccion('pacienteA', 'recordatorios')
-          .doc(id)
-          .get();
+      final id = await e.base.agregarRecordatorio(
+        'pacienteA',
+        _recordatorio('pacienteA'),
+      );
+      final doc = await e.coleccion('pacienteA', 'recordatorios').doc(id).get();
       expect(doc.exists, isTrue);
       expect(await e.pendientes(), isEmpty);
     });
@@ -288,7 +288,10 @@ void main() {
       () async {
         final e = await _crearEntorno();
         e.orquestador.iniciar();
-        await e.base.agregarRecordatorio('pacienteA', _recordatorio('pacienteA'));
+        await e.base.agregarRecordatorio(
+          'pacienteA',
+          _recordatorio('pacienteA'),
+        );
         expect(await e.pendientes(), hasLength(1));
 
         e.red.fijar(true);
@@ -304,7 +307,10 @@ void main() {
       'la cola sobrevive al cierre de la app y se envía al reabrir',
       () async {
         final e = await _crearEntorno();
-        await e.base.agregarRecordatorio('pacienteA', _recordatorio('pacienteA'));
+        await e.base.agregarRecordatorio(
+          'pacienteA',
+          _recordatorio('pacienteA'),
+        );
 
         final prefs = await SharedPreferences.getInstance();
         SharedPreferences.setMockInitialValues({
@@ -343,7 +349,10 @@ void main() {
       'un borrado en el servidor gana sobre una actualización encolada',
       () async {
         final e = await _crearEntorno(enLinea: true);
-        final id = await e.base.agregarRecordatorio('pacienteA', _recordatorio('pacienteA'));
+        final id = await e.base.agregarRecordatorio(
+          'pacienteA',
+          _recordatorio('pacienteA'),
+        );
         e.red.fijar(false);
         await e.base.actualizarRecordatorio('pacienteA', id, activo: false);
         await e.coleccion('pacienteA', 'recordatorios').doc(id).delete();
@@ -363,7 +372,10 @@ void main() {
 
     test('la última escritura encolada gana campo a campo', () async {
       final e = await _crearEntorno(enLinea: true);
-      final id = await e.base.agregarRecordatorio('pacienteA', _recordatorio('pacienteA'));
+      final id = await e.base.agregarRecordatorio(
+        'pacienteA',
+        _recordatorio('pacienteA'),
+      );
       e.red.fijar(false);
       await e.base.actualizarRecordatorio('pacienteA', id, activo: false);
       await e.base.actualizarRecordatorio('pacienteA', id, activo: true);
@@ -371,10 +383,7 @@ void main() {
       e.red.fijar(true);
       await e.orquestador.drenar();
 
-      final doc = await e
-          .coleccion('pacienteA', 'recordatorios')
-          .doc(id)
-          .get();
+      final doc = await e.coleccion('pacienteA', 'recordatorios').doc(id).get();
       expect(doc.data()?['activo'], isTrue);
       expect(doc.data()?['pacienteId'], 'pacienteA');
     });

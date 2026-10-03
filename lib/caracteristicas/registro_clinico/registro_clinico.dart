@@ -501,8 +501,7 @@ class _RegistroClinicoScreenState extends ConsumerState<RegistroClinicoScreen> {
                           }
                         });
                       },
-                      onCambioOtro: () =>
-                          setState(() => _sincronizarOtroProblema()),
+                      onCambioOtro: () => setState(_sincronizarOtroProblema),
                     ),
                     const SizedBox(height: 20),
                     _seccionObservaciones(),
@@ -534,7 +533,7 @@ class _RegistroClinicoScreenState extends ConsumerState<RegistroClinicoScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        TituloSeccion('Observaciones', icono: Icons.edit_note_rounded),
+        const TituloSeccion('Observaciones', icono: Icons.edit_note_rounded),
         const SizedBox(height: 12),
         CampoObservaciones(controlador: _observacionesController),
       ],

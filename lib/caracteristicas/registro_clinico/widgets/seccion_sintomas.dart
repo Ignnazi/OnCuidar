@@ -109,7 +109,10 @@ class SeccionSintomas extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        TituloSeccion('Síntomas observados', icono: Icons.healing_rounded),
+        const TituloSeccion(
+          'Síntomas observados',
+          icono: Icons.healing_rounded,
+        ),
         const SizedBox(height: 12),
         Container(
           padding: const EdgeInsets.all(16),
@@ -161,7 +164,7 @@ class SeccionSintomas extends StatelessWidget {
                 )
               else ...[
                 const SizedBox(height: 16),
-                Divider(color: Paleta.doradoClaro, height: 20),
+                const Divider(color: Paleta.doradoClaro, height: 20),
                 const SizedBox(height: 8),
                 Text(
                   'Intensidad de cada síntoma:',

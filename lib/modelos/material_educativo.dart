@@ -25,8 +25,6 @@ class MaterialEducativo {
     required this.createdAt,
   });
 
-  String get cacheKey => 'mat_$id';
-
   bool get esVideo => category.toLowerCase() == 'videos';
 
   bool get esChecklist => category.toLowerCase() == 'checklist';

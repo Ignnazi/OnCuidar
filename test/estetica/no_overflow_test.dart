@@ -334,7 +334,7 @@ void main() {
         fecha: fecha,
         creadoEn: fecha,
         tipoRegistro: 'programado',
-        signosVitales: SignosVitales(
+        signosVitales: const SignosVitales(
           temperature: 40,
           heartRate: 120,
           oxygenSaturation: 88,

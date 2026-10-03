@@ -124,33 +124,30 @@ void main() {
   }
 
   group('Datos por paciente activo', () {
-    test(
-      'al cambiar de paciente cambian registros y recordatorios',
-      () async {
-        await seleccionar(idA);
-        final registros = observar(registrosClinicosProvider);
-        final recordatorios = observar(recordatoriosProvider);
+    test('al cambiar de paciente cambian registros y recordatorios', () async {
+      await seleccionar(idA);
+      final registros = observar(registrosClinicosProvider);
+      final recordatorios = observar(recordatoriosProvider);
 
-        await _esperar(
-          () => registros().isNotEmpty && registros().first.pacienteId == idA,
-        );
-        expect(registros().map((r) => r.observaciones), ['obs A']);
-        await _esperar(() => recordatorios().isNotEmpty);
-        expect(recordatorios().map((r) => r.titulo), ['recordatorio A']);
+      await _esperar(
+        () => registros().isNotEmpty && registros().first.pacienteId == idA,
+      );
+      expect(registros().map((r) => r.observaciones), ['obs A']);
+      await _esperar(() => recordatorios().isNotEmpty);
+      expect(recordatorios().map((r) => r.titulo), ['recordatorio A']);
 
-        await seleccionar(idB);
-        await _esperar(
-          () => registros().isNotEmpty && registros().first.pacienteId == idB,
-        );
-        expect(registros().map((r) => r.observaciones), ['obs B']);
-        await _esperar(
-          () =>
-              recordatorios().isNotEmpty &&
-              recordatorios().first.titulo == 'recordatorio B',
-        );
-        expect(recordatorios().map((r) => r.titulo), ['recordatorio B']);
-      },
-    );
+      await seleccionar(idB);
+      await _esperar(
+        () => registros().isNotEmpty && registros().first.pacienteId == idB,
+      );
+      expect(registros().map((r) => r.observaciones), ['obs B']);
+      await _esperar(
+        () =>
+            recordatorios().isNotEmpty &&
+            recordatorios().first.titulo == 'recordatorio B',
+      );
+      expect(recordatorios().map((r) => r.titulo), ['recordatorio B']);
+    });
 
     test('volver al paciente anterior recupera solo sus datos', () async {
       await seleccionar(idA);

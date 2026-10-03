@@ -3,12 +3,13 @@ import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../../core/servicios/servicio_base_datos.dart';
-import '../../../core/tema/paleta.dart';
-import '../../../core/utilidades/validacion_correo.dart';
+
 import '../../../compartidos/widgets/boton_principal.dart';
 import '../../../compartidos/widgets/campos_formulario.dart';
 import '../../../compartidos/widgets/titulo_seccion.dart';
+import '../../../core/servicios/servicio_base_datos.dart';
+import '../../../core/tema/paleta.dart';
+import '../../../core/utilidades/validacion_correo.dart';
 
 Future<void> mostrarDialogoCorreos(
   BuildContext context, {
@@ -298,7 +299,7 @@ class _DialogoCorreosState extends State<_DialogoCorreos> {
                       24 + MediaQuery.of(ctx).viewInsets.bottom,
                     ),
                     children: [
-                      TituloSeccion(
+                      const TituloSeccion(
                         Icons.mark_email_unread_outlined,
                         'Correos',
                       ),
@@ -353,7 +354,7 @@ class _DialogoCorreosState extends State<_DialogoCorreos> {
                         ),
                       ],
                       const SizedBox(height: 20),
-                      TituloSeccion(
+                      const TituloSeccion(
                         Icons.lock_outline,
                         'Confirmar cambios de correo',
                       ),

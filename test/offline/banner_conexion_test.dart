@@ -12,7 +12,7 @@ Widget _app({required bool enLinea}) {
     overrides: [
       estadoConexionProvider.overrideWith((_) => Stream.value(enLinea)),
     ],
-    child: MaterialApp(
+    child: const MaterialApp(
       home: Scaffold(body: BannerConexion(duracion: _breve)),
     ),
   );

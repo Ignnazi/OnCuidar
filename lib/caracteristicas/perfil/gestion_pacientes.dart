@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+import '../../compartidos/widgets/boton_principal.dart';
+import '../../compartidos/widgets/dialogo_confirmacion.dart';
 import '../../core/proveedores/proveedores.dart';
 import '../../core/tema/paleta.dart';
 import '../../modelos/paciente.dart';
-import '../../compartidos/widgets/boton_principal.dart';
-import '../../compartidos/widgets/dialogo_confirmacion.dart';
 import 'widgets/dialogo_archivados.dart';
 import 'widgets/dialogo_cambiar_paciente.dart';
 import 'widgets/dialogo_paciente.dart';

@@ -101,7 +101,10 @@ void main() {
       'editar un documento ya borrado en el servidor no lo revive',
       () async {
         final ent = await _crearEntorno();
-        final id = await ent.base.agregarRecordatorio('p1', _recordatorio('Turno'));
+        final id = await ent.base.agregarRecordatorio(
+          'p1',
+          _recordatorio('Turno'),
+        );
         await ent.coleccion('recordatorios').doc(id).delete();
 
         await ent.base.actualizarRecordatorio('p1', id, activo: false);
@@ -117,7 +120,10 @@ void main() {
       'una actualización encolada de un documento borrado se descarta',
       () async {
         final ent = await _crearEntorno();
-        final id = await ent.base.agregarRecordatorio('p1', _recordatorio('Turno'));
+        final id = await ent.base.agregarRecordatorio(
+          'p1',
+          _recordatorio('Turno'),
+        );
         ent.red.fijar(false);
         await ent.base.actualizarRecordatorio('p1', id, activo: false);
         await ent.coleccion('recordatorios').doc(id).delete();
@@ -137,7 +143,10 @@ void main() {
   group('Una edición nueva no se pisa con una vieja', () {
     test('con pendientes del mismo documento la nueva va detrás', () async {
       final ent = await _crearEntorno();
-      final id = await ent.base.agregarRecordatorio('p1', _recordatorio('Turno'));
+      final id = await ent.base.agregarRecordatorio(
+        'p1',
+        _recordatorio('Turno'),
+      );
       ent.red.fijar(false);
       await ent.base.actualizarRecordatorio('p1', id, activo: false);
 
@@ -154,7 +163,10 @@ void main() {
 
     test('sin pendientes la escritura va directa al servidor', () async {
       final ent = await _crearEntorno();
-      final id = await ent.base.agregarRecordatorio('p1', _recordatorio('Turno'));
+      final id = await ent.base.agregarRecordatorio(
+        'p1',
+        _recordatorio('Turno'),
+      );
       await ent.base.actualizarRecordatorio('p1', id, activo: false);
 
       expect(await ent.cola.pendientes(_uid), isEmpty);

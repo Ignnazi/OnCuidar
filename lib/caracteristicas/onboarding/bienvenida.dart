@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../core/tema/paleta.dart';
+
+import '../../compartidos/widgets/boton_principal.dart';
 import '../../compartidos/widgets/encabezado_gradiente.dart';
 import '../../compartidos/widgets/marca.dart';
-import '../../compartidos/widgets/boton_principal.dart';
+import '../../core/tema/paleta.dart';
 
 class Bienvenida extends StatefulWidget {
   const Bienvenida({

@@ -7,7 +7,7 @@ class AccesosRapidos extends StatelessWidget {
   const AccesosRapidos({super.key});
 
   static final List<_Acceso> _accesos = [
-    _Acceso(
+    const _Acceso(
       icono: Icons.chat_bubble_outline,
       color: Paleta.doradoPrincipal,
       titulo: 'Orientación',
@@ -15,37 +15,37 @@ class AccesosRapidos extends StatelessWidget {
       ruta: '/chat',
       degradado: true,
     ),
-    _Acceso(
+    const _Acceso(
       icono: Icons.notifications_outlined,
-      color: const Color(0xFFF07830),
+      color: Color(0xFFF07830),
       titulo: 'Recordatorios',
       subtitulo: 'Programa avisos',
       ruta: '/recordatorios',
     ),
-    _Acceso(
+    const _Acceso(
       icono: Icons.help_outline,
-      color: const Color(0xFFE8A820),
+      color: Color(0xFFE8A820),
       titulo: 'FAQ',
       subtitulo: 'Resuelve dudas',
       ruta: '/faq',
     ),
-    _Acceso(
+    const _Acceso(
       icono: Icons.book_outlined,
-      color: const Color(0xFF4EC4D4),
+      color: Color(0xFF4EC4D4),
       titulo: 'Biblioteca',
       subtitulo: 'Materiales y guías',
       ruta: '/biblioteca',
     ),
-    _Acceso(
+    const _Acceso(
       icono: Icons.assignment_rounded,
-      color: const Color(0xFF10B981),
+      color: Color(0xFF10B981),
       titulo: 'Registro',
       subtitulo: 'Registrar datos',
       ruta: '/registro-clinico',
     ),
-    _Acceso(
+    const _Acceso(
       icono: Icons.history,
-      color: const Color(0xFF8B5CF6),
+      color: Color(0xFF8B5CF6),
       titulo: 'Historial',
       subtitulo: 'Registros pasados',
       ruta: '/historial',

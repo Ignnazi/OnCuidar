@@ -117,7 +117,9 @@ void main() {
   });
 
   group('El Splash no queda bloqueado por los avisos', () {
-    testWidgets('con sesión y plugin caído igual entra al panel', (tester) async {
+    testWidgets('con sesión y plugin caído igual entra al panel', (
+      tester,
+    ) async {
       final (base, _) = await baseRecordatorios();
       final idPaciente = await crearPacienteRecordatorios(base);
       await base.agregarRecordatorio(idPaciente, recordatorioDe(idPaciente));

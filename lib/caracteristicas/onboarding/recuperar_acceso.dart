@@ -135,7 +135,7 @@ class _RecuperarAccesoState extends State<RecuperarAcceso> {
                         icono: Icons.lock_reset_rounded,
                         titulo: 'Correo de respaldo',
                         hijos: [
-                          EtiquetaCampo(texto: 'Correo de respaldo'),
+                          const EtiquetaCampo(texto: 'Correo de respaldo'),
                           const SizedBox(height: 8),
                           CampoFormulario(
                             controlador: _correoController,
@@ -198,14 +198,14 @@ class _RecuperarAccesoState extends State<RecuperarAcceso> {
                       ),
                       const SizedBox(height: 16),
                       if (_enviado && _encontrado) ...[
-                        _PanelEstado(
+                        const _PanelEstado(
                           color: Paleta.doradoPrincipal,
                           icono: Icons.mark_email_read_outlined,
                           texto:
                               '¡Listo! Te enviamos un enlace a tu correo de respaldo. Revisa tu bandeja de entrada (y el spam).',
                         ),
                       ] else if (_enviado && !_encontrado) ...[
-                        _PanelEstado(
+                        const _PanelEstado(
                           color: Paleta.error,
                           icono: Icons.person_off_outlined,
                           texto:
@@ -248,14 +248,14 @@ class _RecuperarAccesoState extends State<RecuperarAcceso> {
                 ),
               ),
             ),
-            Positioned(
+            const Positioned(
               top: 0,
               left: 0,
               right: 0,
               child: EncabezadoGradiente(
                 titulo: 'Recuperar acceso',
                 subtitulo: 'Usa tu correo de respaldo para recuperar tu cuenta',
-                logo: const AssetImage('assets/images/OnCuidar.png'),
+                logo: AssetImage('assets/images/OnCuidar.png'),
                 tamanoTitulo: 20,
                 alto: 100,
               ),

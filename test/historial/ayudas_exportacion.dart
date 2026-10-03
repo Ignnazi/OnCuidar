@@ -82,8 +82,9 @@ Widget pantallaHistorial(
       ),
       GoRoute(
         path: '/registro-clinico',
-        builder: (c, s) =>
-            const Scaffold(body: Center(child: Text('Registro clínico abierto'))),
+        builder: (c, s) => const Scaffold(
+          body: Center(child: Text('Registro clínico abierto')),
+        ),
       ),
     ],
   );
@@ -132,8 +133,9 @@ List<String> instalarCanalesDeExportacion() {
 void sembrarFuentesEnDisco(Directory destino) {
   for (final peso in _variantesDeNunito) {
     for (final hash in _hashesDeNunito) {
-      File('${destino.path}${Platform.pathSeparator}Nunito_${peso}_$hash.ttf')
-          .writeAsBytesSync(Uint8List.fromList([0, 1, 0, 0]));
+      File(
+        '${destino.path}${Platform.pathSeparator}Nunito_${peso}_$hash.ttf',
+      ).writeAsBytesSync(Uint8List.fromList([0, 1, 0, 0]));
     }
   }
 }

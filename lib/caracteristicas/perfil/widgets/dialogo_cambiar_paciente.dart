@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../../core/tema/paleta.dart';
-import '../../../modelos/paciente.dart';
+
 import '../../../compartidos/widgets/campos_formulario.dart';
 import '../../../compartidos/widgets/dialogo_confirmacion.dart';
+import '../../../core/tema/paleta.dart';
+import '../../../modelos/paciente.dart';
 
 Future<void> mostrarDialogoCambiarPaciente(
   BuildContext context, {

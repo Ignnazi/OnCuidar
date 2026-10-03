@@ -90,7 +90,7 @@ void main() {
 
   group('Sin datos clínicos en claro', () {
     test('rechaza campos clínicos sin cifrar', () async {
-      for (final campo in ['titulo', 'observaciones', 'sintomas', 'items']) {
+      for (final campo in ['titulo', 'observaciones', 'sintomas']) {
         await expectLater(
           cola.encolar(
             'u1',

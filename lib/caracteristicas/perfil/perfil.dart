@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../core/tema/paleta.dart';
+
 import '../../compartidos/widgets/encabezado_gradiente.dart';
+import '../../core/tema/paleta.dart';
 import 'gestion_pacientes.dart';
 import 'perfil_cuidador.dart';
 
@@ -98,13 +99,13 @@ class _PerfilState extends ConsumerState<Perfil> {
                           ? _VistaPerfil.pacientes
                           : _VistaPerfil.cuidador,
                     ),
-                    children: [
+                    children: const [
                       SingleChildScrollView(
-                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                        padding: EdgeInsets.fromLTRB(20, 0, 20, 24),
                         child: GestionPacientes(),
                       ),
                       SingleChildScrollView(
-                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                        padding: EdgeInsets.fromLTRB(20, 0, 20, 24),
                         child: PerfilCuidador(),
                       ),
                     ],
@@ -121,7 +122,7 @@ class _PerfilState extends ConsumerState<Perfil> {
             child: EncabezadoGradiente(
               titulo: 'Perfiles',
               subtitulo: 'Gestiona la información',
-              logo: AssetImage('assets/images/OnCuidar.png'),
+              logo: const AssetImage('assets/images/OnCuidar.png'),
               tamanoTitulo: 20,
               alto: 100,
               alTocarLogo: () => context.go('/dashboard'),

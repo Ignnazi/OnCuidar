@@ -214,40 +214,37 @@ void main() {
       expect(recordatorios.first.tipo, 'cita');
     });
 
-    test(
-      'la recurrencia mensual se persiste y se descifra',
-      () async {
-        final (base, firestore) = await _baseDatos();
-        final idPaciente = await _sembrarPaciente(base);
-        final fecha = DateTime.now();
-        final id = await base.agregarRecordatorio(
-          idPaciente,
-          Recordatorio(
-            id: '',
-            pacienteId: idPaciente,
-            tipo: 'medicamento',
-            titulo: 'Vitamina mensual',
-            fechaHora: fecha,
-            activo: true,
-            creadoEn: fecha,
-            recurrencia: 'mensual',
-          ),
-        );
-        final datos = await _doc(firestore, idPaciente, id);
-        final payload = await _payloadRecordatorio(firestore, idPaciente, id);
-        expect(payload['recurrencia'], 'mensual');
-        expect(datos!.containsKey('completadoEn'), isFalse);
+    test('la recurrencia mensual se persiste y se descifra', () async {
+      final (base, firestore) = await _baseDatos();
+      final idPaciente = await _sembrarPaciente(base);
+      final fecha = DateTime.now();
+      final id = await base.agregarRecordatorio(
+        idPaciente,
+        Recordatorio(
+          id: '',
+          pacienteId: idPaciente,
+          tipo: 'medicamento',
+          titulo: 'Vitamina mensual',
+          fechaHora: fecha,
+          activo: true,
+          creadoEn: fecha,
+          recurrencia: 'mensual',
+        ),
+      );
+      final datos = await _doc(firestore, idPaciente, id);
+      final payload = await _payloadRecordatorio(firestore, idPaciente, id);
+      expect(payload['recurrencia'], 'mensual');
+      expect(datos!.containsKey('completadoEn'), isFalse);
 
-        var recordatorios = await base
-            .recordatoriosEnTiempoReal(idPaciente)
-            .first;
-        expect(recordatorios.single.esMensual, isTrue);
+      var recordatorios = await base
+          .recordatoriosEnTiempoReal(idPaciente)
+          .first;
+      expect(recordatorios.single.esMensual, isTrue);
 
-        await base.actualizarRecordatorio(idPaciente, id, recurrencia: '');
-        recordatorios = await base.recordatoriosEnTiempoReal(idPaciente).first;
-        expect(recordatorios.single.recurrencia, isNull);
-      },
-    );
+      await base.actualizarRecordatorio(idPaciente, id, recurrencia: '');
+      recordatorios = await base.recordatoriosEnTiempoReal(idPaciente).first;
+      expect(recordatorios.single.recurrencia, isNull);
+    });
 
     test(
       'reagendarNotificaciones cancela todo y reprograma solo activos',

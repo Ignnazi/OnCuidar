@@ -72,7 +72,11 @@ Future<Map<String, dynamic>> _payload(
       as Map<String, dynamic>;
 }
 
-Future<void> _elegirAccion(WidgetTester tester, String id, String accion) async {
+Future<void> _elegirAccion(
+  WidgetTester tester,
+  String id,
+  String accion,
+) async {
   await tester.tap(find.byKey(Key('menuRecordatorio_$id')));
   await tester.pumpAndSettle();
   await tester.tap(find.byKey(Key('accion${accion}_$id')));
@@ -81,37 +85,42 @@ Future<void> _elegirAccion(WidgetTester tester, String id, String accion) async 
 
 void main() {
   group('Asignación del recordatorio', () {
-    testWidgets('dirigirlo al cuidador guarda la asignación y nombra el aviso', (
-      tester,
-    ) async {
-      final (base, firestore) = await baseRecordatorios();
-      final idPaciente = await crearPacienteRecordatorios(base);
-      final notif = NotificacionesFalsas();
-      await _montar(tester, _pantalla(base, notif));
+    testWidgets(
+      'dirigirlo al cuidador guarda la asignación y nombra el aviso',
+      (tester) async {
+        final (base, firestore) = await baseRecordatorios();
+        final idPaciente = await crearPacienteRecordatorios(base);
+        final notif = NotificacionesFalsas();
+        await _montar(tester, _pantalla(base, notif));
 
-      await tester.tap(find.byKey(const Key('tarjetaRapida_medicamento')));
-      await tester.pumpAndSettle();
-      await tester.enterText(
-        find.byKey(const Key('campoTituloRecordatorio')),
-        'Mi control',
-      );
-      await tester.tap(find.byKey(const Key('asignado_cuidador')));
-      await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const Key('confirmarRecordatorio')));
-      await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('tarjetaRapida_medicamento')));
+        await tester.pumpAndSettle();
+        await tester.enterText(
+          find.byKey(const Key('campoTituloRecordatorio')),
+          'Mi control',
+        );
+        await tester.tap(find.byKey(const Key('asignado_cuidador')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('confirmarRecordatorio')));
+        await tester.pumpAndSettle();
 
-      final docs = await firestore
-          .collection('users')
-          .doc(uidRecordatorios)
-          .collection('patients')
-          .doc(idPaciente)
-          .collection('recordatorios')
-          .get();
-      final payload = await _payload(firestore, idPaciente, docs.docs.single.id);
-      expect(payload['asignadoA'], 'cuidador');
-      expect(notif.programados.single['titulo'], 'Cuidador · Medicamento');
-      expect(find.text('Cuidador'), findsOneWidget);
-    });
+        final docs = await firestore
+            .collection('users')
+            .doc(uidRecordatorios)
+            .collection('patients')
+            .doc(idPaciente)
+            .collection('recordatorios')
+            .get();
+        final payload = await _payload(
+          firestore,
+          idPaciente,
+          docs.docs.single.id,
+        );
+        expect(payload['asignadoA'], 'cuidador');
+        expect(notif.programados.single['titulo'], 'Cuidador · Medicamento');
+        expect(find.text('Cuidador'), findsOneWidget);
+      },
+    );
 
     testWidgets('por defecto va dirigido al paciente', (tester) async {
       final (base, firestore) = await baseRecordatorios();
@@ -136,7 +145,11 @@ void main() {
           .collection('recordatorios')
           .get();
       expect(
-        (await _payload(firestore, idPaciente, docs.docs.single.id))['asignadoA'],
+        (await _payload(
+          firestore,
+          idPaciente,
+          docs.docs.single.id,
+        ))['asignadoA'],
         'paciente',
       );
       expect(notif.programados.single['titulo'], 'Paciente Test · Medicamento');
@@ -178,12 +191,19 @@ void main() {
           .doc(idPaciente)
           .collection('recordatorios')
           .get();
-      final payload = await _payload(firestore, idPaciente, docs.docs.single.id);
+      final payload = await _payload(
+        firestore,
+        idPaciente,
+        docs.docs.single.id,
+      );
       final fecha = DateTime.parse(payload['fechaHora'] as String);
       expect((fecha.year, fecha.month, fecha.day), (anio, 12, 31));
       expect(payload['diasRepeticion'], isEmpty);
       final programada = notif.programados.single['fechaHora'] as DateTime;
-      expect((programada.year, programada.month, programada.day), (anio, 12, 31));
+      expect(
+        (programada.year, programada.month, programada.day),
+        (anio, 12, 31),
+      );
     });
 
     testWidgets('mensual guarda el día del mes elegido en el selector', (
@@ -224,51 +244,58 @@ void main() {
           .doc(idPaciente)
           .collection('recordatorios')
           .get();
-      final payload = await _payload(firestore, idPaciente, docs.docs.single.id);
+      final payload = await _payload(
+        firestore,
+        idPaciente,
+        docs.docs.single.id,
+      );
       expect(DateTime.parse(payload['fechaHora'] as String).day, 20);
       expect(payload['recurrencia'], 'mensual');
       expect(notif.programados.single['mensual'], isTrue);
       expect((notif.programados.single['fechaHora'] as DateTime).day, 20);
     });
 
-    testWidgets('editar uno mensual conserva su día y la descripción del aviso', (
+    testWidgets(
+      'editar uno mensual conserva su día y la descripción del aviso',
+      (tester) async {
+        final (base, firestore) = await baseRecordatorios();
+        final idPaciente = await crearPacienteRecordatorios(base);
+        final id = await base.agregarRecordatorio(
+          idPaciente,
+          recordatorioDe(
+            idPaciente,
+            titulo: 'Control mensual',
+            fechaHora: DateTime(2026, 1, 15, 9),
+            recurrencia: 'mensual',
+          ),
+        );
+        final notif = NotificacionesFalsas();
+        await _montar(tester, _pantalla(base, notif));
+
+        await _elegirAccion(tester, id, 'Editar');
+        expect(
+          find.text('Se recordará cada mes el día 15 a la hora indicada.'),
+          findsOneWidget,
+        );
+        await tester.enterText(
+          find.byKey(const Key('campoDescripcionRecordatorio')),
+          'Llevar carnet',
+        );
+        await tester.tap(find.byKey(const Key('confirmarRecordatorio')));
+        await tester.pumpAndSettle();
+
+        final payload = await _payload(firestore, idPaciente, id);
+        expect(DateTime.parse(payload['fechaHora'] as String).day, 15);
+        expect(payload['recurrencia'], 'mensual');
+        final aviso = notif.programados.last;
+        expect(aviso['cuerpo'], 'Control mensual · Llevar carnet');
+        expect(aviso['mensual'], isTrue);
+      },
+    );
+
+    testWidgets('editar uno de una sola vez no cambia su fecha', (
       tester,
     ) async {
-      final (base, firestore) = await baseRecordatorios();
-      final idPaciente = await crearPacienteRecordatorios(base);
-      final id = await base.agregarRecordatorio(
-        idPaciente,
-        recordatorioDe(
-          idPaciente,
-          titulo: 'Control mensual',
-          fechaHora: DateTime(2026, 1, 15, 9),
-          recurrencia: 'mensual',
-        ),
-      );
-      final notif = NotificacionesFalsas();
-      await _montar(tester, _pantalla(base, notif));
-
-      await _elegirAccion(tester, id, 'Editar');
-      expect(
-        find.text('Se recordará cada mes el día 15 a la hora indicada.'),
-        findsOneWidget,
-      );
-      await tester.enterText(
-        find.byKey(const Key('campoDescripcionRecordatorio')),
-        'Llevar carnet',
-      );
-      await tester.tap(find.byKey(const Key('confirmarRecordatorio')));
-      await tester.pumpAndSettle();
-
-      final payload = await _payload(firestore, idPaciente, id);
-      expect(DateTime.parse(payload['fechaHora'] as String).day, 15);
-      expect(payload['recurrencia'], 'mensual');
-      final aviso = notif.programados.last;
-      expect(aviso['cuerpo'], 'Control mensual · Llevar carnet');
-      expect(aviso['mensual'], isTrue);
-    });
-
-    testWidgets('editar uno de una sola vez no cambia su fecha', (tester) async {
       final (base, firestore) = await baseRecordatorios();
       final idPaciente = await crearPacienteRecordatorios(base);
       final futura = DateTime.now().add(const Duration(days: 10));
@@ -287,6 +314,5 @@ void main() {
       expect(DateTime.parse(payload['fechaHora'] as String), original);
       expect(payload['diasRepeticion'], isEmpty);
     });
-
   });
 }

@@ -451,7 +451,7 @@ void main() {
           .doc(idPaciente)
           .collection('clinicalRecords')
           .get();
-      var doc = registros.docs.single.data();
+      final doc = registros.docs.single.data();
       expect(
         doc.containsKey('sintomas'),
         isFalse,
@@ -462,8 +462,8 @@ void main() {
         isFalse,
         reason: 'sin signos ingresados no se escribe el campo',
       );
-      var sintomas = await _sintomasDescifrados(cifrado, doc);
-      var dolorGuardado = sintomas.singleWhere((s) => s['name'] == 'Dolor');
+      final sintomas = await _sintomasDescifrados(cifrado, doc);
+      final dolorGuardado = sintomas.singleWhere((s) => s['name'] == 'Dolor');
       expect(
         dolorGuardado['intensity'],
         0,

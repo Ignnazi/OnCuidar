@@ -26,7 +26,9 @@ Widget _pantalla() {
   );
   return ProviderScope(
     overrides: [
-      contenidosEducativosProvider.overrideWith((ref) => Stream.value(const [])),
+      contenidosEducativosProvider.overrideWith(
+        (ref) => Stream.value(const []),
+      ),
     ],
     child: MaterialApp.router(routerConfig: router),
   );

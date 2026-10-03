@@ -7,7 +7,6 @@ import '../../caracteristicas/faq/faq.dart';
 import '../../caracteristicas/historial/historial.dart';
 import '../../caracteristicas/onboarding/bienvenida.dart';
 import '../../caracteristicas/onboarding/iniciar_sesion.dart';
-import '../../caracteristicas/onboarding/proximamente.dart';
 import '../../caracteristicas/onboarding/recuperar_acceso.dart';
 import '../../caracteristicas/onboarding/registro.dart';
 import '../../caracteristicas/onboarding/splash.dart';
@@ -34,15 +33,6 @@ GoRoute _rutaHistorial() {
     builder: (context, state) => HistorialScreen(
       filtroFechaInicial:
           (state.extra as Map<String, dynamic>?)?['filtroFecha'] as DateTime?,
-    ),
-  );
-}
-
-GoRoute _rutaProximamente() {
-  return GoRoute(
-    path: '/proximamente',
-    builder: (context, state) => Proximamente(
-      titulo: state.uri.queryParameters['titulo'] ?? 'Próximamente',
     ),
   );
 }
@@ -122,7 +112,6 @@ final router = GoRouter(
             ),
             _rutaRegistroClinico(),
             _rutaHistorial(),
-            _rutaProximamente(),
             _rutaChat(),
             _rutaFaq(),
             _rutaRecordatorios(),
@@ -139,7 +128,6 @@ final router = GoRouter(
             ),
             _rutaRegistroClinico(),
             _rutaHistorial(),
-            _rutaProximamente(),
             _rutaChat(),
             _rutaFaq(),
             _rutaRecordatorios(),

@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../core/router/destino_aviso.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 import '../../compartidos/widgets/campos_formulario.dart';
 import '../../compartidos/widgets/encabezado_gradiente.dart';
 import '../../core/proveedores/proveedores.dart';
+import '../../core/router/destino_aviso.dart';
 import '../../core/servicios/servicio_registro.dart';
 import '../../core/tema/paleta.dart';
 import '../../core/utilidades/rut_utils.dart';
@@ -624,14 +625,14 @@ class _RegistroState extends ConsumerState<Registro> {
               ),
             ),
 
-            Positioned(
+            const Positioned(
               top: 0,
               left: 0,
               right: 0,
               child: EncabezadoGradiente(
                 titulo: 'Crear tu perfil',
                 subtitulo: 'Completa todos los datos',
-                logo: const AssetImage('assets/images/OnCuidar.png'),
+                logo: AssetImage('assets/images/OnCuidar.png'),
                 tamanoTitulo: 20,
                 alto: 100,
               ),

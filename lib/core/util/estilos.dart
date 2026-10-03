@@ -1,12 +1,6 @@
 import 'package:flutter/material.dart';
 import '../tema/paleta.dart';
 
-const gradienteDorado = LinearGradient(
-  begin: Alignment.topLeft,
-  end: Alignment.bottomRight,
-  colors: [Paleta.doradoMedio, Paleta.doradoOscuro],
-);
-
 InputDecoration entradaDorada({
   String? hintText,
   TextStyle? hintStyle,

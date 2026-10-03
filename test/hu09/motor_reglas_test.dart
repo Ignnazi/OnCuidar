@@ -9,7 +9,7 @@ void main() {
   group('temperatura', () {
     test('fiebre sobre 39.5°C es crítica', () {
       final resultado = MotorReglasClinicas.evaluar(
-        SignosVitales(temperature: 40),
+        const SignosVitales(temperature: 40),
         const [],
       );
       expect(resultado.nivel, NivelAlerta.critico);
@@ -18,7 +18,7 @@ void main() {
 
     test('fiebre sobre 38.5°C es alerta', () {
       final resultado = MotorReglasClinicas.evaluar(
-        SignosVitales(temperature: 39),
+        const SignosVitales(temperature: 39),
         const [],
       );
       expect(resultado.nivel, NivelAlerta.alerta);
@@ -27,7 +27,7 @@ void main() {
 
     test('temperatura normal no dispara', () {
       final resultado = MotorReglasClinicas.evaluar(
-        SignosVitales(temperature: 37.5),
+        const SignosVitales(temperature: 37.5),
         const [],
       );
       expect(resultado.nivel, NivelAlerta.normal);
@@ -36,7 +36,7 @@ void main() {
 
     test('borde 39.5°C aún no es crítica', () {
       final resultado = MotorReglasClinicas.evaluar(
-        SignosVitales(temperature: 39.5),
+        const SignosVitales(temperature: 39.5),
         const [],
       );
       expect(resultado.nivel, NivelAlerta.alerta);
@@ -44,7 +44,7 @@ void main() {
 
     test('borde 38.5°C aún no dispara alerta', () {
       final resultado = MotorReglasClinicas.evaluar(
-        SignosVitales(temperature: 38.5),
+        const SignosVitales(temperature: 38.5),
         const [],
       );
       expect(resultado.nivel, NivelAlerta.normal);
@@ -52,7 +52,7 @@ void main() {
 
     test('temperatura bajo 36.5°C es alerta (hipotermia leve)', () {
       final resultado = MotorReglasClinicas.evaluar(
-        SignosVitales(temperature: 36),
+        const SignosVitales(temperature: 36),
         const [],
       );
       expect(resultado.nivel, NivelAlerta.alerta);
@@ -61,7 +61,7 @@ void main() {
 
     test('temperatura bajo 35°C es crítica (hipotermia)', () {
       final resultado = MotorReglasClinicas.evaluar(
-        SignosVitales(temperature: 34.5),
+        const SignosVitales(temperature: 34.5),
         const [],
       );
       expect(resultado.nivel, NivelAlerta.critico);
@@ -70,7 +70,7 @@ void main() {
 
     test('borde 36.5°C aún es normal', () {
       final resultado = MotorReglasClinicas.evaluar(
-        SignosVitales(temperature: 36.5),
+        const SignosVitales(temperature: 36.5),
         const [],
       );
       expect(resultado.nivel, NivelAlerta.normal);
@@ -80,7 +80,7 @@ void main() {
   group('frecuencia cardíaca', () {
     test('FC sobre 130 lpm es crítica (taquicardia)', () {
       final resultado = MotorReglasClinicas.evaluar(
-        SignosVitales(heartRate: 135),
+        const SignosVitales(heartRate: 135),
         const [],
       );
       expect(resultado.nivel, NivelAlerta.critico);
@@ -89,7 +89,7 @@ void main() {
 
     test('FC sobre 100 lpm es alerta', () {
       final resultado = MotorReglasClinicas.evaluar(
-        SignosVitales(heartRate: 110),
+        const SignosVitales(heartRate: 110),
         const [],
       );
       expect(resultado.nivel, NivelAlerta.alerta);
@@ -101,7 +101,7 @@ void main() {
 
     test('FC bajo 50 lpm es alerta (bradicardia)', () {
       final resultado = MotorReglasClinicas.evaluar(
-        SignosVitales(heartRate: 45),
+        const SignosVitales(heartRate: 45),
         const [],
       );
       expect(resultado.nivel, NivelAlerta.alerta);
@@ -110,7 +110,7 @@ void main() {
 
     test('FC bajo 40 lpm es crítica (bradicardia severa)', () {
       final resultado = MotorReglasClinicas.evaluar(
-        SignosVitales(heartRate: 38),
+        const SignosVitales(heartRate: 38),
         const [],
       );
       expect(resultado.nivel, NivelAlerta.critico);
@@ -119,7 +119,7 @@ void main() {
 
     test('FC normal no dispara', () {
       final resultado = MotorReglasClinicas.evaluar(
-        SignosVitales(heartRate: 72),
+        const SignosVitales(heartRate: 72),
         const [],
       );
       expect(resultado.nivel, NivelAlerta.normal);
@@ -129,7 +129,7 @@ void main() {
   group('frecuencia respiratoria', () {
     test('FR sobre 28 rpm es crítica (taquipnea)', () {
       final resultado = MotorReglasClinicas.evaluar(
-        SignosVitales(respiratoryRate: 30),
+        const SignosVitales(respiratoryRate: 30),
         const [],
       );
       expect(resultado.nivel, NivelAlerta.critico);
@@ -138,7 +138,7 @@ void main() {
 
     test('FR sobre 20 rpm es alerta', () {
       final resultado = MotorReglasClinicas.evaluar(
-        SignosVitales(respiratoryRate: 24),
+        const SignosVitales(respiratoryRate: 24),
         const [],
       );
       expect(resultado.nivel, NivelAlerta.alerta);
@@ -150,7 +150,7 @@ void main() {
 
     test('FR bajo 12 rpm es alerta (bradipnea)', () {
       final resultado = MotorReglasClinicas.evaluar(
-        SignosVitales(respiratoryRate: 10),
+        const SignosVitales(respiratoryRate: 10),
         const [],
       );
       expect(resultado.nivel, NivelAlerta.alerta);
@@ -162,7 +162,7 @@ void main() {
 
     test('FR bajo 8 rpm es crítica (bradipnea severa)', () {
       final resultado = MotorReglasClinicas.evaluar(
-        SignosVitales(respiratoryRate: 7),
+        const SignosVitales(respiratoryRate: 7),
         const [],
       );
       expect(resultado.nivel, NivelAlerta.critico);
@@ -171,7 +171,7 @@ void main() {
 
     test('FR normal no dispara', () {
       final resultado = MotorReglasClinicas.evaluar(
-        SignosVitales(respiratoryRate: 16),
+        const SignosVitales(respiratoryRate: 16),
         const [],
       );
       expect(resultado.nivel, NivelAlerta.normal);
@@ -181,7 +181,7 @@ void main() {
   group('saturación de oxígeno', () {
     test('O₂ bajo 90% es crítico', () {
       final resultado = MotorReglasClinicas.evaluar(
-        SignosVitales(oxygenSaturation: 88),
+        const SignosVitales(oxygenSaturation: 88),
         const [],
       );
       expect(resultado.nivel, NivelAlerta.critico);
@@ -190,7 +190,7 @@ void main() {
 
     test('O₂ bajo 92% es alerta', () {
       final resultado = MotorReglasClinicas.evaluar(
-        SignosVitales(oxygenSaturation: 91),
+        const SignosVitales(oxygenSaturation: 91),
         const [],
       );
       expect(resultado.nivel, NivelAlerta.alerta);
@@ -199,7 +199,7 @@ void main() {
 
     test('O₂ 92% no dispara', () {
       final resultado = MotorReglasClinicas.evaluar(
-        SignosVitales(oxygenSaturation: 92),
+        const SignosVitales(oxygenSaturation: 92),
         const [],
       );
       expect(resultado.nivel, NivelAlerta.normal);
@@ -372,7 +372,7 @@ void main() {
   group('monotonicidad', () {
     test('crítico por fiebre no baja aunque solo haya síntomas leves', () {
       final resultado = MotorReglasClinicas.evaluar(
-        SignosVitales(temperature: 40),
+        const SignosVitales(temperature: 40),
         [_sintoma('Tos', 2)],
       );
       expect(resultado.nivel, NivelAlerta.critico);
@@ -381,7 +381,7 @@ void main() {
 
     test('crítico por O₂ no baja con síntomas severos después', () {
       final resultado = MotorReglasClinicas.evaluar(
-        SignosVitales(oxygenSaturation: 88),
+        const SignosVitales(oxygenSaturation: 88),
         [_sintoma('Dolor', 6), _sintoma('Náuseas', 7), _sintoma('Fiebre', 8)],
       );
       expect(resultado.nivel, NivelAlerta.critico);
@@ -389,7 +389,7 @@ void main() {
 
     test('los mensajes anteriores se conservan al subir', () {
       final resultado = MotorReglasClinicas.evaluar(
-        SignosVitales(temperature: 39, oxygenSaturation: 88),
+        const SignosVitales(temperature: 39, oxygenSaturation: 88),
         const [],
       );
       expect(resultado.nivel, NivelAlerta.critico);

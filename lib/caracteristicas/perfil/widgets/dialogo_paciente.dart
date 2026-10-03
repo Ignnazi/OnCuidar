@@ -2,13 +2,14 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+
+import '../../../compartidos/widgets/boton_principal.dart';
+import '../../../compartidos/widgets/campos_formulario.dart';
+import '../../../compartidos/widgets/titulo_seccion.dart';
 import '../../../core/servicios/servicio_base_datos.dart';
 import '../../../core/tema/paleta.dart';
 import '../../../core/utilidades/rut_utils.dart';
 import '../../../modelos/paciente.dart';
-import '../../../compartidos/widgets/boton_principal.dart';
-import '../../../compartidos/widgets/campos_formulario.dart';
-import '../../../compartidos/widgets/titulo_seccion.dart';
 
 Future<void> mostrarDialogoPaciente(
   BuildContext context, {
@@ -271,7 +272,10 @@ class _DialogoPacienteState extends State<_DialogoPaciente> {
                     24 + MediaQuery.of(ctx).viewInsets.bottom,
                   ),
                   children: [
-                    TituloSeccion(Icons.person_outline, 'Datos del paciente'),
+                    const TituloSeccion(
+                      Icons.person_outline,
+                      'Datos del paciente',
+                    ),
                     const SizedBox(height: 10),
                     CampoFormulario(
                       controlador: _nombreController,
@@ -329,7 +333,7 @@ class _DialogoPacienteState extends State<_DialogoPaciente> {
                           : null,
                     ),
                     const SizedBox(height: 20),
-                    TituloSeccion(
+                    const TituloSeccion(
                       Icons.local_hospital_outlined,
                       'Centro de salud',
                     ),
@@ -365,7 +369,7 @@ class _DialogoPacienteState extends State<_DialogoPaciente> {
                           : null,
                     ),
                     const SizedBox(height: 20),
-                    TituloSeccion(
+                    const TituloSeccion(
                       Icons.emergency_outlined,
                       'Contacto de emergencia',
                     ),

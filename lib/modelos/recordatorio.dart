@@ -40,7 +40,9 @@ class Recordatorio {
   bool get esParaCuidador => asignadoA == asignadoACuidador;
 
   String tituloAviso(String nombrePaciente, String etiquetaTipo) =>
-      esParaCuidador ? 'Cuidador · $etiquetaTipo' : '$nombrePaciente · $etiquetaTipo';
+      esParaCuidador
+      ? 'Cuidador · $etiquetaTipo'
+      : '$nombrePaciente · $etiquetaTipo';
 
   String get cuerpoAviso =>
       '$titulo${descripcion != null && descripcion!.isNotEmpty ? ' · $descripcion' : ''}';

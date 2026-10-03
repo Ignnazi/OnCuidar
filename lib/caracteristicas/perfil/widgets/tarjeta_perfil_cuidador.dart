@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../../core/tema/paleta.dart';
+
 import '../../../compartidos/widgets/chip_franja.dart';
 import '../../../compartidos/widgets/tarjeta_dato.dart';
+import '../../../core/tema/paleta.dart';
 
 class TarjetaPerfilCuidador extends StatelessWidget {
   const TarjetaPerfilCuidador({
@@ -363,8 +364,8 @@ class _TarjetaAutenticacion extends StatelessWidget {
               ],
               icon: Container(
                 padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [Paleta.doradoPrincipal, Paleta.doradoOscuro],

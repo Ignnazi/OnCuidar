@@ -17,8 +17,6 @@ class ChatActivoEstado {
   final String? titulo;
   final String? categoria;
   final List<MensajeConversacion> mensajes;
-
-  bool get estaVacia => mensajes.isEmpty;
 }
 
 class ChatActivoNotifier extends Notifier<ChatActivoEstado> {

@@ -273,7 +273,7 @@ pw.Widget _tablaRegistros(
     headerStyle: estiloEncabezado,
     headerDecoration: pw.BoxDecoration(
       color: _hex('#E8A820'),
-      borderRadius: pw.BorderRadius.only(
+      borderRadius: const pw.BorderRadius.only(
         topLeft: pw.Radius.circular(4),
         topRight: pw.Radius.circular(4),
       ),
@@ -282,7 +282,7 @@ pw.Widget _tablaRegistros(
     cellStyle: estiloCelda,
     cellPadding: const pw.EdgeInsets.symmetric(horizontal: 4, vertical: 4),
     cellHeight: 18,
-    rowDecoration: pw.BoxDecoration(color: PdfColors.white),
+    rowDecoration: const pw.BoxDecoration(color: PdfColors.white),
     oddRowDecoration: pw.BoxDecoration(color: _hex('#FFF9E8')),
     columnWidths: const {
       0: pw.FixedColumnWidth(46),

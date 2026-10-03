@@ -65,7 +65,7 @@ class _PantallaVideoState extends State<PantallaVideo> {
       _controlador = controlador;
       await controlador.initialize();
       if (!mounted || _controlador != controlador) {
-        controlador.dispose();
+        unawaited(controlador.dispose());
         return;
       }
       controlador.addListener(_alCambiarProgreso);
