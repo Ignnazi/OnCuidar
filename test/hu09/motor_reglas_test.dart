@@ -207,38 +207,38 @@ void main() {
   });
 
   group('síntomas', () {
-    test('un síntoma insoportable (≥9) es crítico', () {
+    test('un síntoma insoportable (10) es crítico', () {
       final resultado = MotorReglasClinicas.evaluar(null, [
-        _sintoma('Dolor', 9),
+        _sintoma('Dolor', 10),
       ]);
       expect(resultado.nivel, NivelAlerta.critico);
       expect(resultado.mensajes, contains('1 síntoma insoportable'));
     });
 
-    test('varios síntomas ≥9 cuentan en el mensaje crítico', () {
+    test('varios síntomas de 10 cuentan en el mensaje crítico', () {
       final resultado = MotorReglasClinicas.evaluar(null, [
-        _sintoma('Dolor', 9),
+        _sintoma('Dolor', 10),
         _sintoma('Fiebre', 10),
       ]);
       expect(resultado.nivel, NivelAlerta.critico);
       expect(resultado.mensajes, contains('2 síntomas insoportables'));
     });
 
-    test('dos síntomas intensos (7-8) son críticos', () {
+    test('dos síntomas severos (7-9) son críticos', () {
       final resultado = MotorReglasClinicas.evaluar(null, [
         _sintoma('Dolor', 7),
         _sintoma('Náuseas', 8),
       ]);
       expect(resultado.nivel, NivelAlerta.critico);
-      expect(resultado.mensajes, contains('2 síntomas intensos'));
+      expect(resultado.mensajes, contains('2 síntomas severos'));
     });
 
-    test('un síntoma intenso (7-8) es alerta', () {
+    test('un síntoma severo (7-9) es alerta', () {
       final resultado = MotorReglasClinicas.evaluar(null, [
         _sintoma('Dolor', 7),
       ]);
       expect(resultado.nivel, NivelAlerta.alerta);
-      expect(resultado.mensajes, contains('1 síntoma intenso'));
+      expect(resultado.mensajes, contains('1 síntoma severo'));
     });
 
     test('tres síntomas moderados son alerta', () {
@@ -270,7 +270,7 @@ void main() {
         _sintoma('Otro problema', 7),
       ]);
       expect(resultado.nivel, NivelAlerta.alerta);
-      expect(resultado.mensajes, contains('1 síntoma intenso'));
+      expect(resultado.mensajes, contains('1 síntoma severo'));
     });
 
     test('sin datos no hay síntomas preocupantes', () {
@@ -320,7 +320,7 @@ void main() {
     });
 
     test(
-      'un síntoma insoportable con varios intensos manda el mensaje insoportable',
+      'un síntoma insoportable con varios severos manda el mensaje insoportable',
       () {
         final resultado = MotorReglasClinicas.evaluar(null, [
           _sintoma('Dolor', 10),
@@ -332,19 +332,19 @@ void main() {
         expect(
           resultado.mensajes.join(' '),
           isNot(contains('intensos')),
-          reason: 'el mensaje insoportable gana sobre el de intensos',
+          reason: 'el mensaje insoportable gana sobre el de severos',
         );
       },
     );
 
-    test('dos intensos y un moderado son críticos', () {
+    test('dos severos y un moderado son críticos', () {
       final resultado = MotorReglasClinicas.evaluar(null, [
         _sintoma('Dolor', 8),
         _sintoma('Náuseas', 7),
         _sintoma('Fiebre', 5),
       ]);
       expect(resultado.nivel, NivelAlerta.critico);
-      expect(resultado.mensajes, contains('2 síntomas intensos'));
+      expect(resultado.mensajes, contains('2 síntomas severos'));
     });
 
     test('un único moderado habla en singular y plural', () {
@@ -379,7 +379,7 @@ void main() {
       expect(resultado.mensajes, contains('Fiebre alta (40.0°C)'));
     });
 
-    test('crítico por O₂ no baja con síntomas intensos después', () {
+    test('crítico por O₂ no baja con síntomas severos después', () {
       final resultado = MotorReglasClinicas.evaluar(
         SignosVitales(oxygenSaturation: 88),
         [_sintoma('Dolor', 6), _sintoma('Náuseas', 7), _sintoma('Fiebre', 8)],

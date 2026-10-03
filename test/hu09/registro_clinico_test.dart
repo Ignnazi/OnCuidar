@@ -431,7 +431,7 @@ void main() {
       expect(find.text('Nada de dolor'), findsOneWidget);
       expect(find.text('El peor dolor posible'), findsOneWidget);
       expect(
-        find.text('Mínimo síntoma'),
+        find.text('Sin síntoma'),
         findsOneWidget,
         reason: 'la píldora resume icono + etiqueta + valor',
       );
@@ -537,7 +537,7 @@ void main() {
 
     expect(find.text('1 seleccionados'), findsOneWidget);
     expect(
-      find.text('Mínimo síntoma'),
+      find.text('Sin síntoma'),
       findsOneWidget,
       reason: '"Otro problema" arranca con intensidad 0 como cualquier síntoma',
     );
@@ -855,9 +855,10 @@ void main() {
   group('EntradaSintoma.iconoPara', () {
     test('mapea la intensidad a un emoticono por tramo', () {
       expect(EntradaSintoma.iconoPara(0), Icons.sentiment_very_satisfied);
-      expect(EntradaSintoma.iconoPara(2), Icons.sentiment_satisfied);
-      expect(EntradaSintoma.iconoPara(3), Icons.sentiment_dissatisfied);
-      expect(EntradaSintoma.iconoPara(5), Icons.sentiment_very_dissatisfied);
+      expect(EntradaSintoma.iconoPara(3), Icons.sentiment_satisfied);
+      expect(EntradaSintoma.iconoPara(4), Icons.sentiment_dissatisfied);
+      expect(EntradaSintoma.iconoPara(6), Icons.sentiment_dissatisfied);
+      expect(EntradaSintoma.iconoPara(7), Icons.sentiment_very_dissatisfied);
       expect(EntradaSintoma.iconoPara(8), Icons.sentiment_very_dissatisfied);
       expect(EntradaSintoma.iconoPara(10), Icons.sentiment_very_dissatisfied);
     });

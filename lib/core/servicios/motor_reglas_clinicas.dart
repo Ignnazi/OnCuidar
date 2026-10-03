@@ -80,9 +80,9 @@ class MotorReglasClinicas {
     }
 
     final activos = sintomas.where((s) => s.intensity >= 1).toList();
-    final insoportables = activos.where((s) => s.intensity >= 9).length;
+    final insoportables = activos.where((s) => s.intensity == 10).length;
     final intensos = activos
-        .where((s) => s.intensity >= 7 && s.intensity <= 8)
+        .where((s) => s.intensity >= 7 && s.intensity <= 9)
         .length;
     final moderados = activos
         .where((s) => s.intensity >= 4 && s.intensity <= 6)
@@ -101,11 +101,11 @@ class MotorReglasClinicas {
       );
     } else if (intensos >= 2) {
       nivel = NivelAlerta.critico;
-      mensajes.add('$intensos síntomas intensos');
+      mensajes.add('$intensos síntomas severos');
     } else if (intensos == 1) {
       if (nivel != NivelAlerta.critico) {
         nivel = NivelAlerta.alerta;
-        mensajes.add('1 síntoma intenso');
+        mensajes.add('1 síntoma severo');
       }
     } else if (moderados >= 3) {
       if (nivel != NivelAlerta.critico) {

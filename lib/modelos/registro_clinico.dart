@@ -33,17 +33,16 @@ class EntradaSintoma {
         return const Color(0xFF6BA368);
       case 1:
       case 2:
-        return const Color(0xFF8BC34A);
       case 3:
+        return const Color(0xFF8BC34A);
       case 4:
-        return const Color(0xFFE8A820);
       case 5:
       case 6:
         return const Color(0xFFEF8A17);
       case 7:
       case 8:
-        return const Color(0xFFD9534F);
       case 9:
+        return const Color(0xFFD9534F);
       case 10:
         return const Color(0xFFB71C1C);
       default:
@@ -57,9 +56,11 @@ class EntradaSintoma {
         return Icons.sentiment_very_satisfied;
       case 1:
       case 2:
-        return Icons.sentiment_satisfied;
       case 3:
+        return Icons.sentiment_satisfied;
       case 4:
+      case 5:
+      case 6:
         return Icons.sentiment_dissatisfied;
       default:
         return Icons.sentiment_very_dissatisfied;
@@ -69,7 +70,7 @@ class EntradaSintoma {
   static String etiquetaPara(int intensity) {
     switch (intensity) {
       case 0:
-        return 'Mínimo síntoma';
+        return 'Sin síntoma';
       case 1:
       case 2:
       case 3:
@@ -80,8 +81,8 @@ class EntradaSintoma {
         return 'Moderado';
       case 7:
       case 8:
-        return 'Intenso';
       case 9:
+        return 'Severo';
       case 10:
         return 'Insoportable';
       default:
