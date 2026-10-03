@@ -47,11 +47,6 @@ void main() {
         observaciones: 'obs $etiqueta',
       ),
     );
-    await base.crearListaChecklist(
-      id,
-      titulo: 'lista $etiqueta',
-      items: ['item $etiqueta'],
-    );
     await base.agregarRecordatorio(
       id,
       Recordatorio(
@@ -130,19 +125,16 @@ void main() {
 
   group('Datos por paciente activo', () {
     test(
-      'al cambiar de paciente cambian registros, checklists y recordatorios',
+      'al cambiar de paciente cambian registros y recordatorios',
       () async {
         await seleccionar(idA);
         final registros = observar(registrosClinicosProvider);
-        final listas = observar(listasChecklistProvider);
         final recordatorios = observar(recordatoriosProvider);
 
         await _esperar(
           () => registros().isNotEmpty && registros().first.pacienteId == idA,
         );
         expect(registros().map((r) => r.observaciones), ['obs A']);
-        await _esperar(() => listas().isNotEmpty);
-        expect(listas().map((l) => l.titulo), ['lista A']);
         await _esperar(() => recordatorios().isNotEmpty);
         expect(recordatorios().map((r) => r.titulo), ['recordatorio A']);
 
@@ -151,10 +143,6 @@ void main() {
           () => registros().isNotEmpty && registros().first.pacienteId == idB,
         );
         expect(registros().map((r) => r.observaciones), ['obs B']);
-        await _esperar(
-          () => listas().isNotEmpty && listas().first.titulo == 'lista B',
-        );
-        expect(listas().map((l) => l.titulo), ['lista B']);
         await _esperar(
           () =>
               recordatorios().isNotEmpty &&
@@ -166,19 +154,25 @@ void main() {
 
     test('volver al paciente anterior recupera solo sus datos', () async {
       await seleccionar(idA);
-      final listas = observar(listasChecklistProvider);
+      final recordatorios = observar(recordatoriosProvider);
       await _esperar(
-        () => listas().isNotEmpty && listas().first.titulo == 'lista A',
+        () =>
+            recordatorios().isNotEmpty &&
+            recordatorios().first.titulo == 'recordatorio A',
       );
       await seleccionar(idB);
       await _esperar(
-        () => listas().isNotEmpty && listas().first.titulo == 'lista B',
+        () =>
+            recordatorios().isNotEmpty &&
+            recordatorios().first.titulo == 'recordatorio B',
       );
       await seleccionar(idA);
       await _esperar(
-        () => listas().isNotEmpty && listas().first.titulo == 'lista A',
+        () =>
+            recordatorios().isNotEmpty &&
+            recordatorios().first.titulo == 'recordatorio A',
       );
-      expect(listas(), hasLength(1));
+      expect(recordatorios(), hasLength(1));
     });
 
     test('ninguna lista mezcla datos de los dos pacientes', () async {

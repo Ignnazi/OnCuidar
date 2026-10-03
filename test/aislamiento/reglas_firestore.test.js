@@ -45,11 +45,6 @@ const colecciones = [
     valido: (p) => ({ paciente_id: p, tipoRegistro: 'diario', sintomas_cifrado: 'a.b.c' }),
   },
   {
-    nombre: 'userChecklists',
-    campo: 'paciente_id',
-    valido: (p) => ({ paciente_id: p, indicesMarcados: [], titulo_cifrado: 'a.b.c' }),
-  },
-  {
     nombre: 'recordatorios',
     campo: 'pacienteId',
     valido: (p) => ({ pacienteId: p, activo: true, titulo_cifrado: 'a.b.c' }),

@@ -27,7 +27,7 @@ void main() {
 
       final pendientes = await despuesDelReinicio.pendientes('u1');
       expect(pendientes.map((e) => e.id), ['a', 'b']);
-      expect(pendientes.first.ruta, 'users/u1/patients/p1/userChecklists/c1');
+      expect(pendientes.first.ruta, 'users/u1/patients/p1/recordatorios/c1');
     });
 
     test('conserva el orden de llegada', () async {

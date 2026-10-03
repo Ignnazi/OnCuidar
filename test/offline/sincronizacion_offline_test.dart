@@ -129,27 +129,26 @@ void main() {
 
   group('Escritura sin conexión', () {
     test(
-      'un checklist creado sin red se ve de inmediato y queda en la cola',
+      'un recordatorio creado sin red se ve de inmediato y queda en la cola',
       () async {
         final e = await _crearEntorno();
-        final id = await e.base.crearListaChecklist(
+        final id = await e.base.agregarRecordatorio(
           'pacienteA',
-          titulo: 'Rutina diaria',
-          items: ['Preparar mochila'],
+          _recordatorio('pacienteA'),
         );
 
         expect(id, isNotEmpty);
         expect(
-          (await e.coleccion('pacienteA', 'userChecklists').get()).docs,
+          (await e.coleccion('pacienteA', 'recordatorios').get()).docs,
           hasLength(1),
           reason: 'sin red la lista debe mostrar lo recién creado',
         );
         final visibles = await e.base
-            .listasChecklistTiempoReal('pacienteA')
+            .recordatoriosEnTiempoReal('pacienteA')
             .first;
-        expect(visibles.map((l) => l.titulo), ['Rutina diaria']);
+        expect(visibles.map((r) => r.titulo), ['Dar paracetamol']);
         final pendiente = (await e.pendientes()).single;
-        expect(pendiente.ruta, endsWith('userChecklists/$id'));
+        expect(pendiente.ruta, endsWith('recordatorios/$id'));
         expect(pendiente.operacion, OperacionPendiente.crear);
       },
     );
@@ -158,11 +157,6 @@ void main() {
       'lo encolado declara el paciente y no lleva datos clínicos en claro',
       () async {
         final e = await _crearEntorno();
-        await e.base.crearListaChecklist(
-          'pacienteA',
-          titulo: 'Secreto',
-          items: ['x'],
-        );
         await e.base.guardarRegistroClinico(
           'pacienteA',
           _registro('r1', 'pacienteA'),
@@ -173,10 +167,9 @@ void main() {
         );
 
         final pendientes = await e.pendientes();
-        expect(pendientes, hasLength(3));
+        expect(pendientes, hasLength(2));
         final todo = pendientes.map((p) => p.datos.toString()).join();
         for (final secreto in [
-          'Secreto',
           'Observación reservada',
           'Dolor',
           'Dar paracetamol',
@@ -185,20 +178,15 @@ void main() {
           expect(todo, isNot(contains(secreto)), reason: secreto);
         }
         expect(pendientes[0].datos['paciente_id'], 'pacienteA');
-        expect(pendientes[1].datos['paciente_id'], 'pacienteA');
-        expect(pendientes[2].datos['pacienteId'], 'pacienteA');
+        expect(pendientes[1].datos['pacienteId'], 'pacienteA');
       },
     );
 
     test('con conexión se escribe directo y la cola queda vacía', () async {
       final e = await _crearEntorno(enLinea: true);
-      final id = await e.base.crearListaChecklist(
-        'pacienteA',
-        titulo: 'Rutina',
-        items: ['x'],
-      );
+      final id = await e.base.agregarRecordatorio('pacienteA', _recordatorio('pacienteA'));
       final doc = await e
-          .coleccion('pacienteA', 'userChecklists')
+          .coleccion('pacienteA', 'recordatorios')
           .doc(id)
           .get();
       expect(doc.exists, isTrue);
@@ -207,16 +195,11 @@ void main() {
   });
 
   group('Drenaje al recuperar la red', () {
-    test('envía registro, checklist y recordatorio con su paciente', () async {
+    test('envía registro y recordatorio con su paciente', () async {
       final e = await _crearEntorno();
       await e.base.guardarRegistroClinico(
         'pacienteA',
         _registro('r1', 'pacienteA'),
-      );
-      final idLista = await e.base.crearListaChecklist(
-        'pacienteA',
-        titulo: 'Rutina',
-        items: ['x'],
       );
       final idRec = await e.base.agregarRecordatorio(
         'pacienteA',
@@ -230,10 +213,6 @@ void main() {
           .coleccion('pacienteA', 'clinicalRecords')
           .doc('r1')
           .get();
-      final lista = await e
-          .coleccion('pacienteA', 'userChecklists')
-          .doc(idLista)
-          .get();
       final rec = await e
           .coleccion('pacienteA', 'recordatorios')
           .doc(idRec)
@@ -241,18 +220,13 @@ void main() {
       expect(registro.data()?['paciente_id'], 'pacienteA');
       expect(registro.data()?['sintomas_cifrado'], isNotNull);
       expect(registro.data()?['creadoEn'], isNotNull);
-      expect(lista.data()?['paciente_id'], 'pacienteA');
       expect(rec.data()?['pacienteId'], 'pacienteA');
       expect(await e.pendientes(), isEmpty);
     });
 
     test('sin red no envía nada y conserva la cola', () async {
       final e = await _crearEntorno();
-      await e.base.crearListaChecklist(
-        'pacienteA',
-        titulo: 'Rutina',
-        items: ['x'],
-      );
+      await e.base.agregarRecordatorio('pacienteA', _recordatorio('pacienteA'));
       await e.orquestador.drenar();
       expect(await e.pendientes(), hasLength(1));
       expect(e.base.aplicadas, isEmpty);
@@ -260,65 +234,52 @@ void main() {
 
     test('drenar dos veces no duplica documentos', () async {
       final e = await _crearEntorno();
-      await e.base.crearListaChecklist(
-        'pacienteA',
-        titulo: 'Rutina',
-        items: ['x'],
-      );
+      await e.base.agregarRecordatorio('pacienteA', _recordatorio('pacienteA'));
       e.red.fijar(true);
       await Future.wait([e.orquestador.drenar(), e.orquestador.drenar()]);
       await e.orquestador.drenar();
       expect(
-        (await e.coleccion('pacienteA', 'userChecklists').get()).docs,
+        (await e.coleccion('pacienteA', 'recordatorios').get()).docs,
         hasLength(1),
       );
     });
 
     test('reenviar una escritura ya aplicada es idempotente', () async {
       final e = await _crearEntorno(enLinea: true);
-      await e.base.crearListaChecklist(
-        'pacienteA',
-        titulo: 'Rutina',
-        items: ['x'],
-      );
+      await e.base.agregarRecordatorio('pacienteA', _recordatorio('pacienteA'));
       final doc =
-          (await e.coleccion('pacienteA', 'userChecklists').get()).docs.single;
+          (await e.coleccion('pacienteA', 'recordatorios').get()).docs.single;
       final escritura = escrituraDe(
-        ruta: 'users/$_uid/patients/pacienteA/userChecklists/${doc.id}',
+        ruta: 'users/$_uid/patients/pacienteA/recordatorios/${doc.id}',
         pacienteId: 'pacienteA',
         datos: CodecPayload.codificar(doc.data()) as Map<String, dynamic>,
       );
       await e.base.aplicarEscrituraPendiente(escritura);
       await e.base.aplicarEscrituraPendiente(escritura);
       expect(
-        (await e.coleccion('pacienteA', 'userChecklists').get()).docs,
+        (await e.coleccion('pacienteA', 'recordatorios').get()).docs,
         hasLength(1),
       );
     });
 
     test(
-      'aplica en orden: crear y luego actualizar el mismo checklist',
+      'aplica en orden: crear y luego actualizar el mismo recordatorio',
       () async {
         final e = await _crearEntorno();
-        final id = await e.base.crearListaChecklist(
+        final id = await e.base.agregarRecordatorio(
           'pacienteA',
-          titulo: 'Rutina',
-          items: ['a', 'b'],
+          _recordatorio('pacienteA'),
         );
-        await e.base.actualizarListaChecklist(
-          'pacienteA',
-          id,
-          indicesMarcados: [1],
-        );
+        await e.base.actualizarRecordatorio('pacienteA', id, activo: false);
         e.red.fijar(true);
         await e.orquestador.drenar();
 
         final doc = await e
-            .coleccion('pacienteA', 'userChecklists')
+            .coleccion('pacienteA', 'recordatorios')
             .doc(id)
             .get();
-        expect(doc.data()?['indicesMarcados'], [1]);
-        expect(doc.data()?['paciente_id'], 'pacienteA');
+        expect(doc.data()?['activo'], isFalse);
+        expect(doc.data()?['pacienteId'], 'pacienteA');
       },
     );
 
@@ -327,17 +288,13 @@ void main() {
       () async {
         final e = await _crearEntorno();
         e.orquestador.iniciar();
-        await e.base.crearListaChecklist(
-          'pacienteA',
-          titulo: 'Rutina',
-          items: ['x'],
-        );
+        await e.base.agregarRecordatorio('pacienteA', _recordatorio('pacienteA'));
         expect(await e.pendientes(), hasLength(1));
 
         e.red.fijar(true);
         await esperarHasta(() async => (await e.pendientes()).isEmpty);
         expect(
-          (await e.coleccion('pacienteA', 'userChecklists').get()).docs,
+          (await e.coleccion('pacienteA', 'recordatorios').get()).docs,
           hasLength(1),
         );
       },
@@ -347,11 +304,7 @@ void main() {
       'la cola sobrevive al cierre de la app y se envía al reabrir',
       () async {
         final e = await _crearEntorno();
-        await e.base.crearListaChecklist(
-          'pacienteA',
-          titulo: 'Rutina',
-          items: ['x'],
-        );
+        await e.base.agregarRecordatorio('pacienteA', _recordatorio('pacienteA'));
 
         final prefs = await SharedPreferences.getInstance();
         SharedPreferences.setMockInitialValues({
@@ -377,7 +330,7 @@ void main() {
 
         await orquestador.drenar();
         expect(
-          (await e.coleccion('pacienteA', 'userChecklists').get()).docs,
+          (await e.coleccion('pacienteA', 'recordatorios').get()).docs,
           hasLength(1),
         );
         expect(await cola.pendientes(_uid), isEmpty);
@@ -390,24 +343,16 @@ void main() {
       'un borrado en el servidor gana sobre una actualización encolada',
       () async {
         final e = await _crearEntorno(enLinea: true);
-        final id = await e.base.crearListaChecklist(
-          'pacienteA',
-          titulo: 'Rutina',
-          items: ['x'],
-        );
+        final id = await e.base.agregarRecordatorio('pacienteA', _recordatorio('pacienteA'));
         e.red.fijar(false);
-        await e.base.actualizarListaChecklist(
-          'pacienteA',
-          id,
-          indicesMarcados: [0],
-        );
-        await e.coleccion('pacienteA', 'userChecklists').doc(id).delete();
+        await e.base.actualizarRecordatorio('pacienteA', id, activo: false);
+        await e.coleccion('pacienteA', 'recordatorios').doc(id).delete();
 
         e.red.fijar(true);
         await e.orquestador.drenar();
 
         final doc = await e
-            .coleccion('pacienteA', 'userChecklists')
+            .coleccion('pacienteA', 'recordatorios')
             .doc(id)
             .get();
         expect(doc.exists, isFalse);
@@ -418,43 +363,26 @@ void main() {
 
     test('la última escritura encolada gana campo a campo', () async {
       final e = await _crearEntorno(enLinea: true);
-      final id = await e.base.crearListaChecklist(
-        'pacienteA',
-        titulo: 'Rutina',
-        items: ['x', 'y'],
-      );
+      final id = await e.base.agregarRecordatorio('pacienteA', _recordatorio('pacienteA'));
       e.red.fijar(false);
-      await e.base.actualizarListaChecklist(
-        'pacienteA',
-        id,
-        indicesMarcados: [0],
-      );
-      await e.base.actualizarListaChecklist(
-        'pacienteA',
-        id,
-        indicesMarcados: [0, 1],
-      );
+      await e.base.actualizarRecordatorio('pacienteA', id, activo: false);
+      await e.base.actualizarRecordatorio('pacienteA', id, activo: true);
 
       e.red.fijar(true);
       await e.orquestador.drenar();
 
       final doc = await e
-          .coleccion('pacienteA', 'userChecklists')
+          .coleccion('pacienteA', 'recordatorios')
           .doc(id)
           .get();
-      expect(doc.data()?['indicesMarcados'], [0, 1]);
-      expect(doc.data()?['paciente_id'], 'pacienteA');
+      expect(doc.data()?['activo'], isTrue);
+      expect(doc.data()?['pacienteId'], 'pacienteA');
     });
   });
 
   group('Fallos durante el drenaje', () {
     test('un fallo transitorio a mitad no pierde ninguna escritura', () async {
       final e = await _crearEntorno();
-      await e.base.crearListaChecklist(
-        'pacienteA',
-        titulo: 'Uno',
-        items: ['x'],
-      );
       await e.base.agregarRecordatorio('pacienteA', _recordatorio('pacienteA'));
       await e.base.guardarRegistroClinico(
         'pacienteA',
@@ -471,10 +399,6 @@ void main() {
       expect(restantes, hasLength(2));
       expect(restantes.first.ruta, contains('recordatorios'));
       expect(restantes.first.intentos, 1);
-      expect(
-        (await e.coleccion('pacienteA', 'userChecklists').get()).docs,
-        hasLength(1),
-      );
 
       e.base.falla = null;
       await e.orquestador.drenar();
@@ -493,11 +417,7 @@ void main() {
       final e = await _crearEntorno(
         retardoBase: const Duration(milliseconds: 10),
       );
-      await e.base.crearListaChecklist(
-        'pacienteA',
-        titulo: 'Uno',
-        items: ['x'],
-      );
+      await e.base.agregarRecordatorio('pacienteA', _recordatorio('pacienteA'));
       var fallos = 0;
       e.base.falla = (_) {
         if (fallos >= 2) return null;
@@ -514,20 +434,19 @@ void main() {
       await esperarHasta(() async => (await e.pendientes()).isEmpty);
       expect(fallos, 2);
       expect(
-        (await e.coleccion('pacienteA', 'userChecklists').get()).docs,
+        (await e.coleccion('pacienteA', 'recordatorios').get()).docs,
         hasLength(1),
       );
     });
 
     test('un error permanente va a fallidas y no bloquea al resto', () async {
       final e = await _crearEntorno();
-      await e.base.crearListaChecklist(
+      await e.base.guardarRegistroClinico(
         'pacienteA',
-        titulo: 'Uno',
-        items: ['x'],
+        _registro('r1', 'pacienteA'),
       );
       await e.base.agregarRecordatorio('pacienteA', _recordatorio('pacienteA'));
-      e.base.falla = (escritura) => escritura.ruta.contains('userChecklists')
+      e.base.falla = (escritura) => escritura.ruta.contains('clinicalRecords')
           ? FirebaseException(
               plugin: 'cloud_firestore',
               code: 'permission-denied',
@@ -547,11 +466,7 @@ void main() {
 
     test('tras agotar los intentos la escritura pasa a fallidas', () async {
       final e = await _crearEntorno(maxIntentos: 2);
-      await e.base.crearListaChecklist(
-        'pacienteA',
-        titulo: 'Uno',
-        items: ['x'],
-      );
+      await e.base.agregarRecordatorio('pacienteA', _recordatorio('pacienteA'));
       e.base.falla = (_) =>
           FirebaseException(plugin: 'cloud_firestore', code: 'unavailable');
       e.red.fijar(true);
@@ -570,14 +485,14 @@ void main() {
       await e.cola.encolar(
         _uid,
         escrituraDe(
-          ruta: 'users/$_uid/patients/pacienteB/userChecklists/c1',
+          ruta: 'users/$_uid/patients/pacienteB/recordatorios/c1',
           pacienteId: 'pacienteA',
         ),
       );
       await e.orquestador.drenar();
 
       expect(
-        (await e.coleccion('pacienteB', 'userChecklists').get()).docs,
+        (await e.coleccion('pacienteB', 'recordatorios').get()).docs,
         isEmpty,
       );
       expect(await e.cola.fallidas(_uid), hasLength(1));
@@ -588,7 +503,7 @@ void main() {
       await e.cola.encolar(
         _uid,
         escrituraDe(
-          ruta: 'users/otro-cuidador/patients/pacienteA/userChecklists/c1',
+          ruta: 'users/otro-cuidador/patients/pacienteA/recordatorios/c1',
           pacienteId: 'pacienteA',
         ),
       );
@@ -599,7 +514,7 @@ void main() {
           .doc('otro-cuidador')
           .collection('patients')
           .doc('pacienteA')
-          .collection('userChecklists')
+          .collection('recordatorios')
           .get();
       expect(ajeno.docs, isEmpty);
     });

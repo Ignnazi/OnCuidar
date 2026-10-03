@@ -134,7 +134,7 @@ Future<_Entorno> _crearEntorno({
 }
 
 EscrituraPendiente _escritura(String id) =>
-    escrituraDe(id: id, ruta: 'users/$_uid/patients/p1/userChecklists/c1');
+    escrituraDe(id: id, ruta: 'users/$_uid/patients/p1/recordatorios/c1');
 
 Future<Map<String, dynamic>> _payloadDe(
   _Entorno ent,
@@ -508,31 +508,6 @@ void main() {
       expect(await ent.cola.pendientes(_uid), isEmpty);
     });
 
-    test('sin red el borrado de un checklist llega al servidor', () async {
-      final ent = await _crearEntorno(enLinea: true);
-      final id = await ent.base.crearListaChecklist(
-        'p1',
-        titulo: 'Turno',
-        items: ['Pastilla'],
-      );
-
-      ent.red.fijar(false);
-      await ent.base.eliminarListaChecklist('p1', id);
-
-      expect(
-        (await ent.cola.pendientes(_uid)).single.operacion,
-        OperacionPendiente.borrar,
-      );
-
-      ent.red.fijar(true);
-      await ent.orquestador.drenar();
-
-      expect(
-        (await ent.coleccion('p1', 'userChecklists').doc(id).get()).exists,
-        isFalse,
-      );
-    });
-
     test(
       'sin red el borrado de un registro clínico llega al servidor',
       () async {
@@ -624,24 +599,6 @@ void main() {
   });
 
   group('El binding de paciente viaja en cada escritura', () {
-    test('actualizar un checklist lo sigue declarando', () async {
-      final ent = await _crearEntorno(enLinea: true);
-      final id = await ent.base.crearListaChecklist(
-        'p1',
-        titulo: 'Turno',
-        items: ['Pastilla'],
-      );
-
-      await ent.base.actualizarListaChecklist('p1', id, indicesMarcados: [0]);
-
-      final doc = await ent.coleccion('p1', 'userChecklists').doc(id).get();
-      expect(
-        doc.data()!['paciente_id'],
-        'p1',
-        reason: 'firestore.rules exige el binding también al actualizar',
-      );
-    });
-
     test('actualizar un recordatorio lo sigue declarando', () async {
       final ent = await _crearEntorno(enLinea: true);
       final id = await ent.base.agregarRecordatorio(

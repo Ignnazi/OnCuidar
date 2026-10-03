@@ -101,17 +101,13 @@ void main() {
       'editar un documento ya borrado en el servidor no lo revive',
       () async {
         final ent = await _crearEntorno();
-        final id = await ent.base.crearListaChecklist(
-          'p1',
-          titulo: 'Turno',
-          items: ['Pastilla'],
-        );
-        await ent.coleccion('userChecklists').doc(id).delete();
+        final id = await ent.base.agregarRecordatorio('p1', _recordatorio('Turno'));
+        await ent.coleccion('recordatorios').doc(id).delete();
 
-        await ent.base.actualizarListaChecklist('p1', id, indicesMarcados: [0]);
+        await ent.base.actualizarRecordatorio('p1', id, activo: false);
 
         expect(
-          (await ent.coleccion('userChecklists').doc(id).get()).exists,
+          (await ent.coleccion('recordatorios').doc(id).get()).exists,
           isFalse,
         );
       },
@@ -121,20 +117,16 @@ void main() {
       'una actualización encolada de un documento borrado se descarta',
       () async {
         final ent = await _crearEntorno();
-        final id = await ent.base.crearListaChecklist(
-          'p1',
-          titulo: 'Turno',
-          items: ['Pastilla'],
-        );
+        final id = await ent.base.agregarRecordatorio('p1', _recordatorio('Turno'));
         ent.red.fijar(false);
-        await ent.base.actualizarListaChecklist('p1', id, indicesMarcados: [0]);
-        await ent.coleccion('userChecklists').doc(id).delete();
+        await ent.base.actualizarRecordatorio('p1', id, activo: false);
+        await ent.coleccion('recordatorios').doc(id).delete();
 
         ent.red.fijar(true);
         await ent.orquestador.drenar();
 
         expect(
-          (await ent.coleccion('userChecklists').doc(id).get()).exists,
+          (await ent.coleccion('recordatorios').doc(id).get()).exists,
           isFalse,
         );
         expect(await ent.cola.pendientes(_uid), isEmpty);
@@ -145,37 +137,29 @@ void main() {
   group('Una edición nueva no se pisa con una vieja', () {
     test('con pendientes del mismo documento la nueva va detrás', () async {
       final ent = await _crearEntorno();
-      final id = await ent.base.crearListaChecklist(
-        'p1',
-        titulo: 'Turno',
-        items: ['Pastilla'],
-      );
+      final id = await ent.base.agregarRecordatorio('p1', _recordatorio('Turno'));
       ent.red.fijar(false);
-      await ent.base.actualizarListaChecklist('p1', id, indicesMarcados: [0]);
+      await ent.base.actualizarRecordatorio('p1', id, activo: false);
 
       ent.red.fijar(true);
-      await ent.base.actualizarListaChecklist('p1', id, indicesMarcados: [1]);
+      await ent.base.actualizarRecordatorio('p1', id, activo: true);
 
       expect(await ent.cola.pendientes(_uid), hasLength(2));
 
       await ent.orquestador.drenar();
 
-      final doc = await ent.coleccion('userChecklists').doc(id).get();
-      expect(doc.data()!['indicesMarcados'], [1]);
+      final doc = await ent.coleccion('recordatorios').doc(id).get();
+      expect(doc.data()!['activo'], isTrue);
     });
 
     test('sin pendientes la escritura va directa al servidor', () async {
       final ent = await _crearEntorno();
-      final id = await ent.base.crearListaChecklist(
-        'p1',
-        titulo: 'Turno',
-        items: ['Pastilla'],
-      );
-      await ent.base.actualizarListaChecklist('p1', id, indicesMarcados: [2]);
+      final id = await ent.base.agregarRecordatorio('p1', _recordatorio('Turno'));
+      await ent.base.actualizarRecordatorio('p1', id, activo: false);
 
       expect(await ent.cola.pendientes(_uid), isEmpty);
-      final doc = await ent.coleccion('userChecklists').doc(id).get();
-      expect(doc.data()!['indicesMarcados'], [2]);
+      final doc = await ent.coleccion('recordatorios').doc(id).get();
+      expect(doc.data()!['activo'], isFalse);
     });
   });
 

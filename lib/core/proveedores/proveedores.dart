@@ -5,7 +5,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart' show StateProvider;
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../modelos/checklist_usuario.dart';
 import '../../modelos/conversacion.dart';
 import '../../modelos/material_educativo.dart';
 import '../../modelos/paciente.dart';
@@ -421,17 +420,6 @@ final idsFavoritosProvider = StreamProvider.autoDispose<List<String>>((ref) {
 final contenidoDetalleProvider = FutureProvider.autoDispose
     .family<MaterialEducativo?, String>((ref, id) {
       return ref.watch(servicioBaseDatosProvider).obtenerContenidoEducativo(id);
-    });
-
-final listasChecklistProvider =
-    StreamProvider.autoDispose<List<ChecklistUsuario>>((ref) {
-      final pacienteAsync = ref.watch(currentPatientProvider);
-      if (pacienteAsync is AsyncLoading) return Stream.empty();
-      final paciente = pacienteAsync.value;
-      if (paciente == null) return Stream.value(const []);
-      return ref
-          .watch(servicioBaseDatosProvider)
-          .listasChecklistTiempoReal(paciente.id);
     });
 
 final recordatoriosProvider = StreamProvider.autoDispose<List<Recordatorio>>((

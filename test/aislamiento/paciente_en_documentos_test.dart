@@ -26,26 +26,6 @@ void main() {
 
   group('Paciente declarado en el documento', () {
     test(
-      'un checklist creado guarda paciente_id igual al de su ruta',
-      () async {
-        final id = await base.crearListaChecklist(
-          'pacienteA',
-          titulo: 'Rutina diaria',
-          items: ['Preparar mochila'],
-        );
-        final doc = await firestore
-            .collection('users')
-            .doc(_uid)
-            .collection('patients')
-            .doc('pacienteA')
-            .collection('userChecklists')
-            .doc(id)
-            .get();
-        expect(doc.data()?['paciente_id'], 'pacienteA');
-      },
-    );
-
-    test(
       'un recordatorio creado guarda pacienteId igual al de su ruta',
       () async {
         final ahora = DateTime.now();

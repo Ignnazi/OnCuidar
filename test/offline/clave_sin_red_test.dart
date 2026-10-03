@@ -63,7 +63,7 @@ void main() {
         .doc(_uid)
         .collection('patients')
         .doc('pacienteA')
-        .collection('userChecklists')
+        .collection('recordatorios')
         .get();
     expect(pacientes.docs, isEmpty);
   }
@@ -81,14 +81,6 @@ void main() {
         await afirmarNadaEscrito();
       },
     );
-
-    test('un checklist falla con un error explícito y no se encola', () async {
-      await expectLater(
-        base.crearListaChecklist('pacienteA', titulo: 'Rutina', items: ['x']),
-        throwsA(isA<ClaveNoDisponibleSinConexion>()),
-      );
-      await afirmarNadaEscrito();
-    });
 
     test(
       'un recordatorio falla con un error explícito y no se encola',
@@ -133,14 +125,9 @@ void main() {
       expect(pendiente.datos['contenido_registro_cifrado'], isNotNull);
     });
 
-    test('también encola checklists y recordatorios', () async {
-      await base.crearListaChecklist(
-        'pacienteA',
-        titulo: 'Rutina',
-        items: ['x'],
-      );
+    test('también encola recordatorios', () async {
       await base.agregarRecordatorio('pacienteA', _recordatorio());
-      expect(await cola.pendientes(_uid), hasLength(2));
+      expect(await cola.pendientes(_uid), hasLength(1));
     });
   });
 
@@ -151,7 +138,7 @@ void main() {
       'conserva el comportamiento previo: error de clave no cargada',
       () async {
         await expectLater(
-          base.crearListaChecklist('pacienteA', titulo: 'Rutina', items: ['x']),
+          base.agregarRecordatorio('pacienteA', _recordatorio()),
           throwsA(isA<StateError>()),
         );
         expect(await cola.pendientes(_uid), isEmpty);

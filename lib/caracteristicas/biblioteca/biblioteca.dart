@@ -5,18 +5,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:open_filex/open_filex.dart';
-import '../../compartidos/widgets/dialogo_confirmacion.dart';
 import '../../compartidos/widgets/encabezado_gradiente.dart';
 import '../../core/configuracion/entrega_semana.dart';
 import '../../core/proveedores/proveedores.dart';
 import '../../core/tema/paleta.dart';
 import '../../core/util/estilos.dart';
-import '../../modelos/checklist_usuario.dart';
 import '../../modelos/material_educativo.dart';
 import 'categorias.dart';
 import 'checklist_interactivo.dart';
-import 'hoja_checklist_usuario.dart';
-import 'hoja_editor_checklist.dart';
 import 'pantalla_video.dart';
 import 'parseo_contenido.dart';
 import 'widgets/imagen_cacheada.dart';
@@ -225,7 +221,6 @@ class _BibliotecaScreenState extends ConsumerState<BibliotecaScreen> {
     final contenidosAsync = ref.watch(contenidosEducativosProvider);
     final favoritosAsync = ref.watch(idsFavoritosProvider);
     final descargados = ref.watch(contenidosDescargadosProvider);
-    final listasAsync = ref.watch(listasChecklistProvider);
     final favoritos = favoritosAsync.value ?? <String>[];
 
     return Scaffold(
@@ -267,11 +262,7 @@ class _BibliotecaScreenState extends ConsumerState<BibliotecaScreen> {
                       _filaFiltros(),
                       const SizedBox(height: 6),
                       Expanded(
-                        child: _lista(
-                          filtrados,
-                          descargados,
-                          listasAsync.value ?? const [],
-                        ),
+                        child: _lista(filtrados, descargados),
                       ),
                     ],
                   ),
@@ -456,13 +447,8 @@ class _BibliotecaScreenState extends ConsumerState<BibliotecaScreen> {
   Widget _lista(
     List<MaterialEducativo> filtrados,
     Set<String> descargados,
-    List<ChecklistUsuario> listas,
   ) {
-    final mostrarSeccion =
-        habilitadaDesdeSemana(3) &&
-        (_filtro == 'Todos' || _filtro == 'Checklist') &&
-        (filtrados.isNotEmpty || listas.isNotEmpty);
-    if (filtrados.isEmpty && !mostrarSeccion) {
+    if (filtrados.isEmpty) {
       return _EstadoVacio(
         mensaje: _soloFavoritos
             ? 'No tienes materiales guardados todavía.'
@@ -474,12 +460,6 @@ class _BibliotecaScreenState extends ConsumerState<BibliotecaScreen> {
       children: [
         for (final material in filtrados)
           _tarjetaMaterial(material, descargados),
-        if (mostrarSeccion) ...[
-          const SizedBox(height: 4),
-          _encabezadoMisChecklists(),
-          const SizedBox(height: 8),
-          for (final lista in listas) _tarjetaChecklist(lista),
-        ],
       ],
     );
   }
@@ -521,336 +501,7 @@ class _BibliotecaScreenState extends ConsumerState<BibliotecaScreen> {
       }
     }
   }
-
-  Widget _encabezadoMisChecklists() {
-    return Row(
-      children: [
-        Expanded(
-          child: Text(
-            'Mis Checklists',
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.nunito(
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              color: Paleta.textoPrincipal,
-            ),
-          ),
-        ),
-        const SizedBox(width: 8),
-        GestureDetector(
-          key: const Key('agregarChecklist'),
-          onTap: () => _abrirEditorChecklist(),
-          child: Container(
-            height: 36,
-            padding: const EdgeInsets.symmetric(horizontal: 14),
-            decoration: BoxDecoration(
-              color: Paleta.doradoPrincipal,
-              borderRadius: BorderRadius.circular(18),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.add, color: Colors.white, size: 20),
-                const SizedBox(width: 5),
-                Text(
-                  'Crear checklist',
-                  style: GoogleFonts.nunito(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 13,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _tarjetaChecklist(ChecklistUsuario lista) {
-    final progreso = lista.items.isEmpty
-        ? 0.0
-        : lista.indicesMarcados.length / lista.items.length;
-    final completado = progreso >= 1.0;
-    return GestureDetector(
-      key: Key('checklist_${lista.id}'),
-      onTap: () => _abrirChecklistUsuario(lista),
-      onLongPress: () => _opcionesChecklist(lista),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color: Paleta.tarjeta,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: Paleta.doradoPrincipal.withValues(alpha: 0.18),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Paleta.doradoPrincipal.withValues(alpha: 0.06),
-              blurRadius: 4,
-              offset: const Offset(0, 1),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Paleta.doradoMedio, Paleta.doradoClaro],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(
-                Icons.check_circle_outline_rounded,
-                color: Colors.white,
-                size: 20,
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    lista.titulo,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.nunito(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: Paleta.textoPrincipal,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(3),
-                          child: LinearProgressIndicator(
-                            value: progreso,
-                            backgroundColor: Paleta.doradoPrincipal.withValues(
-                              alpha: 0.12,
-                            ),
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              completado
-                                  ? Paleta.verdeExito
-                                  : Paleta.doradoPrincipal,
-                            ),
-                            minHeight: 4,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        '${lista.indicesMarcados.length}/${lista.items.length}',
-                        style: GoogleFonts.nunito(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: completado
-                              ? Paleta.verdeExito
-                              : Paleta.doradoOscuro,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 6),
-            PopupMenuButton<_AccionChecklist>(
-              onSelected: (accion) {
-                switch (accion) {
-                  case _AccionChecklist.editar:
-                    _abrirEditorChecklist(lista: lista);
-                  case _AccionChecklist.eliminar:
-                    _eliminarChecklist(lista);
-                }
-              },
-              itemBuilder: (context) => [
-                PopupMenuItem(
-                  value: _AccionChecklist.editar,
-                  child: ListTile(
-                    leading: const Icon(
-                      Icons.edit_outlined,
-                      color: Paleta.doradoOscuro,
-                    ),
-                    title: const Text(
-                      'Editar',
-                      style: TextStyle(
-                        color: Paleta.doradoOscuro,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    contentPadding: EdgeInsets.zero,
-                    dense: true,
-                  ),
-                ),
-                PopupMenuItem(
-                  value: _AccionChecklist.eliminar,
-                  child: ListTile(
-                    leading: const Icon(
-                      Icons.delete_outline,
-                      color: Paleta.error,
-                    ),
-                    title: const Text(
-                      'Eliminar',
-                      style: TextStyle(
-                        color: Paleta.error,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    contentPadding: EdgeInsets.zero,
-                    dense: true,
-                  ),
-                ),
-              ],
-              icon: Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: Paleta.doradoClaro.withValues(alpha: 0.35),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.more_vert,
-                  size: 20,
-                  color: Paleta.doradoOscuro,
-                ),
-              ),
-              color: Paleta.tarjeta,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              tooltip: 'Opciones del checklist',
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _abrirChecklistUsuario(ChecklistUsuario lista) {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (_) => HojaChecklistUsuario(checklist: lista),
-    );
-  }
-
-  void _abrirEditorChecklist({ChecklistUsuario? lista}) {
-    final pacienteAsync = ref.read(currentPatientProvider);
-    final paciente = pacienteAsync.value;
-    if (paciente == null) return;
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (_) => HojaEditorChecklist(checklist: lista),
-    );
-  }
-
-  void _opcionesChecklist(ChecklistUsuario lista) {
-    showModalBottomSheet<void>(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              margin: const EdgeInsets.only(top: 10),
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Paleta.textoAyuda.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                lista.titulo,
-                style: GoogleFonts.nunito(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: Paleta.textoPrincipal,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            const Divider(height: 1, color: Paleta.bordeTarjeta),
-            ListTile(
-              leading: const Icon(Icons.edit, color: Paleta.doradoPrincipal),
-              title: Text(
-                'Editar',
-                style: GoogleFonts.nunito(
-                  fontSize: 14,
-                  color: Paleta.textoPrincipal,
-                ),
-              ),
-              onTap: () {
-                Navigator.of(ctx).pop();
-                _abrirEditorChecklist(lista: lista);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.delete_outline, color: Paleta.error),
-              title: Text(
-                'Eliminar',
-                style: GoogleFonts.nunito(fontSize: 14, color: Paleta.error),
-              ),
-              onTap: () {
-                Navigator.of(ctx).pop();
-                _eliminarChecklist(lista);
-              },
-            ),
-            const SizedBox(height: 8),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _eliminarChecklist(ChecklistUsuario lista) async {
-    final pacienteAsync = ref.read(currentPatientProvider);
-    final paciente = pacienteAsync.value;
-    if (paciente == null) return;
-    final confirmado = await mostrarDialogoConfirmacion(
-      context,
-      icono: Icons.delete_outline,
-      titulo: 'Eliminar checklist',
-      mensaje: '¿Seguro que deseas eliminar "${lista.titulo}"?',
-      textoConfirmar: 'Eliminar',
-      colorConfirmar: Paleta.error,
-    );
-    if (confirmado != true) return;
-    try {
-      await ref
-          .read(servicioBaseDatosProvider)
-          .eliminarListaChecklist(paciente.id, lista.id);
-    } catch (e) {
-      if (mounted) _mostrarAviso('Error al eliminar el checklist: $e');
-    }
-  }
 }
-
-enum _AccionChecklist { editar, eliminar }
 
 class _EstadoVacio extends StatelessWidget {
   const _EstadoVacio({required this.mensaje});

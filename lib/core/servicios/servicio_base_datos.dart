@@ -5,7 +5,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
-import '../../modelos/checklist_usuario.dart';
 import '../../modelos/conversacion.dart';
 import '../../modelos/material_educativo.dart';
 import '../../modelos/paciente.dart';
@@ -403,7 +402,6 @@ class ServicioBaseDatos {
 
   static const subcoleccionesPaciente = [
     'clinicalRecords',
-    'userChecklists',
     'recordatorios',
   ];
 
@@ -669,142 +667,6 @@ class ServicioBaseDatos {
         'favoriteArticleIds': favoritos,
       }, SetOptions(merge: true)),
     );
-  }
-
-  CollectionReference _checklistsUsuario(String idPaciente) => _docUsuario
-      .collection('patients')
-      .doc(idPaciente)
-      .collection('userChecklists');
-
-  Stream<List<ChecklistUsuario>> listasChecklistTiempoReal(String idPaciente) {
-    if (!_tieneIdentidad()) return Stream.value(const []);
-    return _checklistsUsuario(idPaciente)
-        .orderBy('creadoEn', descending: true)
-        .limit(50)
-        .snapshots()
-        .asyncMap(
-          (snap) => Future.wait(
-            snap.docs.map(
-              (d) => _descifrarChecklistUsuario(
-                d.id,
-                d.data() as Map<String, dynamic>,
-              ),
-            ),
-          ),
-        );
-  }
-
-  Future<String> crearListaChecklist(
-    String idPaciente, {
-    required String titulo,
-    required List<String> items,
-  }) async {
-    await verificarEscrituraDisponible();
-    final datos = <String, dynamic>{
-      'paciente_id': idPaciente,
-      'indicesMarcados': <int>[],
-      'creadoEn': DateTime.now(),
-    };
-    await _reemplazarPorCifrado(
-      datos,
-      plano: titulo,
-      cifrado: 'titulo_cifrado',
-    );
-    datos['items_cifrado'] = await _cifrado.cifrar(_uid, jsonEncode(items));
-    final ref = _checklistsUsuario(idPaciente).doc();
-    await _escribir(
-      ref,
-      datos,
-      operacion: OperacionPendiente.crear,
-      idPaciente: idPaciente,
-    );
-    return ref.id;
-  }
-
-  Future<void> actualizarListaChecklist(
-    String idPaciente,
-    String idLista, {
-    String? titulo,
-    List<String>? items,
-    List<int>? indicesMarcados,
-    DateTime? completadaEn,
-    bool quitarCompletada = false,
-  }) async {
-    if (titulo != null || items != null) await verificarEscrituraDisponible();
-    final datos = <String, dynamic>{};
-    if (completadaEn != null) {
-      datos['completadaEn'] = completadaEn;
-    } else if (quitarCompletada) {
-      datos['completadaEn'] = FieldValue.delete();
-    }
-    if (titulo != null) {
-      await _reemplazarPorCifrado(
-        datos,
-        plano: titulo,
-        cifrado: 'titulo_cifrado',
-      );
-    }
-    if (items != null) {
-      datos['items_cifrado'] = await _cifrado.cifrar(_uid, jsonEncode(items));
-    }
-    if (indicesMarcados != null) {
-      datos['indicesMarcados'] = indicesMarcados;
-    }
-    if (datos.isEmpty) return;
-    datos['paciente_id'] = idPaciente;
-    await _escribir(
-      _checklistsUsuario(idPaciente).doc(idLista),
-      datos,
-      operacion: OperacionPendiente.fusionar,
-      idPaciente: idPaciente,
-    );
-  }
-
-  Future<void> eliminarListaChecklist(String idPaciente, String idLista) async {
-    await _borrar(_checklistsUsuario(idPaciente).doc(idLista), idPaciente);
-  }
-
-  Future<ChecklistUsuario> _descifrarChecklistUsuario(
-    String id,
-    Map<String, dynamic> datos,
-  ) async {
-    final items = await _descifrarItemsChecklist(datos);
-    return ChecklistUsuario(
-      id: id,
-      titulo: (await _descifrarCampo(datos, 'titulo_cifrado')) ?? '',
-      items: items,
-      indicesMarcados: filtrarMarcas(
-        (datos['indicesMarcados'] as List<dynamic>?)?.map(
-              (e) => (e as num).toInt(),
-            ) ??
-            const [],
-        items.length,
-      ),
-      creadoEn: _fechaTolerante(datos['creadoEn']),
-      completadaEn: datos['completadaEn'] == null
-          ? null
-          : _fechaTolerante(datos['completadaEn']),
-    );
-  }
-
-  Future<List<String>> _descifrarItemsChecklist(
-    Map<String, dynamic> datos,
-  ) async {
-    final cifrado = datos['items_cifrado'] as String?;
-    if (cifrado != null && cifrado.isNotEmpty) {
-      try {
-        final texto = await _cifrado.descifrar(_uid, cifrado);
-        final lista = jsonDecode(texto) as List<dynamic>;
-        return lista.map((e) => e.toString()).toList();
-      } catch (e, pila) {
-        debugPrint('No se pudo descifrar items_cifrado: $e\n$pila');
-      }
-    }
-    final itemsRaw = datos['items'];
-    if (itemsRaw is List) {
-      return itemsRaw.map((e) => e.toString()).toList();
-    }
-    return const [];
   }
 
   CollectionReference _conversaciones() =>
