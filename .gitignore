@@ -60,3 +60,6 @@ functions/node_modules/
 
 # Firebase local (emuladores, caches de hosting)
 .firebase/
+
+# Dependencias de la prueba de reglas de Firestore
+test/reglas_firestore/node_modules/

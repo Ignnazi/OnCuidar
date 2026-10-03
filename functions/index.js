@@ -138,15 +138,15 @@ async function sendRecoveryMail(backupEmail, primaryEmail) {
   });
 }
 
-exports.registerRecoveryEmail = onCall(
+exports.registrarCorreoRespaldo = onCall(
   { secrets: [backupHmac], region: 'southamerica-west1' },
   async (request) => {
     if (!request.auth?.uid) throw new HttpsError('unauthenticated', 'Inicia sesión nuevamente.');
-    const raw = typeof request.data?.email === 'string' ? request.data.email : '';
+    const raw = typeof request.data?.correo === 'string' ? request.data.correo : '';
     if (raw.length > 254 || !EMAIL_REGEX.test(raw.trim())) {
       throw new HttpsError('invalid-argument', 'Correo inválido.');
     }
-    await db.collection('users').doc(request.auth.uid).set(
+    await db.collection('usuarios').doc(request.auth.uid).set(
       { correo_respaldo_hash: hmacBackupEmail(raw) },
       { merge: true },
     );
@@ -154,10 +154,10 @@ exports.registerRecoveryEmail = onCall(
   },
 );
 
-exports.recoverByBackupEmail = onCall(
+exports.recuperarPorCorreoRespaldo = onCall(
   { region: 'southamerica-west1', secrets: [backupHmac, smtpUser, smtpPass, continueUrl] },
   async (request) => {
-    const raw = typeof request.data?.email === 'string' ? request.data.email : '';
+    const raw = typeof request.data?.correo === 'string' ? request.data.correo : '';
     if (raw.length > 254 || !EMAIL_REGEX.test(raw.trim())) {
       throw new HttpsError('invalid-argument', 'Correo inválido.');
     }
@@ -165,15 +165,15 @@ exports.recoverByBackupEmail = onCall(
     const hmacHash = hmacBackupEmail(raw);
 
     try {
-      const cooldownRef = db.collection('recoveryCooldowns').doc(hmacHash);
+      const cooldownRef = db.collection('esperasRecuperacion').doc(hmacHash);
       const cooldownSnap = await cooldownRef.get();
       if (cooldownSnap.exists) {
-        const lastSent = cooldownSnap.data().lastSentAt?.toMillis?.() ?? 0;
+        const lastSent = cooldownSnap.data().ultimoEnvioEn?.toMillis?.() ?? 0;
         if (Date.now() - lastSent < 60_000) return { ok: true };
       }
 
       let snap = await db
-        .collection('users')
+        .collection('usuarios')
         .where('correo_respaldo_hash', '==', hmacHash)
         .limit(1)
         .get();
@@ -181,7 +181,7 @@ exports.recoverByBackupEmail = onCall(
       if (snap.empty) {
         const legacyHash = hashBackupEmailLegacy(raw);
         snap = await db
-          .collection('users')
+          .collection('usuarios')
           .where('correo_respaldo_hash', '==', legacyHash)
           .limit(1)
           .get();
@@ -190,7 +190,7 @@ exports.recoverByBackupEmail = onCall(
 
       if (!snap.empty) {
         const userDoc = snap.docs[0];
-        const primary = userDoc.data().email;
+        const primary = userDoc.data().correo;
 
         if (primary && normalizeBackupEmail(primary) === backupEmail) {
           return { ok: true };
@@ -202,18 +202,18 @@ exports.recoverByBackupEmail = onCall(
           if (usedLegacy) {
             await userDoc.ref.set({ correo_respaldo_hash: hmacHash }, { merge: true });
           }
-          await cooldownRef.set({ lastSentAt: admin.firestore.FieldValue.serverTimestamp() });
+          await cooldownRef.set({ ultimoEnvioEn: admin.firestore.FieldValue.serverTimestamp() });
         }
       }
     } catch (e) {
-      console.error('recoverByBackupEmail error interno:', e);
+      console.error('recuperarPorCorreoRespaldo error interno:', e);
     }
     return { ok: true };
   },
 );
 
 const kms = new KeyManagementServiceClient();
-const ref = (uid) => db.collection('recoveryKeys').doc(uid);
+const ref = (uid) => db.collection('clavesRecuperacion').doc(uid);
 
 function kmsResource() {
   return sanitizeKmsResource(kmsKeyResource.value());
@@ -260,7 +260,7 @@ async function sealKms(data) {
 async function openStored(x) {
   if (x.v === 3) {
     const res = kmsResource();
-    if (!res) throw new Error('KMS no configurado (no se puede descifrar recoveryKeys v3)');
+    if (!res) throw new Error('KMS no configurado (no se puede descifrar clavesRecuperacion v3)');
     const [dec] = await kms.decrypt({ name: res, ciphertext: Buffer.from(x.c, 'base64') });
     return dec.plaintext;
   }
@@ -281,7 +281,7 @@ const auth = (request) => {
   if (!request.auth?.uid) throw new HttpsError('unauthenticated', 'Inicia sesión nuevamente.');
 };
 
-exports.getOrCreateDataKey = onCall(
+exports.obtenerClaveDatos = onCall(
   { secrets: [master, kmsKeyResource], region: 'southamerica-west1' },
   async (request) => {
     auth(request);
@@ -291,15 +291,15 @@ exports.getOrCreateDataKey = onCall(
       const oldData = old.data();
       const plain = await openStored(oldData);
       if (oldData.iv) {
-        await r.set({ ...(await sealNew(plain)), createdAt: oldData.createdAt }, { merge: true });
+        await r.set({ ...(await sealNew(plain)), creadoEn: oldData.creadoEn }, { merge: true });
       }
-      return { dataKey: plain.toString('base64') };
+      return { claveDatos: plain.toString('base64') };
     }
     const data = crypto.randomBytes(32);
     await r.set({
       ...(await sealNew(data)),
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      creadoEn: admin.firestore.FieldValue.serverTimestamp(),
     });
-    return { dataKey: data.toString('base64') };
+    return { claveDatos: data.toString('base64') };
   },
 );

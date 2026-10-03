@@ -23,5 +23,6 @@ linter:
     - unnecessary_parenthesis
     - unnecessary_statements
     - directives_ordering
+    - always_use_package_imports
     - prefer_single_quotes
     - avoid_unused_constructor_parameters
