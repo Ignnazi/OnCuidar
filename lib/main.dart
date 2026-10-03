@@ -5,12 +5,11 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import 'core/proveedores/proveedores.dart';
-import 'core/router/app_router.dart';
-import 'core/router/destino_aviso.dart';
-import 'core/tema/tema.dart';
-import 'firebase_options.dart';
+import 'package:oncuidar/app/enrutador/destino_aviso.dart';
+import 'package:oncuidar/app/enrutador/enrutador.dart';
+import 'package:oncuidar/app/tema/tema.dart';
+import 'package:oncuidar/firebase_options.dart';
+import 'package:oncuidar/nucleo/proveedores.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();

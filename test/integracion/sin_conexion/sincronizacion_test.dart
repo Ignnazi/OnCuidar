@@ -1,0 +1,574 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:oncuidar/caracteristicas/recordatorios/datos/repositorio_recordatorios.dart';
+import 'package:oncuidar/caracteristicas/recordatorios/dominio/recordatorio.dart';
+import 'package:oncuidar/caracteristicas/registro_clinico/datos/repositorio_registros_clinicos.dart';
+import 'package:oncuidar/caracteristicas/registro_clinico/dominio/registro_clinico.dart';
+import 'package:oncuidar/nucleo/cifrado/servicio_cifrado.dart';
+import 'package:oncuidar/nucleo/conectividad/servicio_conectividad.dart';
+import 'package:oncuidar/nucleo/datos/base_datos_segura.dart';
+import 'package:oncuidar/nucleo/sincronizacion/cola_escrituras.dart';
+import 'package:oncuidar/nucleo/sincronizacion/orquestador_sincronizacion.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../ayudas/offline.dart';
+
+const _clavePrueba = 'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=';
+const _uid = 'uid-offline';
+
+class _BaseConFallos extends BaseDatosSegura {
+  _BaseConFallos({
+    required FirebaseFirestore base,
+    required super.cifrado,
+    required ColaEscrituras cola,
+    required ServicioConectividad conectividad,
+  }) : super(
+         base: base,
+         uidPrueba: _uid,
+         cola: cola,
+         conectividad: conectividad,
+       );
+
+  Object? Function(EscrituraPendiente escritura)? falla;
+  final aplicadas = <String>[];
+
+  @override
+  Future<void> aplicarEscrituraPendiente(EscrituraPendiente escritura) async {
+    final error = falla?.call(escritura);
+    if (error != null) throw error;
+    await super.aplicarEscrituraPendiente(escritura);
+    aplicadas.add(escritura.ruta);
+  }
+}
+
+class _Entorno {
+  _Entorno({
+    required this.firestore,
+    required this.cola,
+    required this.red,
+    required this.base,
+    required this.orquestador,
+  });
+
+  final FakeFirebaseFirestore firestore;
+  final ColaEscrituras cola;
+  final ConectividadFalsa red;
+  final _BaseConFallos base;
+
+  RepositorioRecordatorios get recordatorios => RepositorioRecordatorios(base);
+  RepositorioRegistrosClinicos get registros =>
+      RepositorioRegistrosClinicos(base);
+  final OrquestadorSincronizacion orquestador;
+
+  CollectionReference<Map<String, dynamic>> coleccion(
+    String paciente,
+    String nombre,
+  ) => firestore
+      .collection('usuarios')
+      .doc(_uid)
+      .collection('pacientes')
+      .doc(paciente)
+      .collection(nombre);
+
+  Future<List<EscrituraPendiente>> pendientes() => cola.pendientes(_uid);
+}
+
+Future<_Entorno> _crearEntorno({
+  bool enLinea = false,
+  Duration retardoBase = const Duration(hours: 1),
+  int maxIntentos = 8,
+}) async {
+  final cifrado = ServicioCifrado(clavePrueba: _clavePrueba);
+  await cifrado.fijarClave(_uid, _clavePrueba);
+  final firestore = FakeFirebaseFirestore();
+  final cola = ColaEscrituras();
+  final red = ConectividadFalsa(enLinea: enLinea);
+  final base = _BaseConFallos(
+    base: firestore,
+    cifrado: cifrado,
+    cola: cola,
+    conectividad: red,
+  );
+  final orquestador = OrquestadorSincronizacion(
+    cola: cola,
+    base: base,
+    conectividad: red,
+    uidActual: () => _uid,
+    retardoBase: retardoBase,
+    maxIntentosPorEscritura: maxIntentos,
+  );
+  addTearDown(orquestador.dispose);
+  return _Entorno(
+    firestore: firestore,
+    cola: cola,
+    red: red,
+    base: base,
+    orquestador: orquestador,
+  );
+}
+
+RegistroClinico _registro(String id, String paciente) => RegistroClinico(
+  id: id,
+  pacienteId: paciente,
+  fecha: DateTime(2026, 10, 1, 9),
+  creadoEn: DateTime(2026, 10, 1, 9),
+  tipoRegistro: 'diario',
+  signosVitales: const SignosVitales(temperatura: 37.2),
+  sintomas: const [EntradaSintoma(nombre: 'Dolor', intensidad: 3)],
+  observaciones: 'Observación reservada',
+);
+
+Recordatorio _recordatorio(String paciente) => Recordatorio(
+  id: '',
+  pacienteId: paciente,
+  tipo: 'medicamento',
+  titulo: 'Dar paracetamol',
+  descripcion: '500 mg',
+  fechaHora: DateTime(2026, 10, 1, 20),
+  activo: true,
+  creadoEn: DateTime(2026, 10, 1, 8),
+);
+
+void main() {
+  setUp(() => SharedPreferences.setMockInitialValues({}));
+
+  group('Escritura sin conexión', () {
+    test(
+      'un recordatorio creado sin red se ve de inmediato y queda en la cola',
+      () async {
+        final e = await _crearEntorno();
+        final id = await e.recordatorios.agregarRecordatorio(
+          'pacienteA',
+          _recordatorio('pacienteA'),
+        );
+
+        expect(id, isNotEmpty);
+        expect(
+          (await e.coleccion('pacienteA', 'recordatorios').get()).docs,
+          hasLength(1),
+          reason: 'sin red la lista debe mostrar lo recién creado',
+        );
+        final visibles = await e.recordatorios
+            .recordatoriosEnTiempoReal('pacienteA')
+            .first;
+        expect(visibles.map((r) => r.titulo), ['Dar paracetamol']);
+        final pendiente = (await e.pendientes()).single;
+        expect(pendiente.ruta, endsWith('recordatorios/$id'));
+        expect(pendiente.operacion, OperacionPendiente.crear);
+      },
+    );
+
+    test(
+      'lo encolado declara el paciente y no lleva datos clínicos en claro',
+      () async {
+        final e = await _crearEntorno();
+        await e.registros.guardarRegistroClinico(
+          'pacienteA',
+          _registro('r1', 'pacienteA'),
+        );
+        await e.recordatorios.agregarRecordatorio(
+          'pacienteA',
+          _recordatorio('pacienteA'),
+        );
+
+        final pendientes = await e.pendientes();
+        expect(pendientes, hasLength(2));
+        final todo = pendientes.map((p) => p.datos.toString()).join();
+        for (final secreto in [
+          'Observación reservada',
+          'Dolor',
+          'Dar paracetamol',
+          '500 mg',
+        ]) {
+          expect(todo, isNot(contains(secreto)), reason: secreto);
+        }
+        expect(pendientes[0].datos['paciente_id'], 'pacienteA');
+        expect(pendientes[1].datos['pacienteId'], 'pacienteA');
+      },
+    );
+
+    test('con conexión se escribe directo y la cola queda vacía', () async {
+      final e = await _crearEntorno(enLinea: true);
+      final id = await e.recordatorios.agregarRecordatorio(
+        'pacienteA',
+        _recordatorio('pacienteA'),
+      );
+      final doc = await e.coleccion('pacienteA', 'recordatorios').doc(id).get();
+      expect(doc.exists, isTrue);
+      expect(await e.pendientes(), isEmpty);
+    });
+  });
+
+  group('Drenaje al recuperar la red', () {
+    test('envía registro y recordatorio con su paciente', () async {
+      final e = await _crearEntorno();
+      await e.registros.guardarRegistroClinico(
+        'pacienteA',
+        _registro('r1', 'pacienteA'),
+      );
+      final idRec = await e.recordatorios.agregarRecordatorio(
+        'pacienteA',
+        _recordatorio('pacienteA'),
+      );
+
+      e.red.fijar(true);
+      await e.orquestador.drenar();
+
+      final registro = await e
+          .coleccion('pacienteA', 'registrosClinicos')
+          .doc('r1')
+          .get();
+      final rec = await e
+          .coleccion('pacienteA', 'recordatorios')
+          .doc(idRec)
+          .get();
+      expect(registro.data()?['paciente_id'], 'pacienteA');
+      expect(registro.data()?['sintomas_cifrado'], isNotNull);
+      expect(registro.data()?['creadoEn'], isNotNull);
+      expect(rec.data()?['pacienteId'], 'pacienteA');
+      expect(await e.pendientes(), isEmpty);
+    });
+
+    test('sin red no envía nada y conserva la cola', () async {
+      final e = await _crearEntorno();
+      await e.recordatorios.agregarRecordatorio(
+        'pacienteA',
+        _recordatorio('pacienteA'),
+      );
+      await e.orquestador.drenar();
+      expect(await e.pendientes(), hasLength(1));
+      expect(e.base.aplicadas, isEmpty);
+    });
+
+    test('drenar dos veces no duplica documentos', () async {
+      final e = await _crearEntorno();
+      await e.recordatorios.agregarRecordatorio(
+        'pacienteA',
+        _recordatorio('pacienteA'),
+      );
+      e.red.fijar(true);
+      await Future.wait([e.orquestador.drenar(), e.orquestador.drenar()]);
+      await e.orquestador.drenar();
+      expect(
+        (await e.coleccion('pacienteA', 'recordatorios').get()).docs,
+        hasLength(1),
+      );
+    });
+
+    test('reenviar una escritura ya aplicada es idempotente', () async {
+      final e = await _crearEntorno(enLinea: true);
+      await e.recordatorios.agregarRecordatorio(
+        'pacienteA',
+        _recordatorio('pacienteA'),
+      );
+      final doc =
+          (await e.coleccion('pacienteA', 'recordatorios').get()).docs.single;
+      final escritura = escrituraDe(
+        ruta: 'usuarios/$_uid/pacientes/pacienteA/recordatorios/${doc.id}',
+        pacienteId: 'pacienteA',
+        datos: CodecPayload.codificar(doc.data()) as Map<String, dynamic>,
+      );
+      await e.base.aplicarEscrituraPendiente(escritura);
+      await e.base.aplicarEscrituraPendiente(escritura);
+      expect(
+        (await e.coleccion('pacienteA', 'recordatorios').get()).docs,
+        hasLength(1),
+      );
+    });
+
+    test(
+      'aplica en orden: crear y luego actualizar el mismo recordatorio',
+      () async {
+        final e = await _crearEntorno();
+        final id = await e.recordatorios.agregarRecordatorio(
+          'pacienteA',
+          _recordatorio('pacienteA'),
+        );
+        await e.recordatorios.actualizarRecordatorio(
+          'pacienteA',
+          id,
+          activo: false,
+        );
+        e.red.fijar(true);
+        await e.orquestador.drenar();
+
+        final doc = await e
+            .coleccion('pacienteA', 'recordatorios')
+            .doc(id)
+            .get();
+        expect(doc.data()?['activo'], isFalse);
+        expect(doc.data()?['pacienteId'], 'pacienteA');
+      },
+    );
+
+    test(
+      'se drena sola al volver la red cuando el orquestador está activo',
+      () async {
+        final e = await _crearEntorno();
+        e.orquestador.iniciar();
+        await e.recordatorios.agregarRecordatorio(
+          'pacienteA',
+          _recordatorio('pacienteA'),
+        );
+        expect(await e.pendientes(), hasLength(1));
+
+        e.red.fijar(true);
+        await esperarHasta(() async => (await e.pendientes()).isEmpty);
+        expect(
+          (await e.coleccion('pacienteA', 'recordatorios').get()).docs,
+          hasLength(1),
+        );
+      },
+    );
+
+    test(
+      'la cola sobrevive al cierre de la app y se envía al reabrir',
+      () async {
+        final e = await _crearEntorno();
+        await e.recordatorios.agregarRecordatorio(
+          'pacienteA',
+          _recordatorio('pacienteA'),
+        );
+
+        final prefs = await SharedPreferences.getInstance();
+        SharedPreferences.setMockInitialValues({
+          for (final k in prefs.getKeys()) k: prefs.getString(k)!,
+        });
+
+        final cifrado = ServicioCifrado(clavePrueba: _clavePrueba);
+        final cola = ColaEscrituras();
+        final red = ConectividadFalsa(enLinea: true);
+        final base = _BaseConFallos(
+          base: e.firestore,
+          cifrado: cifrado,
+          cola: cola,
+          conectividad: red,
+        );
+        final orquestador = OrquestadorSincronizacion(
+          cola: cola,
+          base: base,
+          conectividad: red,
+          uidActual: () => _uid,
+        );
+        addTearDown(orquestador.dispose);
+
+        await orquestador.drenar();
+        expect(
+          (await e.coleccion('pacienteA', 'recordatorios').get()).docs,
+          hasLength(1),
+        );
+        expect(await cola.pendientes(_uid), isEmpty);
+      },
+    );
+  });
+
+  group('Reconciliación de conflictos', () {
+    test(
+      'un borrado en el servidor gana sobre una actualización encolada',
+      () async {
+        final e = await _crearEntorno(enLinea: true);
+        final id = await e.recordatorios.agregarRecordatorio(
+          'pacienteA',
+          _recordatorio('pacienteA'),
+        );
+        e.red.fijar(false);
+        await e.recordatorios.actualizarRecordatorio(
+          'pacienteA',
+          id,
+          activo: false,
+        );
+        await e.coleccion('pacienteA', 'recordatorios').doc(id).delete();
+
+        e.red.fijar(true);
+        await e.orquestador.drenar();
+
+        final doc = await e
+            .coleccion('pacienteA', 'recordatorios')
+            .doc(id)
+            .get();
+        expect(doc.exists, isFalse);
+        expect(await e.pendientes(), isEmpty);
+        expect(await e.cola.fallidas(_uid), isEmpty);
+      },
+    );
+
+    test('la última escritura encolada gana campo a campo', () async {
+      final e = await _crearEntorno(enLinea: true);
+      final id = await e.recordatorios.agregarRecordatorio(
+        'pacienteA',
+        _recordatorio('pacienteA'),
+      );
+      e.red.fijar(false);
+      await e.recordatorios.actualizarRecordatorio(
+        'pacienteA',
+        id,
+        activo: false,
+      );
+      await e.recordatorios.actualizarRecordatorio(
+        'pacienteA',
+        id,
+        activo: true,
+      );
+
+      e.red.fijar(true);
+      await e.orquestador.drenar();
+
+      final doc = await e.coleccion('pacienteA', 'recordatorios').doc(id).get();
+      expect(doc.data()?['activo'], isTrue);
+      expect(doc.data()?['pacienteId'], 'pacienteA');
+    });
+  });
+
+  group('Fallos durante el drenaje', () {
+    test('un fallo transitorio a mitad no pierde ninguna escritura', () async {
+      final e = await _crearEntorno();
+      await e.recordatorios.agregarRecordatorio(
+        'pacienteA',
+        _recordatorio('pacienteA'),
+      );
+      await e.registros.guardarRegistroClinico(
+        'pacienteA',
+        _registro('r1', 'pacienteA'),
+      );
+
+      e.base.falla = (escritura) => escritura.ruta.contains('recordatorios')
+          ? FirebaseException(plugin: 'cloud_firestore', code: 'unavailable')
+          : null;
+      e.red.fijar(true);
+      await e.orquestador.drenar();
+
+      final restantes = await e.pendientes();
+      expect(restantes, hasLength(2));
+      expect(restantes.first.ruta, contains('recordatorios'));
+      expect(restantes.first.intentos, 1);
+
+      e.base.falla = null;
+      await e.orquestador.drenar();
+      expect(await e.pendientes(), isEmpty);
+      expect(
+        (await e.coleccion('pacienteA', 'recordatorios').get()).docs,
+        hasLength(1),
+      );
+      expect(
+        (await e.coleccion('pacienteA', 'registrosClinicos').get()).docs,
+        hasLength(1),
+      );
+    });
+
+    test('reintenta solo con retroceso hasta lograrlo', () async {
+      final e = await _crearEntorno(
+        retardoBase: const Duration(milliseconds: 10),
+      );
+      await e.recordatorios.agregarRecordatorio(
+        'pacienteA',
+        _recordatorio('pacienteA'),
+      );
+      var fallos = 0;
+      e.base.falla = (_) {
+        if (fallos >= 2) return null;
+        fallos++;
+        return FirebaseException(
+          plugin: 'cloud_firestore',
+          code: 'unavailable',
+        );
+      };
+      e.red.fijar(true);
+      await e.orquestador.drenar();
+      expect(await e.pendientes(), hasLength(1));
+
+      await esperarHasta(() async => (await e.pendientes()).isEmpty);
+      expect(fallos, 2);
+      expect(
+        (await e.coleccion('pacienteA', 'recordatorios').get()).docs,
+        hasLength(1),
+      );
+    });
+
+    test('un error permanente va a fallidas y no bloquea al resto', () async {
+      final e = await _crearEntorno();
+      await e.registros.guardarRegistroClinico(
+        'pacienteA',
+        _registro('r1', 'pacienteA'),
+      );
+      await e.recordatorios.agregarRecordatorio(
+        'pacienteA',
+        _recordatorio('pacienteA'),
+      );
+      e.base.falla = (escritura) => escritura.ruta.contains('registrosClinicos')
+          ? FirebaseException(
+              plugin: 'cloud_firestore',
+              code: 'permission-denied',
+            )
+          : null;
+
+      e.red.fijar(true);
+      await e.orquestador.drenar();
+
+      expect(await e.pendientes(), isEmpty);
+      expect(await e.cola.fallidas(_uid), hasLength(1));
+      expect(
+        (await e.coleccion('pacienteA', 'recordatorios').get()).docs,
+        hasLength(1),
+      );
+    });
+
+    test('tras agotar los intentos la escritura pasa a fallidas', () async {
+      final e = await _crearEntorno(maxIntentos: 2);
+      await e.recordatorios.agregarRecordatorio(
+        'pacienteA',
+        _recordatorio('pacienteA'),
+      );
+      e.base.falla = (_) =>
+          FirebaseException(plugin: 'cloud_firestore', code: 'unavailable');
+      e.red.fijar(true);
+
+      await e.orquestador.drenar();
+      expect(await e.pendientes(), hasLength(1));
+      await e.orquestador.drenar();
+      expect(await e.pendientes(), isEmpty);
+      expect(await e.cola.fallidas(_uid), hasLength(1));
+    });
+  });
+
+  group('Aislamiento por paciente', () {
+    test('no envía una escritura cuya ruta es de otro paciente', () async {
+      final e = await _crearEntorno(enLinea: true);
+      await e.cola.encolar(
+        _uid,
+        escrituraDe(
+          ruta: 'usuarios/$_uid/pacientes/pacienteB/recordatorios/c1',
+          pacienteId: 'pacienteA',
+        ),
+      );
+      await e.orquestador.drenar();
+
+      expect(
+        (await e.coleccion('pacienteB', 'recordatorios').get()).docs,
+        isEmpty,
+      );
+      expect(await e.cola.fallidas(_uid), hasLength(1));
+    });
+
+    test('no envía una escritura de la ruta de otro cuidador', () async {
+      final e = await _crearEntorno(enLinea: true);
+      await e.cola.encolar(
+        _uid,
+        escrituraDe(
+          ruta: 'usuarios/otro-cuidador/pacientes/pacienteA/recordatorios/c1',
+          pacienteId: 'pacienteA',
+        ),
+      );
+      await e.orquestador.drenar();
+      expect(await e.cola.fallidas(_uid), hasLength(1));
+      final ajeno = await e.firestore
+          .collection('usuarios')
+          .doc('otro-cuidador')
+          .collection('pacientes')
+          .doc('pacienteA')
+          .collection('recordatorios')
+          .get();
+      expect(ajeno.docs, isEmpty);
+    });
+  });
+}

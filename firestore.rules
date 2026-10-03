@@ -5,65 +5,65 @@ service cloud.firestore {
     // ══════════════════════════════════════
     // USUARIOS — Cada cuidador solo ve/escribe SU doc
     // ══════════════════════════════════════
-    match /users/{userId} {
-      allow read: if request.auth != null && request.auth.uid == userId;
+    match /usuarios/{idUsuario} {
+      allow read: if request.auth != null && request.auth.uid == idUsuario;
 
       allow create: if request.auth != null
-        && request.auth.uid == userId
+        && request.auth.uid == idUsuario
         && !request.resource.data.keys().hasAny([
           'correo_respaldo_hash',   // solo servidor (HMAC)
-          'displayName',            // siempre cifrado -> nombre_cifrado
-          'phone',                  // siempre cifrado -> telefono_cifrado
-          'relationship',           // siempre cifrado -> relacion_cifrada
+          'nombre',                 // siempre cifrado -> nombre_cifrado
+          'telefono',               // siempre cifrado -> telefono_cifrado
+          'relacion',               // siempre cifrado -> relacion_cifrada
           'correo_respaldo'         // siempre cifrado -> correo_respaldo_cifrado
         ]);
       allow update: if request.auth != null
-        && request.auth.uid == userId
+        && request.auth.uid == idUsuario
         && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
           'correo_respaldo_hash',   // solo servidor (HMAC)
-          'displayName',            // siempre cifrado -> nombre_cifrado
-          'phone',                  // siempre cifrado -> telefono_cifrado
-          'relationship',           // siempre cifrado -> relacion_cifrada
+          'nombre',                 // siempre cifrado -> nombre_cifrado
+          'telefono',               // siempre cifrado -> telefono_cifrado
+          'relacion',               // siempre cifrado -> relacion_cifrada
           'correo_respaldo'         // siempre cifrado -> correo_respaldo_cifrado
         ]);
-      allow delete: if request.auth != null && request.auth.uid == userId;
+      allow delete: if request.auth != null && request.auth.uid == idUsuario;
 
       // Pacientes del cuidador
-      match /patients/{patientId} {
-        allow read, delete: if request.auth != null && request.auth.uid == userId;
+      match /pacientes/{idPaciente} {
+        allow read, delete: if request.auth != null && request.auth.uid == idUsuario;
 
         // Impide que los datos sensibles se escriban en claro
         allow create: if request.auth != null
-          && request.auth.uid == userId
+          && request.auth.uid == idUsuario
           && !request.resource.data.keys().hasAny([
-            'fullName', 'rut', 'age', 'diagnosis',
+            'nombreCompleto', 'rut', 'edad', 'diagnostico',
             'tratamientoFase',
             'centroSaludNombre', 'centroSaludDireccion', 'centroSaludTelefono',
             'contactoEmergenciaNombre', 'contactoEmergenciaTelefono'
           ]);
         allow update: if request.auth != null
-          && request.auth.uid == userId
+          && request.auth.uid == idUsuario
           && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
-            'fullName', 'rut', 'age', 'diagnosis',
+            'nombreCompleto', 'rut', 'edad', 'diagnostico',
             'tratamientoFase',
             'centroSaludNombre', 'centroSaludDireccion', 'centroSaludTelefono',
             'contactoEmergenciaNombre', 'contactoEmergenciaTelefono'
           ]);
 
         // Registros clínicos del paciente cifrados
-        match /clinicalRecords/{recordId} {
-          allow read, delete: if request.auth != null && request.auth.uid == userId;
+        match /registrosClinicos/{idRegistro} {
+          allow read, delete: if request.auth != null && request.auth.uid == idUsuario;
           allow create: if request.auth != null
-            && request.auth.uid == userId
-            && request.resource.data.paciente_id == patientId  // el documento debe declarar al paciente de su ruta
+            && request.auth.uid == idUsuario
+            && request.resource.data.paciente_id == idPaciente  // el documento debe declarar al paciente de su ruta
             && !request.resource.data.keys().hasAny([
               'generalNotes', 'alertMessage',          // nombres de la especificación
               'observaciones', 'mensajeAlerta',        // nombres locales en claro
               'sintomas', 'signosVitales'              // siempre cifrados
             ]);
           allow update: if request.auth != null
-            && request.auth.uid == userId
-            && request.resource.data.paciente_id == patientId  // mismo binding que en create
+            && request.auth.uid == idUsuario
+            && request.resource.data.paciente_id == idPaciente  // mismo binding que en create
             && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
               'generalNotes', 'alertMessage',
               'observaciones', 'mensajeAlerta',
@@ -72,18 +72,18 @@ service cloud.firestore {
         }
 
         // Recordatorios del paciente: título y descripción siempre cifrados
-        match /recordatorios/{recordatorioId} {
-          allow read, delete: if request.auth != null && request.auth.uid == userId;
+        match /recordatorios/{idRecordatorio} {
+          allow read, delete: if request.auth != null && request.auth.uid == idUsuario;
           allow create: if request.auth != null
-            && request.auth.uid == userId
-            && request.resource.data.pacienteId == patientId  // el documento debe declarar al paciente de su ruta
+            && request.auth.uid == idUsuario
+            && request.resource.data.pacienteId == idPaciente  // el documento debe declarar al paciente de su ruta
             && !request.resource.data.keys().hasAny([
               'titulo', 'descripcion',  // siempre cifrados -> titulo_cifrado / descripcion_cifrada
               'tipo', 'fechaHora', 'diasRepeticion', 'recurrencia', 'completadoEn'
             ]);
           allow update: if request.auth != null
-            && request.auth.uid == userId
-            && request.resource.data.pacienteId == patientId  // mismo binding que en create
+            && request.auth.uid == idUsuario
+            && request.resource.data.pacienteId == idPaciente  // mismo binding que en create
             && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
               'titulo', 'descripcion'
             ]);
@@ -92,13 +92,13 @@ service cloud.firestore {
       }
 
       // Conversaciones del cuidador: título y mensajes siempre cifrados
-      match /conversations/{conversationId} {
-        allow read, delete: if request.auth != null && request.auth.uid == userId;
+      match /conversaciones/{idConversacion} {
+        allow read, delete: if request.auth != null && request.auth.uid == idUsuario;
         allow create: if request.auth != null
-          && request.auth.uid == userId
+          && request.auth.uid == idUsuario
           && !request.resource.data.keys().hasAny(['titulo', 'mensajes', 'primeraPregunta']);
         allow update: if request.auth != null
-          && request.auth.uid == userId
+          && request.auth.uid == idUsuario
           && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['titulo', 'mensajes', 'primeraPregunta']);
       }
     }
@@ -109,19 +109,19 @@ service cloud.firestore {
     // ══════════════════════════════════════
 
     // Claves de datos cifradas con Cloud KMS: los clientes nunca leen/escriben.
-    match /recoveryKeys/{uid} {
+    match /clavesRecuperacion/{uid} {
       allow read, write: if false;
     }
 
     // Rate limiting anti-enumeración: solo el servidor escribe/lee.
-    match /recoveryCooldowns/{hash} {
+    match /esperasRecuperacion/{hash} {
       allow read, write: if false;
     }
 
     // ══════════════════════════════════════
     // BIBLIOTECA EDUCATIVA — lectura para cuidadores autenticados
     // ══════════════════════════════════════
-    match /educationalContent/{articleId} {
+    match /materialEducativo/{idMaterial} {
       allow read: if request.auth != null;
       allow write: if false;
     }

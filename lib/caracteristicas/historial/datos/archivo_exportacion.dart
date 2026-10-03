@@ -1,0 +1,47 @@
+import 'dart:io';
+import 'dart:typed_data';
+
+import 'package:open_filex/open_filex.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
+
+String nombreArchivoExportacion(DateTime ahora, String extension) {
+  final mes = ahora.month.toString().padLeft(2, '0');
+  final dia = ahora.day.toString().padLeft(2, '0');
+  final fecha = '${ahora.year}-$mes-$dia';
+  final hora =
+      '${ahora.hour.toString().padLeft(2, '0')}${ahora.minute.toString().padLeft(2, '0')}';
+  return 'historial_oncuidar_${fecha}_$hora.$extension';
+}
+
+Future<File> escribirArchivoTemporal(Uint8List bytes, String extension) async {
+  final dir = await getTemporaryDirectory();
+  final archivo = File(
+    '${dir.path}${Platform.pathSeparator}'
+    '${nombreArchivoExportacion(DateTime.now(), extension)}',
+  );
+  await archivo.writeAsBytes(bytes, flush: true);
+  return archivo;
+}
+
+Future<OpenResult> abrirArchivoExportado(
+  Uint8List bytes,
+  String extension,
+) async {
+  final archivo = await escribirArchivoTemporal(bytes, extension);
+  return OpenFilex.open(archivo.path);
+}
+
+Future<void> compartirArchivoExportado(
+  Uint8List bytes,
+  String extension,
+) async {
+  final archivo = await escribirArchivoTemporal(bytes, extension);
+  await SharePlus.instance.share(
+    ShareParams(
+      files: [XFile(archivo.path)],
+      subject: 'Historial clínico OnCuidar',
+      text: 'Historial clínico OnCuidar',
+    ),
+  );
+}
