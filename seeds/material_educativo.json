@@ -20,20 +20,6 @@
     "urlMiniatura": "https://firebasestorage.googleapis.com/v0/b/oncuidar-v1.firebasestorage.app/o/miniaturas%2Fguia_sintomas.png?alt=media&token=e4c14d65-fad7-4794-bd43-fe339074d2cd"
   },
   {
-    "titulo": "Signos de alarma: cuándo llamar",
-    "categoria": "Infografías",
-    "tema": "Seguridad",
-    "cuerpo": "# Llama de inmediato\n- Fiebre mayor a 38,5 °C\n- Sangrado o moretones nuevos sin golpe\n- Dolor intenso que no cede con el tratamiento\n- Dificultad para respirar\n\n# Consulta en el día\n- Náuseas que impiden comer o beber\n- Enrojecimiento o dolor en el sitio del catéter",
-    "urlMiniatura": "assets/images/miniaturas/guia_sintomas.png"
-  },
-  {
-    "titulo": "Guía de alimentación durante el tratamiento",
-    "categoria": "PDFs",
-    "tema": "Nutrición",
-    "cuerpo": "# Recomendaciones generales\nOfrece comidas pequeñas y frecuentes a lo largo del día.\n\n# Texturas\nPrefiere alimentos suaves y de fácil digestión.\n\n# Hidratación\nAsegura el aporte diario de agua y líquidos claros.",
-    "urlMiniatura": "assets/images/miniaturas/video_fiebre.png"
-  },
-  {
     "titulo": "Guía de seguimiento",
     "categoria": "Infografías",
     "tema": "Seguimiento",

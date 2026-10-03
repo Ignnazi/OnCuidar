@@ -229,6 +229,29 @@ void main() {
     );
 
     test(
+      'los favoritos marcados con distintos pacientes activos se suman',
+      () async {
+        final repositorio = contenedor.read(repositorioBibliotecaProvider);
+        await seleccionar(idA);
+        final favoritos = observar(idsFavoritosProvider);
+        await _esperar(() => favoritos().isNotEmpty);
+
+        await Future.wait([
+          seleccionar(idB),
+          repositorio.alternarFavorito('video-1'),
+          repositorio.alternarFavorito('infografia-1'),
+        ]);
+        await _esperar(() => favoritos().length == 3);
+        await seleccionar(idA);
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+        expect(
+          favoritos(),
+          unorderedEquals(['guia-1', 'video-1', 'infografia-1']),
+        );
+      },
+    );
+
+    test(
       'los documentos del chat y la biblioteca no declaran paciente',
       () async {
         final chat = await firestore

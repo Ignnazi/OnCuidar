@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:oncuidar/app/tema/paleta.dart';
 import 'package:oncuidar/caracteristicas/biblioteca/datos/proveedores_biblioteca.dart';
 import 'package:oncuidar/caracteristicas/biblioteca/datos/servicio_cache_contenido.dart';
 import 'package:oncuidar/caracteristicas/biblioteca/dominio/material_educativo.dart';
@@ -60,7 +61,6 @@ MaterialEducativo _material({
 Widget _tarjeta(
   MaterialEducativo material, {
   bool esFavorito = false,
-  bool descargado = false,
   VoidCallback? alTocar,
   VoidCallback? alAlternarFavorito,
   _CacheFalso? cache,
@@ -74,7 +74,6 @@ Widget _tarjeta(
         body: TarjetaMaterial(
           material: material,
           esFavorito: esFavorito,
-          descargado: descargado,
           alTocar: alTocar ?? () {},
           alAlternarFavorito: alAlternarFavorito ?? () {},
         ),
@@ -156,14 +155,77 @@ void main() {
   });
 
   group('TarjetaMaterial', () {
-    testWidgets('un video muestra insignia y botón de reproducción', (
+    Icon iconoDeTipo(WidgetTester tester) => tester.widget<Icon>(
+      find.descendant(
+        of: find.byKey(const Key('iconoTipoMaterial')),
+        matching: find.byType(Icon),
+      ),
+    );
+
+    testWidgets('todos los tipos comparten la tarjeta con ícono de tipo', (
       tester,
     ) async {
+      final esperados = {
+        'Videos': (Icons.smart_display_rounded, Paleta.categoriaVideo),
+        'Guías': (Icons.menu_book_rounded, Paleta.categoriaGuia),
+        'PDFs': (Icons.menu_book_rounded, Paleta.categoriaGuia),
+        'Infografías': (
+          Icons.insert_chart_outlined_rounded,
+          Paleta.categoriaInfografia,
+        ),
+      };
+      for (final MapEntry(key: categoria, value: (icono, color))
+          in esperados.entries) {
+        await tester.pumpWidget(
+          _tarjeta(_material(id: categoria, categoria: categoria)),
+        );
+        expect(find.byKey(const Key('iconoTipoMaterial')), findsOneWidget);
+        expect(iconoDeTipo(tester).icon, icono, reason: categoria);
+        expect(iconoDeTipo(tester).color, color, reason: categoria);
+        expect(find.text('Material de prueba'), findsOneWidget);
+        expect(find.text('Tema de prueba'), findsOneWidget);
+        expect(find.byIcon(Icons.bookmark_border), findsOneWidget);
+      }
+    });
+
+    testWidgets('no hay insignia de texto; el tipo queda para lectores', (
+      tester,
+    ) async {
+      final semantica = tester.ensureSemantics();
+      await tester.pumpWidget(
+        _tarjeta(_material(id: 'i', categoria: 'Infografías')),
+      );
+      expect(find.text('Infografía'), findsNothing);
+      expect(find.bySemanticsLabel('Infografía'), findsOneWidget);
+      semantica.dispose();
+    });
+
+    testWidgets('un PDF se ve igual que una guía', (tester) async {
+      await tester.pumpWidget(_tarjeta(_material(id: 'p', categoria: 'PDFs')));
+      expect(iconoDeTipo(tester).icon, Icons.menu_book_rounded);
+      expect(estiloTipoMaterial('PDFs'), estiloTipoMaterial('Guías'));
+    });
+
+    testWidgets('sin imagen el reemplazo muestra el ícono del tipo', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        _tarjeta(_material(id: 'i', categoria: 'Infografías')),
+      );
+      expect(
+        find.descendant(
+          of: find.byKey(const Key('reemplazoMiniatura')),
+          matching: find.byIcon(Icons.insert_chart_outlined_rounded),
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('un video muestra el botón de reproducción', (tester) async {
       await tester.pumpWidget(
         _tarjeta(_material(id: 'v', categoria: 'Videos')),
       );
 
-      expect(find.text('Video'), findsOneWidget);
       expect(find.byIcon(Icons.play_arrow_rounded), findsOneWidget);
       expect(find.text('Material de prueba'), findsOneWidget);
       expect(find.text('Tema de prueba'), findsOneWidget);
@@ -172,31 +234,16 @@ void main() {
     testWidgets('un contenido de texto no muestra botón de reproducción', (
       tester,
     ) async {
-      await tester.pumpWidget(
-        _tarjeta(_material(id: 'c', categoria: 'Checklist')),
-      );
-
-      expect(find.text('Checklist'), findsOneWidget);
+      await tester.pumpWidget(_tarjeta(_material(id: 'c', categoria: 'Guías')));
       expect(find.byIcon(Icons.play_arrow_rounded), findsNothing);
-      expect(find.byIcon(Icons.checklist_rounded), findsOneWidget);
     });
 
-    testWidgets(
-      'muestra el indicador de descarga solo cuando está descargado',
-      (tester) async {
-        final material = _material(id: 'g', categoria: 'Guías');
-        await tester.pumpWidget(_tarjeta(material));
-        expect(find.byIcon(Icons.check_circle_rounded), findsNothing);
-
-        final descargado = _material(
-          id: 'g',
-          categoria: 'Guías',
-          esDescargado: true,
-        );
-        await tester.pumpWidget(_tarjeta(descargado, descargado: true));
-        expect(find.byIcon(Icons.check_circle_rounded), findsOneWidget);
-      },
-    );
+    testWidgets('un material descargado no muestra marca', (tester) async {
+      await tester.pumpWidget(
+        _tarjeta(_material(id: 'g', categoria: 'Guías', esDescargado: true)),
+      );
+      expect(find.byIcon(Icons.check_circle_rounded), findsNothing);
+    });
 
     testWidgets('el favorito alterna el ícono y llama al callback', (
       tester,
@@ -204,7 +251,7 @@ void main() {
       var vezAlternado = 0;
       await tester.pumpWidget(
         _tarjeta(
-          _material(id: 'c', categoria: 'Checklist'),
+          _material(id: 'c', categoria: 'Guías'),
           alAlternarFavorito: () => vezAlternado++,
         ),
       );
@@ -226,7 +273,7 @@ void main() {
       var vezTocado = 0;
       await tester.pumpWidget(
         _tarjeta(
-          _material(id: 'c', categoria: 'Checklist'),
+          _material(id: 'c', categoria: 'Guías'),
           alTocar: () => vezTocado++,
         ),
       );
@@ -241,7 +288,7 @@ void main() {
       var vezTocado = 0;
       await tester.pumpWidget(
         _tarjeta(
-          _material(id: 'c', categoria: 'Checklist'),
+          _material(id: 'c', categoria: 'Guías'),
           alTocar: () => vezTocado++,
         ),
       );
@@ -268,7 +315,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(tester.takeException(), isNull);
-      expect(find.byIcon(Icons.ondemand_video_rounded), findsOneWidget);
+      expect(find.byKey(const Key('reemplazoMiniatura')), findsOneWidget);
     });
 
     testWidgets('una miniatura por red se muestra desde la caché', (

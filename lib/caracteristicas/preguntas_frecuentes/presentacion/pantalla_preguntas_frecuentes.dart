@@ -371,7 +371,7 @@ class _EnlaceMaterialRelacionado extends ConsumerWidget {
       padding: const EdgeInsets.only(top: 6),
       child: TextButton.icon(
         key: Key('verMaterial_${pregunta.id}'),
-        onPressed: () => context.push('/biblioteca/${material.id}'),
+        onPressed: () => context.push('/biblioteca?abrir=${material.id}'),
         icon: const Icon(Icons.menu_book_rounded, size: 18),
         label: const Text('Ver material relacionado'),
         style: TextButton.styleFrom(

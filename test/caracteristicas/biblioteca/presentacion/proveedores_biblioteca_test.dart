@@ -65,12 +65,12 @@ MaterialEducativo _guia() => MaterialEducativo(
   creadoEn: DateTime.utc(2026, 1, 2),
 );
 
-MaterialEducativo _checklist() => MaterialEducativo(
-  id: 'checklist-preparacion-para-consulta-oncologica',
-  titulo: 'Preparación para consulta oncológica',
-  categoria: 'Checklist',
+MaterialEducativo _sinAdjuntos() => MaterialEducativo(
+  id: 'guias-preparacion-para-consulta',
+  titulo: 'Preparación para consulta',
+  categoria: 'Guías',
   tema: 'Consulta médica',
-  cuerpo: '- Traer carnet de salud',
+  cuerpo: 'Traer carnet de salud.',
   creadoEn: DateTime.utc(2026, 1, 3),
 );
 
@@ -211,7 +211,7 @@ void main() {
 
       await container
           .read(sincronizacionBibliotecaProvider.notifier)
-          .sincronizar([_video(), _guia(), _checklist()]);
+          .sincronizar([_video(), _guia(), _sinAdjuntos()]);
 
       final estado = container.read(sincronizacionBibliotecaProvider);
       expect(estado.total, 2);
@@ -235,7 +235,7 @@ void main() {
         final base = await _baseConContenido([
           _videoConImagenes(),
           _guia(),
-          _checklist(),
+          _sinAdjuntos(),
         ]);
         final cache = _CacheFalso();
         final metadata = ServicioCacheMetadata();
@@ -387,7 +387,7 @@ void main() {
 
   group('contenidosEducativosProvider', () {
     test('sirve el catálogo de Firestore y lo guarda en caché', () async {
-      final base = await _baseConContenido([_video(), _guia(), _checklist()]);
+      final base = await _baseConContenido([_video(), _guia(), _sinAdjuntos()]);
       final cache = _CacheFalso();
       final metadata = ServicioCacheMetadata();
       final container = ProviderContainer(
@@ -411,7 +411,7 @@ void main() {
         containsAll([
           'videos-como-medir-la-fiebre',
           'guias-manual-de-control-de-sintomas',
-          'checklist-preparacion-para-consulta-oncologica',
+          'guias-preparacion-para-consulta',
         ]),
       );
 

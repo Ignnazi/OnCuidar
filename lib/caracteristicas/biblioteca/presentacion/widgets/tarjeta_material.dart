@@ -3,21 +3,61 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:oncuidar/app/tema/paleta.dart';
 import 'package:oncuidar/caracteristicas/biblioteca/dominio/categorias.dart';
 import 'package:oncuidar/caracteristicas/biblioteca/dominio/material_educativo.dart';
+import 'package:oncuidar/caracteristicas/biblioteca/presentacion/pantalla_visor_imagen.dart';
 import 'package:oncuidar/caracteristicas/biblioteca/presentacion/widgets/imagen_cacheada.dart';
+
+/// Color e ícono de cada tipo de material.
+({Color color, IconData icono}) estiloTipoMaterial(String categoria) {
+  switch (categoria.toLowerCase()) {
+    case 'videos':
+      return (color: Paleta.categoriaVideo, icono: Icons.smart_display_rounded);
+    case 'infografías':
+      return (
+        color: Paleta.categoriaInfografia,
+        icono: Icons.insert_chart_outlined_rounded,
+      );
+    default:
+      // Guías y PDFs son lo mismo para el cuidador.
+      return (color: Paleta.categoriaGuia, icono: Icons.menu_book_rounded);
+  }
+}
+
+class IconoTipoMaterial extends StatelessWidget {
+  const IconoTipoMaterial({super.key, required this.categoria});
+
+  final String categoria;
+
+  @override
+  Widget build(BuildContext context) {
+    final estilo = estiloTipoMaterial(categoria);
+    return Semantics(
+      label: etiquetaCategoria(categoria),
+      excludeSemantics: true,
+      child: Container(
+        key: const Key('iconoTipoMaterial'),
+        width: 38,
+        height: 38,
+        decoration: BoxDecoration(
+          color: estilo.color.withValues(alpha: 0.14),
+          borderRadius: BorderRadius.circular(11),
+        ),
+        child: Icon(estilo.icono, size: 21, color: estilo.color),
+      ),
+    );
+  }
+}
 
 class TarjetaMaterial extends StatelessWidget {
   const TarjetaMaterial({
     super.key,
     required this.material,
     required this.esFavorito,
-    required this.descargado,
     required this.alTocar,
     required this.alAlternarFavorito,
   });
 
   final MaterialEducativo material;
   final bool esFavorito;
-  final bool descargado;
   final VoidCallback alTocar;
   final VoidCallback alAlternarFavorito;
 
@@ -48,12 +88,12 @@ class TarjetaMaterial extends StatelessWidget {
             child: _miniatura(),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(12, 10, 8, 12),
+            padding: const EdgeInsets.fromLTRB(12, 10, 4, 10),
             child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                IconoTipoMaterial(categoria: material.categoria),
+                const SizedBox(width: 10),
                 Expanded(child: _textos()),
-                const SizedBox(width: 4),
                 _iconoFavorito(),
               ],
             ),
@@ -63,22 +103,33 @@ class TarjetaMaterial extends StatelessWidget {
     );
   }
 
+  String? get _urlImagen {
+    final miniatura = material.urlMiniatura;
+    if (miniatura != null && miniatura.isNotEmpty) return miniatura;
+    final imagen = material.urlImagen;
+    if (imagen != null && imagen.isNotEmpty) return imagen;
+    return null;
+  }
+
   Widget _miniatura() {
-    final thumbnail = material.urlMiniatura;
+    final url = _urlImagen;
+    Widget imagen = url != null
+        ? ImagenCacheada(
+            url: url,
+            ajuste: BoxFit.cover,
+            reemplazo: _reemplazoMiniatura(),
+          )
+        : _reemplazoMiniatura();
+    if (url != null && !material.esVideo) {
+      imagen = Hero(tag: etiquetaHeroImagen(material.id), child: imagen);
+    }
     return SizedBox(
       height: 108,
       width: double.infinity,
       child: Stack(
         fit: StackFit.expand,
         children: [
-          if (thumbnail != null && thumbnail.isNotEmpty)
-            ImagenCacheada(
-              url: thumbnail,
-              ajuste: BoxFit.cover,
-              reemplazo: _reemplazoMiniatura(),
-            )
-          else
-            _reemplazoMiniatura(),
+          imagen,
           if (material.esVideo)
             Center(
               child: Container(
@@ -99,61 +150,30 @@ class TarjetaMaterial extends StatelessWidget {
                 ),
               ),
             ),
-          Positioned(top: 8, left: 8, child: _insignia()),
-          if (descargado && material.urlArchivo != null)
-            Positioned(
-              top: 8,
-              right: 8,
-              child: Container(
-                padding: const EdgeInsets.all(4),
-                decoration: const BoxDecoration(
-                  color: Paleta.doradoOscuro,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.check_circle_rounded,
-                  color: Colors.white,
-                  size: 16,
-                ),
-              ),
-            ),
         ],
       ),
     );
   }
 
   Widget _reemplazoMiniatura() {
+    final estilo = estiloTipoMaterial(material.categoria);
     return DecoratedBox(
-      decoration: const BoxDecoration(
+      key: const Key('reemplazoMiniatura'),
+      decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Paleta.doradoClaro, Paleta.doradoMedio],
+          colors: [
+            estilo.color.withValues(alpha: 0.10),
+            estilo.color.withValues(alpha: 0.24),
+          ],
         ),
       ),
       child: Center(
         child: Icon(
-          _iconoCategoria(),
+          estilo.icono,
           size: 34,
-          color: Paleta.doradoOscuro.withValues(alpha: 0.55),
-        ),
-      ),
-    );
-  }
-
-  Widget _insignia() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: Paleta.doradoPrincipal,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        etiquetaCategoria(material.categoria),
-        style: GoogleFonts.nunito(
-          fontSize: 10,
-          fontWeight: FontWeight.w700,
-          color: Colors.white,
+          color: estilo.color.withValues(alpha: 0.55),
         ),
       ),
     );
@@ -162,6 +182,7 @@ class TarjetaMaterial extends StatelessWidget {
   Widget _textos() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
         Text(
           material.titulo,
@@ -171,18 +192,21 @@ class TarjetaMaterial extends StatelessWidget {
             fontSize: 15,
             fontWeight: FontWeight.w700,
             color: Paleta.textoPrincipal,
+            height: 1.2,
           ),
         ),
-        const SizedBox(height: 2),
-        Text(
-          material.tema.isNotEmpty ? material.tema : material.categoria,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: GoogleFonts.nunito(
-            fontSize: 13,
-            color: Paleta.textoSecundario,
+        if (material.tema.isNotEmpty) ...[
+          const SizedBox(height: 2),
+          Text(
+            material.tema,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.nunito(
+              fontSize: 13,
+              color: Paleta.textoSecundario,
+            ),
           ),
-        ),
+        ],
       ],
     );
   }
@@ -202,21 +226,5 @@ class TarjetaMaterial extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  IconData _iconoCategoria() {
-    switch (material.categoria.toLowerCase()) {
-      case 'videos':
-        return Icons.ondemand_video_rounded;
-      case 'guías':
-      case 'pdfs':
-        return Icons.menu_book_rounded;
-      case 'infografías':
-        return Icons.image_rounded;
-      case 'checklist':
-        return Icons.checklist_rounded;
-      default:
-        return Icons.article_rounded;
-    }
   }
 }

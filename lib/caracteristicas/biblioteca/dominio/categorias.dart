@@ -1,10 +1,4 @@
-const etiquetasFiltro = [
-  'Todos',
-  'Videos',
-  'Guías',
-  'Infografías',
-  'Checklist',
-];
+const etiquetasFiltro = ['Todos', 'Videos', 'Guías', 'Infografías'];
 
 const _gruposGuia = {'Guías', 'PDFs'};
 
@@ -19,8 +13,6 @@ bool coincideFiltro(String filtro, String categoria) {
       return _gruposGuia.contains(categoria) || normalizada == 'guías';
     case 'Infografías':
       return normalizada == 'infografías';
-    case 'Checklist':
-      return normalizada == 'checklist';
     default:
       return true;
   }
@@ -31,13 +23,10 @@ String etiquetaCategoria(String categoria) {
     case 'videos':
       return 'Video';
     case 'guías':
-      return 'Guía';
     case 'pdfs':
-      return 'PDF';
+      return 'Guía';
     case 'infografías':
       return 'Infografía';
-    case 'checklist':
-      return 'Checklist';
     default:
       return categoria;
   }

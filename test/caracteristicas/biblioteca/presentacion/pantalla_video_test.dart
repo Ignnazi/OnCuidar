@@ -5,7 +5,9 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:oncuidar/app/proveedores_navegacion.dart';
 import 'package:oncuidar/caracteristicas/biblioteca/presentacion/pantalla_video.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -73,7 +75,8 @@ class _VideoFalso extends VideoPlayerPlatform with MockPlatformInterfaceMixin {
   Future<void> setVolume(int playerId, double volume) async {}
 
   @override
-  Future<void> setPlaybackSpeed(int playerId, double speed) async {}
+  Future<void> setPlaybackSpeed(int playerId, double speed) async =>
+      llamadas.add('velocidad:$speed');
 
   @override
   Future<void> setMixWithOthers(bool mixWithOthers) async {}
@@ -89,6 +92,7 @@ class _VideoFalso extends VideoPlayerPlatform with MockPlatformInterfaceMixin {
 void main() {
   late _VideoFalso video;
   late List<MethodCall> sistema;
+  late ProviderContainer contenedor;
 
   setUp(() {
     SharedPreferences.setMockInitialValues({});
@@ -111,12 +115,17 @@ void main() {
         null,
       ),
     );
+    contenedor = ProviderContainer();
+    addTearDown(contenedor.dispose);
     await tester.pumpWidget(
-      MaterialApp(
-        home: PantallaVideo(
-          archivo: File('video-prueba.mp4'),
-          titulo: 'Cómo medir la fiebre',
-          idContenido: 'video-prueba',
+      UncontrolledProviderScope(
+        container: contenedor,
+        child: MaterialApp(
+          home: PantallaVideo(
+            archivo: File('video-prueba.mp4'),
+            titulo: 'Cómo medir la fiebre',
+            idContenido: 'video-prueba',
+          ),
         ),
       ),
     );
@@ -129,23 +138,130 @@ void main() {
     await tester.pump(const Duration(seconds: 5));
   }
 
-  testWidgets('se abre en horizontal y a pantalla inmersiva', (tester) async {
+  Object? ultima(String metodo) =>
+      sistema.lastWhere((l) => l.method == metodo).arguments;
+
+  testWidgets('se abre en vertical, con barra superior y sin inmersivo', (
+    tester,
+  ) async {
     await abrir(tester);
 
-    final orientacion = sistema.firstWhere(
-      (l) => l.method == 'SystemChrome.setPreferredOrientations',
+    expect(
+      sistema.where((l) => l.method == 'SystemChrome.setEnabledSystemUIMode'),
+      isEmpty,
     );
-    expect(orientacion.arguments, [
-      'DeviceOrientation.landscapeLeft',
-      'DeviceOrientation.landscapeRight',
-    ]);
-    final modo = sistema.firstWhere(
-      (l) => l.method == 'SystemChrome.setEnabledSystemUIMode',
-    );
-    expect(modo.arguments, 'SystemUiMode.immersiveSticky');
+    expect(find.byType(AppBar), findsOneWidget);
+    expect(find.text('Cómo medir la fiebre'), findsOneWidget);
+    expect(find.byIcon(Icons.fullscreen), findsOneWidget);
     expect(video.llamadas, contains('play'));
 
     await cerrar(tester);
+  });
+
+  testWidgets(
+    'pantalla completa: inmersivo, apaisado y sin barras; al salir se restaura',
+    (tester) async {
+      await abrir(tester);
+
+      await tester.tap(find.byKey(const Key('alternarPantallaCompleta')));
+      await tester.pump();
+      expect(
+        ultima('SystemChrome.setEnabledSystemUIMode'),
+        'SystemUiMode.immersiveSticky',
+      );
+      expect(ultima('SystemChrome.setPreferredOrientations'), [
+        'DeviceOrientation.landscapeLeft',
+        'DeviceOrientation.landscapeRight',
+      ]);
+      expect(find.byType(AppBar), findsNothing);
+      expect(find.byIcon(Icons.fullscreen_exit), findsOneWidget);
+      expect(contenedor.read(pantallaCompletaProvider), isTrue);
+
+      await tester.tap(find.byKey(const Key('alternarPantallaCompleta')));
+      await tester.pump();
+      expect(
+        ultima('SystemChrome.setEnabledSystemUIMode'),
+        'SystemUiMode.edgeToEdge',
+      );
+      expect(ultima('SystemChrome.setPreferredOrientations'), [
+        'DeviceOrientation.portraitUp',
+        'DeviceOrientation.portraitDown',
+      ]);
+      expect(find.byType(AppBar), findsOneWidget);
+      expect(contenedor.read(pantallaCompletaProvider), isFalse);
+
+      await cerrar(tester);
+    },
+  );
+
+  testWidgets('salir de la pantalla en pantalla completa restaura todo', (
+    tester,
+  ) async {
+    await abrir(tester);
+    await tester.tap(find.byKey(const Key('alternarPantallaCompleta')));
+    await tester.pump();
+    expect(contenedor.read(pantallaCompletaProvider), isTrue);
+
+    await cerrar(tester);
+
+    expect(
+      ultima('SystemChrome.setEnabledSystemUIMode'),
+      'SystemUiMode.edgeToEdge',
+    );
+    expect(ultima('SystemChrome.setPreferredOrientations'), [
+      'DeviceOrientation.portraitUp',
+      'DeviceOrientation.portraitDown',
+    ]);
+    expect(contenedor.read(pantallaCompletaProvider), isFalse);
+  });
+
+  testWidgets('elegir velocidad la aplica y marca la actual', (tester) async {
+    await abrir(tester);
+    expect(find.text('1×'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('velocidadVideo')));
+    await tester.pumpAndSettle();
+    for (final etiqueta in ['0.5×', '0.75×', 'Normal (1×)', '1.25×', '1.5×']) {
+      expect(find.text(etiqueta), findsOneWidget);
+    }
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('opcionVelocidad_1.0')),
+        matching: find.byIcon(Icons.check_rounded),
+      ),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.byKey(const Key('opcionVelocidad_1.5')));
+    await tester.pumpAndSettle();
+    expect(video.llamadas.last, 'velocidad:1.5');
+    expect(find.text('1.5×'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('velocidadVideo')));
+    await tester.pumpAndSettle();
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('opcionVelocidad_1.5')),
+        matching: find.byIcon(Icons.check_rounded),
+      ),
+      findsOneWidget,
+    );
+    await tester.tap(find.byKey(const Key('opcionVelocidad_0.5')));
+    await tester.pumpAndSettle();
+    expect(video.llamadas.last, 'velocidad:0.5');
+
+    await cerrar(tester);
+  });
+
+  test('etiquetaVelocidad abrevia las velocidades', () {
+    expect(velocidadesReproduccion.map(etiquetaVelocidad).toList(), [
+      '0.5×',
+      '0.75×',
+      '1×',
+      '1.25×',
+      '1.5×',
+      '2×',
+    ]);
   });
 
   testWidgets('muestra los controles y la barra de progreso arrastrable', (

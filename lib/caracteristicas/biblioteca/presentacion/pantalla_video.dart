@@ -3,7 +3,9 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:oncuidar/app/proveedores_navegacion.dart';
 import 'package:oncuidar/app/tema/paleta.dart';
 import 'package:oncuidar/caracteristicas/biblioteca/datos/servicio_cache_contenido.dart';
 import 'package:video_player/video_player.dart';
@@ -27,7 +29,16 @@ Future<Duration?> posicionParaRetomar(
   return Duration(milliseconds: guardado);
 }
 
-class PantallaVideo extends StatefulWidget {
+const velocidadesReproduccion = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
+
+String etiquetaVelocidad(double velocidad) {
+  final texto = velocidad == velocidad.roundToDouble()
+      ? velocidad.toStringAsFixed(0)
+      : velocidad.toString();
+  return '$texto×';
+}
+
+class PantallaVideo extends ConsumerStatefulWidget {
   const PantallaVideo({
     super.key,
     required this.archivo,
@@ -41,21 +52,23 @@ class PantallaVideo extends StatefulWidget {
   final String idContenido;
 
   @override
-  State<PantallaVideo> createState() => _PantallaVideoState();
+  ConsumerState<PantallaVideo> createState() => _PantallaVideoState();
 }
 
-class _PantallaVideoState extends State<PantallaVideo> {
+class _PantallaVideoState extends ConsumerState<PantallaVideo> {
   VideoPlayerController? _controlador;
   Timer? _timerControles;
+  late final PantallaCompletaNotifier _notificadorPantallaCompleta;
   bool _inicializado = false;
   bool _mostrarControles = true;
+  bool _pantallaCompleta = false;
   bool _hayError = false;
   String _mensajeError = '';
 
   @override
   void initState() {
     super.initState();
-    _entrarApaisado();
+    _notificadorPantallaCompleta = ref.read(pantallaCompletaProvider.notifier);
     _inicializar();
   }
 
@@ -83,14 +96,6 @@ class _PantallaVideoState extends State<PantallaVideo> {
     }
   }
 
-  void _entrarApaisado() {
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.landscapeLeft,
-      DeviceOrientation.landscapeRight,
-    ]);
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-  }
-
   Future<void> _restaurarPosicion(VideoPlayerController controlador) async {
     try {
       final retomar = await posicionParaRetomar(
@@ -111,12 +116,36 @@ class _PantallaVideoState extends State<PantallaVideo> {
     } catch (_) {}
   }
 
-  void _restaurarOrientacion() {
+  void _entrarPantallaCompleta() {
+    final controlador = _controlador;
+    final horizontal =
+        controlador == null || controlador.value.aspectRatio >= 1;
+    SystemChrome.setPreferredOrientations(
+      horizontal
+          ? [DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight]
+          : [DeviceOrientation.portraitUp],
+    );
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+  }
+
+  void _restaurarSistema() {
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
     ]);
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+  }
+
+  void _alternarPantallaCompleta() {
+    final completa = !_pantallaCompleta;
+    if (completa) {
+      _entrarPantallaCompleta();
+    } else {
+      _restaurarSistema();
+    }
+    _notificadorPantallaCompleta.fijar(completa);
+    setState(() => _pantallaCompleta = completa);
+    _reiniciarTimerControles();
   }
 
   @override
@@ -129,8 +158,12 @@ class _PantallaVideoState extends State<PantallaVideo> {
       if (controlador.value.isPlaying) controlador.pause();
       controlador.dispose();
     }
+    _restaurarSistema();
+    final notificador = _notificadorPantallaCompleta;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _restaurarOrientacion();
+      try {
+        notificador.fijar(false);
+      } catch (_) {}
     });
     super.dispose();
   }
@@ -172,6 +205,25 @@ class _PantallaVideoState extends State<PantallaVideo> {
     _reiniciarTimerControles();
   }
 
+  Future<void> _elegirVelocidad() async {
+    final controlador = _controlador;
+    if (controlador == null || !_inicializado) return;
+    _timerControles?.cancel();
+    final elegida = await showModalBottomSheet<double>(
+      context: context,
+      backgroundColor: const Color(0xFF1C1C1E),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (_) => _HojaVelocidad(actual: controlador.value.playbackSpeed),
+    );
+    if (elegida != null && mounted) {
+      await controlador.setPlaybackSpeed(elegida);
+      if (mounted) setState(() {});
+    }
+    _reiniciarTimerControles();
+  }
+
   void _alternarControles() {
     setState(() => _mostrarControles = !_mostrarControles);
     if (_mostrarControles) _reiniciarTimerControles();
@@ -188,7 +240,7 @@ class _PantallaVideoState extends State<PantallaVideo> {
   }
 
   void _cerrar() {
-    _restaurarOrientacion();
+    _restaurarSistema();
     Navigator.of(context).pop();
   }
 
@@ -197,10 +249,16 @@ class _PantallaVideoState extends State<PantallaVideo> {
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) _cerrar();
+        if (didPop) return;
+        if (_pantallaCompleta) {
+          _alternarPantallaCompleta();
+        } else {
+          _cerrar();
+        }
       },
       child: Scaffold(
         backgroundColor: Colors.black,
+        appBar: _pantallaCompleta ? null : _barraSuperior(),
         body: GestureDetector(
           onTap: _alternarControles,
           behavior: HitTestBehavior.opaque,
@@ -224,6 +282,29 @@ class _PantallaVideoState extends State<PantallaVideo> {
                 _superposicionControles(),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  PreferredSizeWidget _barraSuperior() {
+    return AppBar(
+      backgroundColor: Colors.black,
+      foregroundColor: Colors.white,
+      elevation: 0,
+      leading: IconButton(
+        tooltip: 'Volver',
+        icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+        onPressed: _cerrar,
+      ),
+      title: Text(
+        widget.titulo,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: GoogleFonts.nunito(
+          fontSize: 16,
+          fontWeight: FontWeight.w700,
+          color: Colors.white,
         ),
       ),
     );
@@ -286,7 +367,7 @@ class _PantallaVideoState extends State<PantallaVideo> {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            Colors.black.withValues(alpha: 0.6),
+            Colors.black.withValues(alpha: _pantallaCompleta ? 0.6 : 0),
             Colors.transparent,
             Colors.transparent,
             Colors.black.withValues(alpha: 0.7),
@@ -297,38 +378,10 @@ class _PantallaVideoState extends State<PantallaVideo> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Padding(
-            padding: EdgeInsets.only(
-              top: MediaQuery.of(context).padding.top + 8,
-              left: 12,
-              right: 12,
-            ),
-            child: Row(
-              children: [
-                IconButton(
-                  icon: const Icon(
-                    Icons.arrow_back_ios_new,
-                    color: Colors.white,
-                    size: 20,
-                  ),
-                  onPressed: _cerrar,
-                ),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: Text(
-                    widget.titulo,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.nunito(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
+          if (_pantallaCompleta)
+            _filaTituloPantallaCompleta()
+          else
+            const SizedBox.shrink(),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -369,9 +422,9 @@ class _PantallaVideoState extends State<PantallaVideo> {
           ),
           Padding(
             padding: EdgeInsets.only(
-              bottom: MediaQuery.of(context).padding.bottom + 16,
+              bottom: MediaQuery.of(context).padding.bottom + 12,
               left: 20,
-              right: 20,
+              right: 12,
             ),
             child: Column(
               children: [
@@ -386,20 +439,30 @@ class _PantallaVideoState extends State<PantallaVideo> {
                   padding: const EdgeInsets.symmetric(vertical: 8),
                 ),
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      formatearDuracion(posicion),
+                      '${formatearDuracion(posicion)} / '
+                      '${formatearDuracion(duracion)}',
                       style: GoogleFonts.nunito(
                         fontSize: 12,
                         color: Colors.white,
                       ),
                     ),
-                    Text(
-                      formatearDuracion(duracion),
-                      style: GoogleFonts.nunito(
-                        fontSize: 12,
+                    const Spacer(),
+                    _chipVelocidad(controlador.value.playbackSpeed),
+                    const SizedBox(width: 4),
+                    IconButton(
+                      key: const Key('alternarPantallaCompleta'),
+                      tooltip: _pantallaCompleta
+                          ? 'Salir de pantalla completa'
+                          : 'Pantalla completa',
+                      onPressed: _alternarPantallaCompleta,
+                      icon: Icon(
+                        _pantallaCompleta
+                            ? Icons.fullscreen_exit
+                            : Icons.fullscreen,
                         color: Colors.white,
+                        size: 28,
                       ),
                     ),
                   ],
@@ -408,6 +471,69 @@ class _PantallaVideoState extends State<PantallaVideo> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _filaTituloPantallaCompleta() {
+    return Padding(
+      padding: EdgeInsets.only(
+        top: MediaQuery.of(context).padding.top + 8,
+        left: 12,
+        right: 12,
+      ),
+      child: Row(
+        children: [
+          IconButton(
+            tooltip: 'Salir de pantalla completa',
+            icon: const Icon(
+              Icons.arrow_back_ios_new,
+              color: Colors.white,
+              size: 20,
+            ),
+            onPressed: _alternarPantallaCompleta,
+          ),
+          const SizedBox(width: 4),
+          Expanded(
+            child: Text(
+              widget.titulo,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.nunito(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _chipVelocidad(double velocidad) {
+    return Tooltip(
+      message: 'Velocidad de reproducción',
+      child: InkWell(
+        key: const Key('velocidadVideo'),
+        onTap: _elegirVelocidad,
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.6)),
+          ),
+          child: Text(
+            etiquetaVelocidad(velocidad),
+            style: GoogleFonts.nunito(
+              fontSize: 13,
+              fontWeight: FontWeight.w800,
+              color: Colors.white,
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -434,6 +560,67 @@ class _PantallaVideoState extends State<PantallaVideo> {
           ],
         ),
         child: Icon(icono, color: Colors.white, size: 32),
+      ),
+    );
+  }
+}
+
+class _HojaVelocidad extends StatelessWidget {
+  const _HojaVelocidad({required this.actual});
+
+  final double actual;
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Velocidad de reproducción',
+                  style: GoogleFonts.nunito(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+            for (final velocidad in velocidadesReproduccion)
+              ListTile(
+                key: Key('opcionVelocidad_$velocidad'),
+                dense: true,
+                onTap: () => Navigator.of(context).pop(velocidad),
+                leading: SizedBox(
+                  width: 24,
+                  child: velocidad == actual
+                      ? const Icon(
+                          Icons.check_rounded,
+                          color: Paleta.doradoMedio,
+                        )
+                      : null,
+                ),
+                title: Text(
+                  velocidad == 1.0
+                      ? 'Normal (1×)'
+                      : etiquetaVelocidad(velocidad),
+                  style: GoogleFonts.nunito(
+                    fontSize: 14,
+                    fontWeight: velocidad == actual
+                        ? FontWeight.w800
+                        : FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
