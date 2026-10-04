@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:excel/excel.dart' as xlsx;
@@ -7,51 +8,52 @@ import 'package:oncuidar/caracteristicas/pacientes/dominio/paciente.dart';
 import 'package:oncuidar/caracteristicas/registro_clinico/dominio/registro_clinico.dart';
 import 'package:oncuidar/nucleo/utilidades/formato_fecha.dart';
 
-void _celdaMergeFila(
+xlsx.ExcelColor _color(String hex) => xlsx.ExcelColor.fromHexString(hex);
+
+const anchosColumnasExcel = <double>[13, 11, 13, 10, 10, 10, 10, 10, 38, 44];
+
+const _ultimaColumnaIzquierda = 4;
+const _ultimaColumna = 9;
+
+const _altoLinea = 13.5;
+
+xlsx.CellIndex _indice(int columna, int fila) =>
+    xlsx.CellIndex.indexByColumnRow(columnIndex: columna, rowIndex: fila);
+
+void _fusionar(
   xlsx.Sheet hoja,
   int fila,
-  int columnaInicio,
-  int columnaFin,
+  int desde,
+  int hasta,
   String texto,
   xlsx.CellStyle estilo,
 ) {
-  final inicio = xlsx.CellIndex.indexByColumnRow(
-    columnIndex: columnaInicio,
-    rowIndex: fila,
-  );
-  final fin = xlsx.CellIndex.indexByColumnRow(
-    columnIndex: columnaFin,
-    rowIndex: fila,
-  );
-  hoja.merge(inicio, fin);
-  final celda = hoja.cell(inicio);
+  if (hasta > desde) hoja.merge(_indice(desde, fila), _indice(hasta, fila));
+  final celda = hoja.cell(_indice(desde, fila));
   celda.value = xlsx.TextCellValue(texto);
   celda.cellStyle = estilo;
 }
 
-void _etiquetaValor(
+int _escribirBloque(
   xlsx.Sheet hoja,
   int fila,
-  String etiqueta,
-  String valor,
-  xlsx.CellStyle estiloEtiqueta,
-  xlsx.CellStyle estiloValor,
-) {
-  final celdaEtiqueta = hoja.cell(
-    xlsx.CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: fila),
-  );
-  celdaEtiqueta.value = xlsx.TextCellValue(etiqueta);
-  celdaEtiqueta.cellStyle = estiloEtiqueta;
-
-  final inicio = xlsx.CellIndex.indexByColumnRow(
-    columnIndex: 1,
-    rowIndex: fila,
-  );
-  final fin = xlsx.CellIndex.indexByColumnRow(columnIndex: 9, rowIndex: fila);
-  hoja.merge(inicio, fin);
-  final celdaValor = hoja.cell(inicio);
-  celdaValor.value = xlsx.TextCellValue(valor);
-  celdaValor.cellStyle = estiloValor;
+  int desde,
+  int hasta,
+  BloqueInfo bloque, {
+  required xlsx.CellStyle estiloSeccion,
+  required xlsx.CellStyle estiloEtiqueta,
+  required xlsx.CellStyle estiloValor,
+}) {
+  _fusionar(hoja, fila, desde, hasta, bloque.titulo, estiloSeccion);
+  var f = fila + 1;
+  for (final (etiqueta, valor) in bloque.filas) {
+    final celdaEtiqueta = hoja.cell(_indice(desde, f));
+    celdaEtiqueta.value = xlsx.TextCellValue(etiqueta);
+    celdaEtiqueta.cellStyle = estiloEtiqueta;
+    _fusionar(hoja, f, desde + 1, hasta, valor, estiloValor);
+    f++;
+  }
+  return f - fila;
 }
 
 Uint8List generarExcelHistorial({
@@ -66,245 +68,184 @@ Uint8List generarExcelHistorial({
   libro.rename('Sheet1', 'Historial');
   final hoja = libro['Historial'];
 
+  final lineaSuave = xlsx.Border(
+    borderStyle: xlsx.BorderStyle.Thin,
+    borderColorHex: _color('#E8DCC0'),
+  );
+  final lineaEncabezado = xlsx.Border(
+    borderStyle: xlsx.BorderStyle.Thin,
+    borderColorHex: _color('#C47E10'),
+  );
+
   final estiloTitulo = xlsx.CellStyle(
     bold: true,
-    fontSize: 14,
-    backgroundColorHex: xlsx.ExcelColor.fromHexString('#E8A820'),
-    fontColorHex: xlsx.ExcelColor.fromHexString('#FFFFFF'),
+    fontSize: 15,
+    backgroundColorHex: _color('#E8A820'),
+    fontColorHex: _color('#FFFFFF'),
+    verticalAlign: xlsx.VerticalAlign.Center,
+  );
+  final estiloSubtitulo = xlsx.CellStyle(
+    fontSize: 10,
+    fontColorHex: _color('#6B5330'),
+    verticalAlign: xlsx.VerticalAlign.Center,
   );
   final estiloSeccion = xlsx.CellStyle(
     bold: true,
     fontSize: 11,
-    backgroundColorHex: xlsx.ExcelColor.fromHexString('#FFF4D0'),
-    fontColorHex: xlsx.ExcelColor.fromHexString('#C08808'),
+    backgroundColorHex: _color('#FFF4D0'),
+    fontColorHex: _color('#C08808'),
+    verticalAlign: xlsx.VerticalAlign.Center,
   );
   final estiloEtiqueta = xlsx.CellStyle(
     bold: true,
     fontSize: 10,
-    fontColorHex: xlsx.ExcelColor.fromHexString('#C08808'),
+    fontColorHex: _color('#C08808'),
+    verticalAlign: xlsx.VerticalAlign.Top,
   );
   final estiloValor = xlsx.CellStyle(
     fontSize: 10,
-    fontColorHex: xlsx.ExcelColor.fromHexString('#2C1A00'),
+    fontColorHex: _color('#2C1A00'),
+    textWrapping: xlsx.TextWrapping.WrapText,
+    verticalAlign: xlsx.VerticalAlign.Top,
   );
   final estiloEncabezadoTabla = xlsx.CellStyle(
     bold: true,
-    fontSize: 11,
-    backgroundColorHex: xlsx.ExcelColor.fromHexString('#E8A820'),
-    fontColorHex: xlsx.ExcelColor.fromHexString('#FFFFFF'),
+    fontSize: 10,
+    backgroundColorHex: _color('#C47E10'),
+    fontColorHex: _color('#FFFFFF'),
+    horizontalAlign: xlsx.HorizontalAlign.Center,
+    verticalAlign: xlsx.VerticalAlign.Center,
+    textWrapping: xlsx.TextWrapping.WrapText,
+    bottomBorder: lineaEncabezado,
   );
 
   var fila = 0;
 
-  _celdaMergeFila(hoja, fila, 0, 9, 'HISTORIAL ONCUIDAR', estiloTitulo);
+  // Título y una línea con el paciente.
+  _fusionar(hoja, fila, 0, _ultimaColumna, 'HISTORIAL ONCUIDAR', estiloTitulo);
+  hoja.setRowHeight(fila, 28);
   fila++;
-  fila++;
-
-  if (paciente != null) {
-    _celdaMergeFila(hoja, fila, 0, 9, 'PACIENTE', estiloSeccion);
-    fila++;
-    _etiquetaValor(
-      hoja,
-      fila,
-      'Nombre',
-      paciente.nombreCompleto,
-      estiloEtiqueta,
-      estiloValor,
-    );
-    fila++;
-    if (paciente.edad != null) {
-      _etiquetaValor(
-        hoja,
-        fila,
-        'Edad',
-        '${paciente.edad} años',
-        estiloEtiqueta,
-        estiloValor,
-      );
-      fila++;
-    }
-    if (paciente.diagnostico?.isNotEmpty == true) {
-      _etiquetaValor(
-        hoja,
-        fila,
-        'Diagnóstico',
-        paciente.diagnostico!,
-        estiloEtiqueta,
-        estiloValor,
-      );
-      fila++;
-    }
-    if (paciente.tratamientoFase?.isNotEmpty == true) {
-      _etiquetaValor(
-        hoja,
-        fila,
-        'Fase',
-        paciente.tratamientoFase!,
-        estiloEtiqueta,
-        estiloValor,
-      );
-      fila++;
-    }
-    fila++;
-  }
-
-  if (nombreCuidador?.trim().isNotEmpty == true) {
-    _celdaMergeFila(hoja, fila, 0, 9, 'CUIDADOR', estiloSeccion);
-    fila++;
-    _etiquetaValor(
-      hoja,
-      fila,
-      'Nombre',
-      nombreCuidador!.trim(),
-      estiloEtiqueta,
-      estiloValor,
-    );
-    fila++;
-    fila++;
-  }
-
-  if (paciente?.centroSaludNombre?.isNotEmpty == true) {
-    _celdaMergeFila(hoja, fila, 0, 9, 'CENTRO DE SALUD', estiloSeccion);
-    fila++;
-    _etiquetaValor(
-      hoja,
-      fila,
-      'Nombre',
-      paciente!.centroSaludNombre!,
-      estiloEtiqueta,
-      estiloValor,
-    );
-    fila++;
-    if (paciente.centroSaludDireccion?.isNotEmpty == true) {
-      _etiquetaValor(
-        hoja,
-        fila,
-        'Dirección',
-        paciente.centroSaludDireccion!,
-        estiloEtiqueta,
-        estiloValor,
-      );
-      fila++;
-    }
-    if (paciente.centroSaludTelefono?.isNotEmpty == true) {
-      _etiquetaValor(
-        hoja,
-        fila,
-        'Teléfono',
-        paciente.centroSaludTelefono!,
-        estiloEtiqueta,
-        estiloValor,
-      );
-      fila++;
-    }
-    fila++;
-  }
-
-  if (paciente?.contactoEmergenciaNombre?.isNotEmpty == true) {
-    _celdaMergeFila(hoja, fila, 0, 9, 'CONTACTO DE EMERGENCIA', estiloSeccion);
-    fila++;
-    _etiquetaValor(
-      hoja,
-      fila,
-      'Nombre',
-      paciente!.contactoEmergenciaNombre!,
-      estiloEtiqueta,
-      estiloValor,
-    );
-    fila++;
-    if (paciente.contactoEmergenciaTelefono?.isNotEmpty == true) {
-      _etiquetaValor(
-        hoja,
-        fila,
-        'Teléfono',
-        paciente.contactoEmergenciaTelefono!,
-        estiloEtiqueta,
-        estiloValor,
-      );
-      fila++;
-    }
-    fila++;
-  }
-
-  _celdaMergeFila(hoja, fila, 0, 9, 'RESUMEN', estiloSeccion);
-  fila++;
-  final inicio = fechaInicio != null ? fechacorta(fechaInicio) : 'sin inicio';
-  final fin = fechaFin != null ? fechacorta(fechaFin) : 'sin fin';
-  _etiquetaValor(
+  final nombre = paciente?.nombreCompleto.trim();
+  _fusionar(
     hoja,
     fila,
-    'Rango',
-    '$inicio - $fin',
-    estiloEtiqueta,
-    estiloValor,
+    0,
+    _ultimaColumna,
+    [
+      if (nombre != null && nombre.isNotEmpty) 'Paciente: $nombre',
+      'Generado: ${fechacorta(generadoEn)} ${hora12(generadoEn)}',
+    ].join('   ·   '),
+    estiloSubtitulo,
   );
+  hoja.setRowHeight(fila, 20);
   fila++;
-  _etiquetaValor(
-    hoja,
-    fila,
-    'Total registros',
-    '${registros.length}',
-    estiloEtiqueta,
-    estiloValor,
-  );
-  fila++;
-  _etiquetaValor(
-    hoja,
-    fila,
-    'Generado',
-    '${fechacorta(generadoEn)} ${hora12(generadoEn)}',
-    estiloEtiqueta,
-    estiloValor,
-  );
-  fila++;
+  hoja.setRowHeight(fila, 8);
   fila++;
 
-  const encabezados = [
-    'Fecha',
-    'Hora',
-    'Tipo',
-    'Estado',
-    'Temp.',
-    'F.C.',
-    'Sat. O₂',
-    'F.R.',
-    'Síntomas',
-    'Observaciones',
-  ];
-  for (var i = 0; i < encabezados.length; i++) {
-    final celda = hoja.cell(
-      xlsx.CellIndex.indexByColumnRow(columnIndex: i, rowIndex: fila),
+  final izquierda = bloquesPacienteYCuidador(paciente, nombreCuidador);
+  final derecha = bloquesCentroYContacto(paciente);
+  for (var i = 0; i < math.max(izquierda.length, derecha.length); i++) {
+    var ocupadas = 0;
+    if (i < izquierda.length) {
+      ocupadas = _escribirBloque(
+        hoja,
+        fila,
+        0,
+        _ultimaColumnaIzquierda,
+        izquierda[i],
+        estiloSeccion: estiloSeccion,
+        estiloEtiqueta: estiloEtiqueta,
+        estiloValor: estiloValor,
+      );
+    }
+    if (i < derecha.length) {
+      ocupadas = math.max(
+        ocupadas,
+        _escribirBloque(
+          hoja,
+          fila,
+          _ultimaColumnaIzquierda + 1,
+          _ultimaColumna,
+          derecha[i],
+          estiloSeccion: estiloSeccion,
+          estiloEtiqueta: estiloEtiqueta,
+          estiloValor: estiloValor,
+        ),
+      );
+    }
+    fila += ocupadas;
+    hoja.setRowHeight(fila, 8);
+    fila++;
+  }
+
+  _fusionar(hoja, fila, 0, _ultimaColumna, 'RESUMEN', estiloSeccion);
+  fila++;
+  for (final (etiqueta, valor) in <FilaInfo>[
+    (
+      rotuloPeriodo(fechaInicio, fechaFin),
+      etiquetaPeriodo(fechaInicio, fechaFin),
+    ),
+    ('Registros', '${registros.length}'),
+  ]) {
+    final celdaEtiqueta = hoja.cell(_indice(0, fila));
+    celdaEtiqueta.value = xlsx.TextCellValue(etiqueta);
+    celdaEtiqueta.cellStyle = estiloEtiqueta;
+    _fusionar(hoja, fila, 1, _ultimaColumnaIzquierda, valor, estiloValor);
+    fila++;
+  }
+  hoja.setRowHeight(fila, 10);
+  fila++;
+
+  // Tabla de registros.
+  for (var i = 0; i < encabezadosRegistro.length; i++) {
+    final celda = hoja.cell(_indice(i, fila));
+    celda.value = xlsx.TextCellValue(
+      encabezadosRegistro[i].replaceAll('O2', 'O₂'),
     );
-    celda.value = xlsx.TextCellValue(encabezados[i]);
     celda.cellStyle = estiloEncabezadoTabla;
   }
+  hoja.setRowHeight(fila, 24);
   fila++;
 
+  var numero = 0;
   for (final rec in ordenarCronologicamente(registros)) {
-    final celdas = celdasRegistro(rec, vacio: '');
+    final celdas = celdasRegistro(rec, vacio: '–');
+    final fondo = numero.isOdd ? _color('#FFF9E8') : _color('#FFFFFF');
     for (var i = 0; i < celdas.length; i++) {
-      final celda = hoja.cell(
-        xlsx.CellIndex.indexByColumnRow(columnIndex: i, rowIndex: fila),
-      );
+      final esTexto = i >= 8;
+      final celda = hoja.cell(_indice(i, fila));
       celda.value = xlsx.TextCellValue(celdas[i]);
+      celda.cellStyle = xlsx.CellStyle(
+        fontSize: 10,
+        backgroundColorHex: fondo,
+        fontColorHex: i == 3
+            ? _color(switch (celdas[i]) {
+                'Normal' => '#168A63',
+                'Alerta' => '#B77900',
+                'Crítico' => '#D1103F',
+                _ => '#2C1A00',
+              })
+            : _color('#2C1A00'),
+        bold: i == 3,
+        horizontalAlign: esTexto
+            ? xlsx.HorizontalAlign.Left
+            : xlsx.HorizontalAlign.Center,
+        verticalAlign: xlsx.VerticalAlign.Center,
+        textWrapping: xlsx.TextWrapping.WrapText,
+        bottomBorder: lineaSuave,
+      );
     }
+    final lineas = math.max(
+      lineasNecesarias(celdas[8], (anchosColumnasExcel[8] * 1.05).floor()),
+      lineasNecesarias(celdas[9], (anchosColumnasExcel[9] * 1.05).floor()),
+    );
+    hoja.setRowHeight(fila, math.max(22, lineas * _altoLinea + 8));
     fila++;
+    numero++;
   }
 
-  const anchos = <int, double>{
-    0: 18,
-    1: 16,
-    2: 17,
-    3: 16,
-    4: 12,
-    5: 12,
-    6: 12,
-    7: 11,
-    8: 40,
-    9: 40,
-  };
-  for (var i = 0; i < 10; i++) {
-    hoja.setColumnWidth(i, anchos[i]!);
+  for (var i = 0; i < anchosColumnasExcel.length; i++) {
+    hoja.setColumnWidth(i, anchosColumnasExcel[i]);
   }
 
   final bytes = libro.save();

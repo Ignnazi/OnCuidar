@@ -10,7 +10,14 @@ import 'package:pdf/widgets.dart' as pw;
 
 PdfColor _hex(String valor) => PdfColor.fromHex(valor);
 
-pw.Widget _encabezadoPagina(DateTime generadoEn, Paciente? paciente) {
+// Paleta del documento.
+final _doradoOscuro = _hex('#C08808');
+final _doradoClaro = _hex('#FFF4D0');
+final _textoPrincipal = _hex('#2C1A00');
+final _textoSecundario = _hex('#6B5330');
+final _lineaSuave = _hex('#E8DCC0');
+
+pw.Widget _bandaPrimeraPagina(DateTime generadoEn, Paciente? paciente) {
   final nombre = paciente?.nombreCompleto.trim();
   return pw.Container(
     width: double.infinity,
@@ -24,7 +31,7 @@ pw.Widget _encabezadoPagina(DateTime generadoEn, Paciente? paciente) {
       borderRadius: pw.BorderRadius.circular(10),
     ),
     child: pw.Row(
-      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      crossAxisAlignment: pw.CrossAxisAlignment.center,
       children: [
         pw.Column(
           crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -32,31 +39,23 @@ pw.Widget _encabezadoPagina(DateTime generadoEn, Paciente? paciente) {
             pw.Text(
               'OnCuidar',
               style: pw.TextStyle(
-                fontSize: 17,
+                fontSize: 18,
                 fontWeight: pw.FontWeight.bold,
                 color: PdfColors.white,
               ),
             ),
             pw.SizedBox(height: 2),
             pw.Text(
-              'Historial Clínico',
+              'Historial clínico',
               style: pw.TextStyle(
-                fontSize: 10.5,
-                color: PdfColors.white.withAlpha(0.9),
-              ),
-            ),
-            pw.SizedBox(height: 4),
-            pw.Text(
-              'Generado: ${fechacorta(generadoEn)} ${hora12(generadoEn)}',
-              style: pw.TextStyle(
-                fontSize: 8.5,
-                color: PdfColors.white.withAlpha(0.8),
+                fontSize: 11,
+                color: PdfColors.white.withAlpha(0.92),
               ),
             ),
           ],
         ),
-        if (nombre != null && nombre.isNotEmpty) ...[
-          pw.Spacer(),
+        pw.Spacer(),
+        if (nombre != null && nombre.isNotEmpty)
           pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.end,
             children: [
@@ -65,7 +64,7 @@ pw.Widget _encabezadoPagina(DateTime generadoEn, Paciente? paciente) {
                 style: pw.TextStyle(
                   fontSize: 7.5,
                   fontWeight: pw.FontWeight.bold,
-                  color: PdfColors.white.withAlpha(0.75),
+                  color: PdfColors.white.withAlpha(0.8),
                   letterSpacing: 1.2,
                 ),
               ),
@@ -73,14 +72,50 @@ pw.Widget _encabezadoPagina(DateTime generadoEn, Paciente? paciente) {
               pw.Text(
                 nombre,
                 style: pw.TextStyle(
-                  fontSize: 10.5,
+                  fontSize: 12,
                   fontWeight: pw.FontWeight.bold,
                   color: PdfColors.white,
                 ),
               ),
+              pw.SizedBox(height: 3),
+              pw.Text(
+                'Generado: ${fechacorta(generadoEn)} ${hora12(generadoEn)}',
+                style: pw.TextStyle(
+                  fontSize: 8,
+                  color: PdfColors.white.withAlpha(0.85),
+                ),
+              ),
             ],
           ),
-        ],
+      ],
+    ),
+  );
+}
+
+pw.Widget _encabezadoContinuacion(Paciente? paciente) {
+  final nombre = paciente?.nombreCompleto.trim();
+  return pw.Container(
+    padding: const pw.EdgeInsets.only(bottom: 5),
+    margin: const pw.EdgeInsets.only(bottom: 8),
+    decoration: pw.BoxDecoration(
+      border: pw.Border(bottom: pw.BorderSide(color: _lineaSuave, width: 0.6)),
+    ),
+    child: pw.Row(
+      children: [
+        pw.Text(
+          'OnCuidar · Historial clínico',
+          style: pw.TextStyle(
+            fontSize: 8.5,
+            fontWeight: pw.FontWeight.bold,
+            color: _doradoOscuro,
+          ),
+        ),
+        pw.Spacer(),
+        if (nombre != null && nombre.isNotEmpty)
+          pw.Text(
+            nombre,
+            style: pw.TextStyle(fontSize: 8.5, color: _textoSecundario),
+          ),
       ],
     ),
   );
@@ -88,204 +123,218 @@ pw.Widget _encabezadoPagina(DateTime generadoEn, Paciente? paciente) {
 
 pw.Widget _piePagina(pw.Context contexto) {
   return pw.Container(
-    margin: const pw.EdgeInsets.only(top: 10),
+    margin: const pw.EdgeInsets.only(top: 8),
     child: pw.Row(
       children: [
         pw.Expanded(
           child: pw.Text(
             'OnCuidar · apoyo al cuidado oncológico pediátrico',
-            style: pw.TextStyle(fontSize: 7.5, color: _hex('#9A8060')),
+            style: pw.TextStyle(fontSize: 7.5, color: _textoSecundario),
           ),
         ),
         pw.Text(
           'Página ${contexto.pageNumber} de ${contexto.pagesCount}',
-          style: pw.TextStyle(fontSize: 8, color: _hex('#9A8060')),
+          style: pw.TextStyle(fontSize: 8, color: _textoSecundario),
         ),
       ],
     ),
   );
 }
 
-pw.Widget _seccionTitulo(
-  String titulo,
-  pw.TextStyle estiloTexto,
-  PdfColor fondo,
-) {
+pw.Widget _tituloSeccion(String titulo) {
   return pw.Container(
     width: double.infinity,
     padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 4),
     decoration: pw.BoxDecoration(
-      color: fondo,
+      color: _doradoClaro,
       borderRadius: pw.BorderRadius.circular(4),
     ),
     child: pw.Row(
       children: [
         pw.Container(
           width: 3,
-          height: 14,
+          height: 12,
           decoration: pw.BoxDecoration(
             color: _hex('#E8A820'),
             borderRadius: pw.BorderRadius.circular(1),
           ),
         ),
         pw.SizedBox(width: 6),
-        pw.Text(titulo, style: estiloTexto),
+        pw.Text(
+          titulo,
+          style: pw.TextStyle(
+            fontSize: 9.5,
+            fontWeight: pw.FontWeight.bold,
+            color: _doradoOscuro,
+            letterSpacing: 0.5,
+          ),
+        ),
       ],
     ),
   );
 }
 
-pw.Widget _cajasRegistrosPorEstado(List<RegistroClinico> registros) {
-  final conteos = <NivelAlerta, int>{
-    NivelAlerta.normal: 0,
-    NivelAlerta.alerta: 0,
-    NivelAlerta.critico: 0,
-  };
-  for (final registro in registros) {
-    conteos[registro.nivelAlerta] = conteos[registro.nivelAlerta]! + 1;
-  }
-
-  const paletas = <NivelAlerta, (String fondo, String color, String label)>{
-    NivelAlerta.normal: ('#E6F7F0', '#1FA97C', 'Normal'),
-    NivelAlerta.alerta: ('#FFF4D0', '#E8A820', 'Alerta'),
-    NivelAlerta.critico: ('#FDE8EE', '#E11D48', 'Crítico'),
-  };
-
-  return pw.Row(
-    children: [
-      for (final nivel in NivelAlerta.values) ...[
-        if (nivel != NivelAlerta.values.first) pw.SizedBox(width: 8),
-        pw.Expanded(
-          child: pw.Container(
-            padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 10),
-            decoration: pw.BoxDecoration(
-              color: _hex(paletas[nivel]!.$1),
-              border: pw.Border(
-                left: pw.BorderSide(color: _hex(paletas[nivel]!.$2), width: 3),
-              ),
-            ),
-            child: pw.Column(
+pw.Widget _bloque(BloqueInfo bloque) {
+  return pw.Padding(
+    padding: const pw.EdgeInsets.only(bottom: 10),
+    child: pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        _tituloSeccion(bloque.titulo),
+        pw.SizedBox(height: 5),
+        for (final (etiqueta, valor) in bloque.filas)
+          pw.Padding(
+            padding: const pw.EdgeInsets.only(bottom: 3, left: 4),
+            child: pw.Row(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
-                pw.Text(
-                  '${conteos[nivel]}',
-                  style: pw.TextStyle(
-                    fontSize: 14,
-                    fontWeight: pw.FontWeight.bold,
-                    color: _hex(paletas[nivel]!.$2),
+                pw.SizedBox(
+                  width: 70,
+                  child: pw.Text(
+                    etiqueta,
+                    style: pw.TextStyle(
+                      fontSize: 8.5,
+                      fontWeight: pw.FontWeight.bold,
+                      color: _doradoOscuro,
+                    ),
                   ),
                 ),
-                pw.SizedBox(height: 2),
-                pw.Text(
-                  paletas[nivel]!.$3,
-                  style: pw.TextStyle(
-                    fontSize: 7.5,
-                    color: _hex(paletas[nivel]!.$2),
+                pw.Expanded(
+                  child: pw.Text(
+                    valor,
+                    style: pw.TextStyle(fontSize: 9, color: _textoPrincipal),
                   ),
                 ),
               ],
             ),
           ),
-        ),
       ],
+    ),
+  );
+}
+
+pw.Widget _ficha(List<BloqueInfo> izquierda, List<BloqueInfo> derecha) {
+  if (izquierda.isEmpty && derecha.isEmpty) return pw.SizedBox();
+  return pw.Row(
+    crossAxisAlignment: pw.CrossAxisAlignment.start,
+    children: [
+      pw.Expanded(
+        child: pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.start,
+          children: [for (final b in izquierda) _bloque(b)],
+        ),
+      ),
+      pw.SizedBox(width: 22),
+      pw.Expanded(
+        child: pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.start,
+          children: [for (final b in derecha) _bloque(b)],
+        ),
+      ),
     ],
   );
 }
 
-pw.Widget _filaEtiquetaValor(
-  String etiqueta,
-  String valor,
-  pw.TextStyle estiloEtiqueta,
-  pw.TextStyle estiloValor,
-) {
-  return pw.Padding(
-    padding: const pw.EdgeInsets.only(bottom: 3),
-    child: pw.Row(
-      crossAxisAlignment: pw.CrossAxisAlignment.start,
-      children: [
-        pw.SizedBox(
-          width: 120,
-          child: pw.Text(etiqueta, style: estiloEtiqueta),
-        ),
-        pw.Expanded(child: pw.Text(valor, style: estiloValor)),
-      ],
+pw.Widget _datoResumen(String rotulo, String valor) {
+  return pw.Expanded(
+    child: pw.Container(
+      padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: pw.BoxDecoration(
+        border: pw.Border.all(color: _lineaSuave, width: 0.6),
+        borderRadius: pw.BorderRadius.circular(6),
+      ),
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Text(
+            rotulo.toUpperCase(),
+            style: pw.TextStyle(
+              fontSize: 7.5,
+              fontWeight: pw.FontWeight.bold,
+              color: _doradoOscuro,
+              letterSpacing: 0.8,
+            ),
+          ),
+          pw.SizedBox(height: 3),
+          pw.Text(
+            valor,
+            style: pw.TextStyle(
+              fontSize: 10.5,
+              fontWeight: pw.FontWeight.bold,
+              color: _textoPrincipal,
+            ),
+          ),
+        ],
+      ),
     ),
   );
 }
 
-pw.Widget _tablaRegistros(
-  List<RegistroClinico> registros,
-  pw.TextStyle estiloEncabezado,
-  pw.TextStyle estiloCelda,
-) {
-  const encabezados = [
-    'Fecha',
-    'Hora',
-    'Tipo',
-    'Estado',
-    'Temp.',
-    'F.C.',
-    'Sat. O2',
-    'F.R.',
-    'Síntomas',
-    'Observaciones',
-  ];
+PdfColor? _colorEstado(String estado) => switch (estado) {
+  'Normal' => _hex('#168A63'),
+  'Alerta' => _hex('#B77900'),
+  'Crítico' => _hex('#D1103F'),
+  _ => null,
+};
 
+const _anchosTabla = <int, pw.TableColumnWidth>{
+  0: pw.FixedColumnWidth(60), // Fecha
+  1: pw.FixedColumnWidth(54), // Hora
+  2: pw.FixedColumnWidth(62), // Tipo
+  3: pw.FixedColumnWidth(50), // Estado
+  4: pw.FixedColumnWidth(46), // Temp.
+  5: pw.FixedColumnWidth(54), // F.C.
+  6: pw.FixedColumnWidth(48), // Sat. O2
+  7: pw.FixedColumnWidth(54), // F.R.
+  8: pw.FlexColumnWidth(5), // Síntomas
+  9: pw.FlexColumnWidth(4), // Observaciones
+};
+
+pw.Widget _tablaRegistros(List<RegistroClinico> registros) {
   final datos = [
     for (final rec in ordenarCronologicamente(registros))
       celdasRegistro(rec, vacio: '-'),
   ];
+  final estiloCelda = pw.TextStyle(
+    fontSize: 8.5,
+    color: _textoPrincipal,
+    lineSpacing: 1.5,
+  );
 
   return pw.TableHelper.fromTextArray(
-    headers: encabezados,
+    headers: encabezadosRegistro,
     data: datos,
-    headerStyle: estiloEncabezado,
-    headerDecoration: pw.BoxDecoration(
-      color: _hex('#E8A820'),
-      borderRadius: const pw.BorderRadius.only(
-        topLeft: pw.Radius.circular(4),
-        topRight: pw.Radius.circular(4),
-      ),
+    headerStyle: pw.TextStyle(
+      fontSize: 8.5,
+      fontWeight: pw.FontWeight.bold,
+      color: PdfColors.white,
+      letterSpacing: 0.3,
     ),
-    headerPadding: const pw.EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+    headerDecoration: pw.BoxDecoration(color: _hex('#C47E10')),
+    headerPadding: const pw.EdgeInsets.symmetric(horizontal: 5, vertical: 6),
+    headerAlignment: pw.Alignment.centerLeft,
     cellStyle: estiloCelda,
-    cellPadding: const pw.EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-    cellHeight: 18,
+    cellPadding: const pw.EdgeInsets.symmetric(horizontal: 5, vertical: 5),
+    cellHeight: 22,
+    cellAlignment: pw.Alignment.centerLeft,
+    cellAlignments: {for (var i = 3; i <= 7; i++) i: pw.Alignment.center},
+    headerAlignments: {for (var i = 3; i <= 7; i++) i: pw.Alignment.center},
     rowDecoration: const pw.BoxDecoration(color: PdfColors.white),
     oddRowDecoration: pw.BoxDecoration(color: _hex('#FFF9E8')),
-    columnWidths: const {
-      0: pw.FixedColumnWidth(46),
-      1: pw.FixedColumnWidth(40),
-      2: pw.FixedColumnWidth(50),
-      3: pw.FixedColumnWidth(42),
-      4: pw.FixedColumnWidth(30),
-      5: pw.FixedColumnWidth(38),
-      6: pw.FixedColumnWidth(34),
-      7: pw.FixedColumnWidth(30),
-      8: pw.FixedColumnWidth(120),
-      9: pw.FixedColumnWidth(105),
-    },
+    columnWidths: _anchosTabla,
     textStyleBuilder: (indice, valor, _) {
       if (indice != 3) return null;
-      final color = switch (valor) {
-        'Normal' => _hex('#1FA97C'),
-        'Alerta' => _hex('#E8A820'),
-        'Crítico' => _hex('#E11D48'),
-        _ => null,
-      };
+      final color = _colorEstado('$valor');
       if (color == null) return null;
       return pw.TextStyle(
-        fontSize: 7.5,
+        fontSize: 8.5,
         fontWeight: pw.FontWeight.bold,
         color: color,
       );
     },
     border: pw.TableBorder(
-      top: pw.BorderSide(color: _hex('#E8A820'), width: 0.6),
-      bottom: pw.BorderSide(color: _hex('#E8DCC0'), width: 0.5),
-      left: pw.BorderSide(color: _hex('#F0E6D0'), width: 0.5),
-      right: pw.BorderSide(color: _hex('#F0E6D0'), width: 0.5),
-      horizontalInside: pw.BorderSide(color: _hex('#E8DCC0'), width: 0.4),
-      verticalInside: pw.BorderSide(color: _hex('#F0E6D0'), width: 0.4),
+      bottom: pw.BorderSide(color: _lineaSuave, width: 0.6),
+      horizontalInside: pw.BorderSide(color: _lineaSuave, width: 0.4),
     ),
   );
 }
@@ -299,227 +348,51 @@ Future<Uint8List> generarPdfHistorial({
   required DateTime generadoEn,
   bool comprimir = true,
 }) async {
-  final doradoOscuro = _hex('#C08808');
-  final doradoClaro = _hex('#FFF4D0');
-  final textoPrincipal = _hex('#2C1A00');
-  final textoSecundario = _hex('#9A8060');
-
-  final estiloSeccion = pw.TextStyle(
-    fontSize: 10,
-    fontWeight: pw.FontWeight.bold,
-    color: doradoOscuro,
-    letterSpacing: 0.5,
-  );
-  final estiloEtiqueta = pw.TextStyle(
-    fontSize: 8.5,
-    fontWeight: pw.FontWeight.bold,
-    color: doradoOscuro,
-  );
-  final estiloValor = pw.TextStyle(fontSize: 8.5, color: textoSecundario);
-  final estiloEncabezadoTabla = pw.TextStyle(
-    fontSize: 8,
-    fontWeight: pw.FontWeight.bold,
-    color: PdfColors.white,
-    letterSpacing: 0.4,
-  );
-  final estiloCelda = pw.TextStyle(fontSize: 7.5, color: textoPrincipal);
-
-  final inicio = fechaInicio != null ? fechacorta(fechaInicio) : 'sin inicio';
-  final fin = fechaFin != null ? fechacorta(fechaFin) : 'sin fin';
-
+  final izquierda = bloquesPacienteYCuidador(paciente, nombreCuidador);
+  final derecha = bloquesCentroYContacto(paciente);
   final documento = pw.Document(compress: comprimir);
 
   documento.addPage(
     pw.MultiPage(
-      pageFormat: PdfPageFormat.a4,
-      margin: const pw.EdgeInsets.all(30),
-      header: (_) => _encabezadoPagina(generadoEn, paciente),
+      pageFormat: PdfPageFormat.a4.landscape,
+      margin: const pw.EdgeInsets.symmetric(horizontal: 28, vertical: 26),
+      header: (contexto) => contexto.pageNumber == 1
+          ? pw.SizedBox()
+          : _encabezadoContinuacion(paciente),
       footer: _piePagina,
       build: (_) {
-        final contenido = <pw.Widget>[pw.SizedBox(height: 6)];
-
-        if (paciente != null) {
-          contenido.add(_seccionTitulo('PACIENTE', estiloSeccion, doradoClaro));
-          contenido.add(pw.SizedBox(height: 6));
-          contenido.add(
-            _filaEtiquetaValor(
-              'Nombre',
-              paciente.nombreCompleto,
-              estiloEtiqueta,
-              estiloValor,
-            ),
-          );
-          if (paciente.edad != null) {
-            contenido.add(
-              _filaEtiquetaValor(
-                'Edad',
-                '${paciente.edad} años',
-                estiloEtiqueta,
-                estiloValor,
+        return <pw.Widget>[
+          _bandaPrimeraPagina(generadoEn, paciente),
+          pw.SizedBox(height: 14),
+          _ficha(izquierda, derecha),
+          _tituloSeccion('RESUMEN'),
+          pw.SizedBox(height: 6),
+          pw.Row(
+            children: [
+              _datoResumen(
+                rotuloPeriodo(fechaInicio, fechaFin),
+                etiquetaPeriodo(fechaInicio, fechaFin),
               ),
-            );
-          }
-          if (paciente.diagnostico?.isNotEmpty == true) {
-            contenido.add(
-              _filaEtiquetaValor(
-                'Diagnóstico',
-                paciente.diagnostico!,
-                estiloEtiqueta,
-                estiloValor,
+              pw.SizedBox(width: 10),
+              _datoResumen('Total de registros', '${registros.length}'),
+              pw.SizedBox(width: 10),
+              _datoResumen(
+                'Generado',
+                '${fechacorta(generadoEn)} ${hora12(generadoEn)}',
               ),
-            );
-          }
-          if (paciente.tratamientoFase?.isNotEmpty == true) {
-            contenido.add(
-              _filaEtiquetaValor(
-                'Fase',
-                paciente.tratamientoFase!,
-                estiloEtiqueta,
-                estiloValor,
-              ),
-            );
-          }
-          contenido.add(pw.SizedBox(height: 10));
-        }
-
-        final nombreLimpio = nombreCuidador?.trim();
-        if (nombreLimpio != null && nombreLimpio.isNotEmpty) {
-          contenido.add(_seccionTitulo('CUIDADOR', estiloSeccion, doradoClaro));
-          contenido.add(pw.SizedBox(height: 6));
-          contenido.add(
-            _filaEtiquetaValor(
-              'Nombre',
-              nombreLimpio,
-              estiloEtiqueta,
-              estiloValor,
-            ),
-          );
-          contenido.add(pw.SizedBox(height: 10));
-        }
-
-        if (paciente?.centroSaludNombre?.isNotEmpty == true) {
-          contenido.add(
-            _seccionTitulo('CENTRO DE SALUD', estiloSeccion, doradoClaro),
-          );
-          contenido.add(pw.SizedBox(height: 6));
-          contenido.add(
-            _filaEtiquetaValor(
-              'Nombre',
-              paciente!.centroSaludNombre!,
-              estiloEtiqueta,
-              estiloValor,
-            ),
-          );
-          if (paciente.centroSaludDireccion?.isNotEmpty == true) {
-            contenido.add(
-              _filaEtiquetaValor(
-                'Dirección',
-                paciente.centroSaludDireccion!,
-                estiloEtiqueta,
-                estiloValor,
-              ),
-            );
-          }
-          if (paciente.centroSaludTelefono?.isNotEmpty == true) {
-            contenido.add(
-              _filaEtiquetaValor(
-                'Teléfono',
-                paciente.centroSaludTelefono!,
-                estiloEtiqueta,
-                estiloValor,
-              ),
-            );
-          }
-          contenido.add(pw.SizedBox(height: 10));
-        }
-
-        if (paciente?.contactoEmergenciaNombre?.isNotEmpty == true) {
-          contenido.add(
-            _seccionTitulo(
-              'CONTACTO DE EMERGENCIA',
-              estiloSeccion,
-              doradoClaro,
-            ),
-          );
-          contenido.add(pw.SizedBox(height: 6));
-          contenido.add(
-            _filaEtiquetaValor(
-              'Nombre',
-              paciente!.contactoEmergenciaNombre!,
-              estiloEtiqueta,
-              estiloValor,
-            ),
-          );
-          if (paciente.contactoEmergenciaTelefono?.isNotEmpty == true) {
-            contenido.add(
-              _filaEtiquetaValor(
-                'Teléfono',
-                paciente.contactoEmergenciaTelefono!,
-                estiloEtiqueta,
-                estiloValor,
-              ),
-            );
-          }
-          contenido.add(pw.SizedBox(height: 10));
-        }
-
-        contenido.add(_seccionTitulo('RESUMEN', estiloSeccion, doradoClaro));
-        contenido.add(pw.SizedBox(height: 6));
-        contenido.add(
-          _filaEtiquetaValor(
-            'Rango',
-            '$inicio - $fin',
-            estiloEtiqueta,
-            estiloValor,
+            ],
           ),
-        );
-        contenido.add(
-          _filaEtiquetaValor(
-            'Total registros',
-            '${registros.length}',
-            estiloEtiqueta,
-            estiloValor,
-          ),
-        );
-        contenido.add(
-          _filaEtiquetaValor(
-            'Generado',
-            '${fechacorta(generadoEn)} ${hora12(generadoEn)}',
-            estiloEtiqueta,
-            estiloValor,
-          ),
-        );
-        if (registros.isNotEmpty) {
-          contenido.add(pw.SizedBox(height: 8));
-          contenido.add(pw.Text('Registros por estado', style: estiloEtiqueta));
-          contenido.add(pw.SizedBox(height: 5));
-          contenido.add(_cajasRegistrosPorEstado(registros));
-        }
-        contenido.add(pw.SizedBox(height: 15));
-
-        contenido.add(
-          _seccionTitulo(
-            'REGISTROS (${registros.length})',
-            estiloSeccion,
-            doradoClaro,
-          ),
-        );
-        contenido.add(pw.SizedBox(height: 8));
-
-        if (registros.isEmpty) {
-          contenido.add(
+          pw.SizedBox(height: 14),
+          _tituloSeccion('REGISTROS (${registros.length})'),
+          pw.SizedBox(height: 8),
+          if (registros.isEmpty)
             pw.Text(
-              'No hay registros para el rango seleccionado.',
-              style: estiloValor,
-            ),
-          );
-        } else {
-          contenido.add(
-            _tablaRegistros(registros, estiloEncabezadoTabla, estiloCelda),
-          );
-        }
-
-        return contenido;
+              'No hay registros para el período seleccionado.',
+              style: pw.TextStyle(fontSize: 9, color: _textoSecundario),
+            )
+          else
+            _tablaRegistros(registros),
+        ];
       },
     ),
   );

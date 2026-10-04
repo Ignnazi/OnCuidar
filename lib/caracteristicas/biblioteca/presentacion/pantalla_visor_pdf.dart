@@ -1,18 +1,39 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:oncuidar/app/proveedores_navegacion.dart';
 import 'package:oncuidar/app/tema/paleta.dart';
 import 'package:pdfx/pdfx.dart';
 
 typedef ConstructorDocumentoPdf = Widget Function(String ruta);
 
-class PantallaVisorPdf extends ConsumerStatefulWidget {
+final constructorDocumentoPdfProvider = Provider<ConstructorDocumentoPdf?>(
+  (_) => null,
+);
+
+Future<void> abrirVisorPdf(
+  BuildContext context, {
+  required String ruta,
+  required String titulo,
+  VoidCallback? alCompartir,
+}) {
+  return Navigator.of(context, rootNavigator: true).push(
+    MaterialPageRoute<void>(
+      builder: (_) => PantallaVisorPdf(
+        ruta: ruta,
+        titulo: titulo,
+        alCompartir: alCompartir,
+      ),
+    ),
+  );
+}
+
+class PantallaVisorPdf extends ConsumerWidget {
   const PantallaVisorPdf({
     super.key,
     required this.ruta,
     required this.titulo,
     this.constructorDocumento,
+    this.alCompartir,
   });
 
   /// Ruta local del archivo ya descargado.
@@ -20,36 +41,12 @@ class PantallaVisorPdf extends ConsumerStatefulWidget {
   final String titulo;
   final ConstructorDocumentoPdf? constructorDocumento;
 
-  @override
-  ConsumerState<PantallaVisorPdf> createState() => _PantallaVisorPdfState();
-}
-
-class _PantallaVisorPdfState extends ConsumerState<PantallaVisorPdf> {
-  late final PantallaCompletaNotifier _notificadorPantallaCompleta;
+  final VoidCallback? alCompartir;
 
   @override
-  void initState() {
-    super.initState();
-    _notificadorPantallaCompleta = ref.read(pantallaCompletaProvider.notifier);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _notificadorPantallaCompleta.fijar(true);
-    });
-  }
-
-  @override
-  void dispose() {
-    final notificador = _notificadorPantallaCompleta;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      try {
-        notificador.fijar(false);
-      } catch (_) {}
-    });
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final constructor = widget.constructorDocumento;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final constructor =
+        constructorDocumento ?? ref.watch(constructorDocumentoPdfProvider);
     return Scaffold(
       backgroundColor: const Color(0xFF0B0B0D),
       appBar: AppBar(
@@ -63,7 +60,7 @@ class _PantallaVisorPdfState extends ConsumerState<PantallaVisorPdf> {
           onPressed: () => Navigator.of(context).maybePop(),
         ),
         title: Text(
-          widget.titulo,
+          titulo,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: GoogleFonts.nunito(
@@ -72,10 +69,17 @@ class _PantallaVisorPdfState extends ConsumerState<PantallaVisorPdf> {
             color: Colors.white,
           ),
         ),
+        actions: [
+          if (alCompartir != null)
+            IconButton(
+              key: const Key('compartirVisorPdf'),
+              tooltip: 'Compartir',
+              icon: const Icon(Icons.share_rounded),
+              onPressed: alCompartir,
+            ),
+        ],
       ),
-      body: constructor != null
-          ? constructor(widget.ruta)
-          : _DocumentoPdf(ruta: widget.ruta),
+      body: constructor != null ? constructor(ruta) : _DocumentoPdf(ruta: ruta),
     );
   }
 }
@@ -138,9 +142,12 @@ class _DocumentoPdfState extends State<_DocumentoPdf> {
         Positioned.fill(
           child: PdfViewPinch(
             controller: _controlador,
+            maxScale: 4,
             backgroundDecoration: const BoxDecoration(color: Color(0xFF0B0B0D)),
             builders: PdfViewPinchBuilders<DefaultBuilderOptions>(
-              options: const DefaultBuilderOptions(),
+              options: const DefaultBuilderOptions(
+                loaderSwitchDuration: Duration(milliseconds: 120),
+              ),
               documentLoaderBuilder: (_) => Center(
                 child: CircularProgressIndicator(color: Paleta.doradoMedio),
               ),

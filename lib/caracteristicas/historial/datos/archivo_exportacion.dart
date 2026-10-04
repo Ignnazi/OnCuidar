@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -22,14 +21,6 @@ Future<File> escribirArchivoTemporal(Uint8List bytes, String extension) async {
   );
   await archivo.writeAsBytes(bytes, flush: true);
   return archivo;
-}
-
-Future<OpenResult> abrirArchivoExportado(
-  Uint8List bytes,
-  String extension,
-) async {
-  final archivo = await escribirArchivoTemporal(bytes, extension);
-  return OpenFilex.open(archivo.path);
 }
 
 Future<void> compartirArchivoExportado(

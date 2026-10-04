@@ -7,6 +7,7 @@ import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:oncuidar/caracteristicas/historial/presentacion/pantalla_historial.dart';
@@ -82,6 +83,7 @@ Widget pantallaHistorial(
   BaseDatosSegura base,
   ServicioCifrado cifrado, {
   required String pacienteActivo,
+  List<Override> overridesExtra = const [],
 }) {
   final router = GoRouter(
     initialLocation: '/',
@@ -108,6 +110,7 @@ Widget pantallaHistorial(
       idPacienteSeleccionadoProvider.overrideWith(
         () => PacienteActivoFijo(pacienteActivo),
       ),
+      ...overridesExtra,
     ],
     child: MaterialApp.router(routerConfig: router),
   );
