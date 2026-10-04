@@ -83,10 +83,13 @@ class TarjetaContacto extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                       height: 40,
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(
+                        gradient: LinearGradient(
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
-                          colors: [Paleta.doradoPrincipal, Paleta.doradoOscuro],
+                          colors: [
+                            Paleta.doradoPrincipal,
+                            Paleta.doradoRelleno,
+                          ],
                         ),
                         borderRadius: BorderRadius.circular(22),
                         boxShadow: [
@@ -105,13 +108,13 @@ class TarjetaContacto extends StatelessWidget {
                             style: GoogleFonts.nunito(
                               fontSize: 12.5,
                               fontWeight: FontWeight.w700,
-                              color: Colors.white,
+                              color: Paleta.sobreDorado,
                             ),
                           ),
                           const SizedBox(width: 6),
-                          const Icon(
+                          Icon(
                             Icons.phone_rounded,
-                            color: Colors.white,
+                            color: Paleta.sobreDorado,
                             size: 18,
                           ),
                         ],

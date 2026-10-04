@@ -81,7 +81,7 @@ class TarjetaSignosVitales extends StatelessWidget {
         child: Ink(
           padding: const EdgeInsets.symmetric(vertical: 11),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
+            gradient: LinearGradient(
               colors: [Paleta.doradoBannerOscuro, Paleta.doradoMedio],
             ),
             borderRadius: BorderRadius.circular(14),
@@ -99,7 +99,7 @@ class TarjetaSignosVitales extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(
+              Icon(
                 Icons.calendar_month_outlined,
                 size: 17,
                 color: Paleta.textoPrincipal,

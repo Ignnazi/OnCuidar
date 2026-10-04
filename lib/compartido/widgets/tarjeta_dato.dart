@@ -13,14 +13,14 @@ class IconoDorado extends StatelessWidget {
       width: 32,
       height: 32,
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Paleta.doradoPrincipal, Paleta.doradoOscuro],
+          colors: [Paleta.doradoPrincipal, Paleta.doradoRelleno],
         ),
         borderRadius: BorderRadius.circular(10),
       ),
-      child: Icon(icono, size: 17, color: Colors.white),
+      child: Icon(icono, size: 17, color: Paleta.sobreDorado),
     );
   }
 }

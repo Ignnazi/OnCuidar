@@ -5,6 +5,7 @@ import 'package:oncuidar/caracteristicas/registro_clinico/dominio/catalogo_sinto
 import 'package:oncuidar/caracteristicas/registro_clinico/presentacion/widgets/fila_intensidad_sintoma.dart';
 import 'package:oncuidar/caracteristicas/registro_clinico/presentacion/widgets/selector_multi_sintoma.dart';
 import 'package:oncuidar/caracteristicas/registro_clinico/presentacion/widgets/titulo_seccion_registro.dart';
+import 'package:oncuidar/compartido/widgets/fondo_hoja.dart';
 
 class SeccionSintomas extends StatelessWidget {
   const SeccionSintomas({
@@ -31,19 +32,19 @@ class SeccionSintomas extends StatelessWidget {
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      backgroundColor: Paleta.tarjeta,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => AnimatedPadding(
-        duration: Duration.zero,
-        padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(ctx).bottom),
-        child: SizedBox(
-          height: MediaQuery.sizeOf(ctx).height * 0.9,
-          child: SelectorMultiSintoma(
-            seleccionados: seleccionados,
-            onAlternar: onAlternar,
-            onCerrar: () => Navigator.of(ctx).pop(),
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => FondoHoja(
+        sobreTarjeta: true,
+        child: AnimatedPadding(
+          duration: Duration.zero,
+          padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(ctx).bottom),
+          child: SizedBox(
+            height: MediaQuery.sizeOf(ctx).height * 0.9,
+            child: SelectorMultiSintoma(
+              seleccionados: seleccionados,
+              onAlternar: onAlternar,
+              onCerrar: () => Navigator.of(ctx).pop(),
+            ),
           ),
         ),
       ),
@@ -82,11 +83,7 @@ class SeccionSintomas extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              const Icon(
-                Icons.arrow_drop_down,
-                size: 26,
-                color: Paleta.doradoOscuro,
-              ),
+              Icon(Icons.arrow_drop_down, size: 26, color: Paleta.doradoOscuro),
             ],
           ),
         ),
@@ -163,7 +160,7 @@ class SeccionSintomas extends StatelessWidget {
                 )
               else ...[
                 const SizedBox(height: 16),
-                const Divider(color: Paleta.doradoClaro, height: 20),
+                Divider(color: Paleta.doradoClaro, height: 20),
                 const SizedBox(height: 8),
                 Text(
                   'Intensidad de cada síntoma:',

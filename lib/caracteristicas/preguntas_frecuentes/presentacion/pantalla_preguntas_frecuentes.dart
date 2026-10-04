@@ -90,7 +90,6 @@ class _FaqScreenState extends State<FaqScreen> {
             logo: const AssetImage('assets/images/OnCuidar.png'),
             tamanoTitulo: 20,
             alto: 100,
-            reservaDerecha: 64,
             alTocarLogo: () => context.go('/dashboard'),
             accionDerecha: _botonBusqueda(),
           ),
@@ -166,12 +165,12 @@ class _FaqScreenState extends State<FaqScreen> {
             height: 40,
             decoration: BoxDecoration(
               gradient: activo
-                  ? const LinearGradient(
+                  ? LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
-                      colors: [Paleta.doradoMedio, Paleta.doradoOscuro],
+                      colors: [Paleta.doradoMedio, Paleta.doradoRelleno],
                     )
-                  : const LinearGradient(
+                  : LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: [Paleta.tarjeta, Paleta.tarjeta],
@@ -205,7 +204,9 @@ class _FaqScreenState extends State<FaqScreen> {
                       style: GoogleFonts.nunito(
                         fontSize: 12.5,
                         fontWeight: FontWeight.w800,
-                        color: activo ? Colors.white : Paleta.doradoOscuro,
+                        color: activo
+                            ? Paleta.sobreDorado
+                            : Paleta.doradoOscuro,
                       ),
                       child: Text(
                         etiqueta,
@@ -280,8 +281,8 @@ class _FaqScreenState extends State<FaqScreen> {
                     turns: abierta ? 0.5 : 0,
                     duration: const Duration(milliseconds: 200),
                     curve: Curves.easeOutCubic,
-                    child: const Padding(
-                      padding: EdgeInsets.only(top: 2),
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 2),
                       child: Icon(
                         Icons.keyboard_arrow_down,
                         color: Paleta.textoSecundario,
@@ -301,7 +302,7 @@ class _FaqScreenState extends State<FaqScreen> {
                 ? Container(
                     width: double.infinity,
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       border: Border(
                         top: BorderSide(color: Paleta.bordeTarjeta),
                       ),
@@ -336,7 +337,7 @@ class _FaqScreenState extends State<FaqScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
+            Icon(
               Icons.help_outline_rounded,
               size: 44,
               color: Paleta.textoSecundario,

@@ -7,7 +7,7 @@ class AccesosRapidos extends StatelessWidget {
   const AccesosRapidos({super.key});
 
   static final List<_Acceso> _accesos = [
-    const _Acceso(
+    _Acceso(
       icono: Icons.chat_bubble_outline,
       color: Paleta.doradoPrincipal,
       titulo: 'Orientación',
@@ -93,11 +93,11 @@ class AccesosRapidos extends StatelessWidget {
 
   Widget _tarjeta(BuildContext context, _Acceso acceso) {
     final degradado = acceso.degradado;
-    final colorIcono = degradado ? Colors.white : acceso.color;
+    final colorIcono = degradado ? Paleta.sobreDorado : acceso.color;
     final colorFondoIcono = degradado
         ? Colors.white.withValues(alpha: 0.25)
         : acceso.color.withValues(alpha: 0.10);
-    final colorTitulo = degradado ? Colors.white : Paleta.textoPrincipal;
+    final colorTitulo = degradado ? Paleta.sobreDorado : Paleta.textoPrincipal;
     final colorSubtitulo = degradado
         ? Colors.white.withValues(alpha: 0.85)
         : Paleta.textoSecundario;
@@ -111,10 +111,10 @@ class AccesosRapidos extends StatelessWidget {
           decoration: BoxDecoration(
             color: degradado ? null : Paleta.tarjeta,
             gradient: degradado
-                ? const LinearGradient(
+                ? LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [Paleta.doradoMedio, Paleta.doradoOscuro],
+                    colors: [Paleta.doradoMedio, Paleta.doradoRelleno],
                   )
                 : null,
             borderRadius: BorderRadius.circular(16),

@@ -270,10 +270,7 @@ void main() {
     await tester.pumpAndSettle();
     await _abrirMiPerfil(tester);
 
-    final boton = find.widgetWithText(ElevatedButton, 'Cerrar sesión');
-    await tester.ensureVisible(boton);
-    await tester.pumpAndSettle();
-    await tester.tap(boton);
+    await tester.tap(find.byKey(const Key('botonCerrarSesion')));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Cerrar sesión').last);
     for (var i = 0; i < 10; i++) {

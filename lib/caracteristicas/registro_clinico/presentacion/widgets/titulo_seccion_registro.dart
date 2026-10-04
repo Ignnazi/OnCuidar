@@ -22,14 +22,14 @@ class TituloSeccionRegistro extends StatelessWidget {
           width: 26,
           height: 26,
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
+            gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [Paleta.doradoMedio, Paleta.doradoOscuro],
+              colors: [Paleta.doradoMedio, Paleta.doradoRelleno],
             ),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Icon(icono, size: 15, color: Colors.white),
+          child: Icon(icono, size: 15, color: Paleta.sobreDorado),
         ),
         const SizedBox(width: 8),
         Expanded(

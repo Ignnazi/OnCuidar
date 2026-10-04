@@ -14,7 +14,6 @@ class EncabezadoGradiente extends StatelessWidget {
     this.accionDerecha,
     this.logo,
     this.iconoRetroceso = Icons.home_rounded,
-    this.reservaDerecha = 0,
     this.tituloCentrado = false,
     this.alTocarLogo,
   });
@@ -32,7 +31,6 @@ class EncabezadoGradiente extends StatelessWidget {
   final Widget? accionDerecha;
   final ImageProvider? logo;
   final IconData iconoRetroceso;
-  final double reservaDerecha;
   final bool tituloCentrado;
   final VoidCallback? alTocarLogo;
 
@@ -41,19 +39,15 @@ class EncabezadoGradiente extends StatelessWidget {
     final alturaBarraEstado = MediaQuery.of(context).padding.top;
     final lateral = mostrarRetroceso ? 48.0 : 20.0;
 
-    final derecha = reservaDerecha > 0
-        ? (reservaDerecha > lateral ? reservaDerecha : lateral)
-        : lateral;
-
     return SizedBox(
       height: alturaBarraEstado + alto,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          const Positioned.fill(
+          Positioned.fill(
             child: IgnorePointer(
               child: ClipPath(
-                clipper: _ClipperOla(profundidad: _profundidadOla),
+                clipper: const _ClipperOla(profundidad: _profundidadOla),
                 child: DecoratedBox(
                   decoration: BoxDecoration(gradient: Paleta.degradadoCabecera),
                 ),
@@ -68,29 +62,36 @@ class EncabezadoGradiente extends StatelessWidget {
               padding: EdgeInsets.fromLTRB(
                 lateral,
                 alturaBarraEstado + 4,
-                derecha,
+                accionDerecha == null ? lateral : 20,
                 4,
               ),
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                child: logo != null
-                    ? Row(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          if (alTocarLogo != null)
-                            GestureDetector(
-                              onTap: alTocarLogo,
-                              behavior: HitTestBehavior.opaque,
-                              child: _logoRedondo(),
-                            )
-                          else
-                            IgnorePointer(child: _logoRedondo()),
-                          const SizedBox(width: 10),
-                          IgnorePointer(child: _contenidoTitulo()),
-                        ],
+              child: Row(
+                children: [
+                  if (logo != null) ...[
+                    if (alTocarLogo != null)
+                      GestureDetector(
+                        onTap: alTocarLogo,
+                        behavior: HitTestBehavior.opaque,
+                        child: _logoRedondo(),
                       )
-                    : IgnorePointer(child: _contenidoTitulo()),
+                    else
+                      IgnorePointer(child: _logoRedondo()),
+                    const SizedBox(width: 10),
+                  ],
+                  Expanded(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: tituloCentrado
+                          ? Alignment.center
+                          : Alignment.centerLeft,
+                      child: IgnorePointer(child: _contenidoTitulo()),
+                    ),
+                  ),
+                  if (accionDerecha != null) ...[
+                    const SizedBox(width: 10),
+                    accionDerecha!,
+                  ],
+                ],
               ),
             ),
           ),
@@ -106,19 +107,19 @@ class EncabezadoGradiente extends StatelessWidget {
                     width: 42,
                     height: 42,
                     decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.10),
+                      color: Paleta.esOscura
+                          ? Colors.white.withValues(alpha: 0.30)
+                          : Colors.black.withValues(alpha: 0.10),
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(iconoRetroceso, color: Colors.white, size: 20),
+                    child: Icon(
+                      iconoRetroceso,
+                      color: Paleta.sobreDorado,
+                      size: 20,
+                    ),
                   ),
                 ),
               ),
-            ),
-          if (accionDerecha != null)
-            Positioned(
-              top: alturaBarraEstado + 26,
-              right: 12,
-              child: accionDerecha!,
             ),
         ],
       ),
@@ -127,12 +128,16 @@ class EncabezadoGradiente extends StatelessWidget {
 
   Widget _logoRedondo() {
     return Container(
+      key: const Key('logoEncabezado'),
       width: 48,
       height: 48,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Paleta.tarjeta,
         shape: BoxShape.circle,
-        border: Border.all(color: Paleta.doradoClaro, width: 1.5),
+        border: Border.all(
+          color: Paleta.esOscura ? Paleta.bordeTarjeta : Paleta.doradoClaro,
+          width: 1.5,
+        ),
         boxShadow: [
           BoxShadow(
             color: Paleta.doradoOscuro.withValues(alpha: 0.25),
@@ -154,18 +159,20 @@ class EncabezadoGradiente extends StatelessWidget {
           titulo,
           textAlign: tituloCentrado ? TextAlign.center : TextAlign.left,
           style: GoogleFonts.nunito(
-            color: Colors.white,
+            color: Paleta.sobreDorado,
             fontSize: tamanoTitulo ?? 24,
             fontWeight: FontWeight.w800,
             letterSpacing: -0.3,
             height: 1.15,
-            shadows: const [
-              Shadow(
-                color: Colors.black26,
-                offset: Offset(0, 1),
-                blurRadius: 3,
-              ),
-            ],
+            shadows: Paleta.esOscura
+                ? null
+                : const [
+                    Shadow(
+                      color: Colors.black26,
+                      offset: Offset(0, 1),
+                      blurRadius: 3,
+                    ),
+                  ],
           ),
         ),
         if (subtitulo != null)
@@ -175,7 +182,9 @@ class EncabezadoGradiente extends StatelessWidget {
               subtitulo!,
               textAlign: tituloCentrado ? TextAlign.center : TextAlign.left,
               style: GoogleFonts.nunito(
-                color: Colors.white.withValues(alpha: 0.9),
+                color: Paleta.sobreDorado.withValues(
+                  alpha: Paleta.alfa(claro: 0.9, oscuro: 0.8),
+                ),
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
                 height: 1.3,

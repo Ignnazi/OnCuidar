@@ -30,7 +30,7 @@ class SaludoPaciente extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(24, 26, 24, 18),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [Paleta.doradoBannerClaro, Paleta.doradoBannerOscuro],
@@ -109,11 +109,7 @@ class SaludoPaciente extends StatelessWidget {
           ),
           Row(
             children: [
-              const Icon(
-                Icons.schedule,
-                size: 13,
-                color: Paleta.textoTerciario,
-              ),
+              Icon(Icons.schedule, size: 13, color: Paleta.textoTerciario),
               const SizedBox(width: 6),
               Expanded(
                 child: Text(

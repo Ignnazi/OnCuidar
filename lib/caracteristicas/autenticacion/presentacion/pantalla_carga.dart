@@ -139,16 +139,16 @@ class _SplashState extends ConsumerState<Splash>
         body: Container(
           width: double.infinity,
           height: double.infinity,
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: [
-                Paleta.doradoOscuro,
+                Paleta.doradoRelleno,
                 Paleta.doradoPrincipal,
-                Paleta.doradoClaro,
+                coloresClaros.doradoClaro,
               ],
-              stops: [0.0, 0.5, 1.0],
+              stops: const [0.0, 0.5, 1.0],
             ),
           ),
           child: SafeArea(
@@ -181,7 +181,7 @@ class _SplashState extends ConsumerState<Splash>
                             style: GoogleFonts.nunito(
                               fontSize: 32,
                               fontWeight: FontWeight.w800,
-                              color: Colors.white,
+                              color: Paleta.sobreDorado,
                               letterSpacing: -0.5,
                               height: 1.1,
                               shadows: const [
@@ -215,11 +215,11 @@ class _SplashState extends ConsumerState<Splash>
                   builder: (context, child) {
                     return Opacity(
                       opacity: _opacidadSpinner.value,
-                      child: const SizedBox(
+                      child: SizedBox(
                         width: 28,
                         height: 28,
                         child: CircularProgressIndicator(
-                          color: Colors.white,
+                          color: Paleta.sobreDorado,
                           strokeWidth: 2.5,
                         ),
                       ),

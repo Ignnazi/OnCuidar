@@ -110,7 +110,6 @@ class _HistorialScreenState extends ConsumerState<HistorialScreen> {
         subtitulo: 'Tus registros clínicos',
         logo: const AssetImage('assets/images/OnCuidar.png'),
         tamanoTitulo: 20,
-        reservaDerecha: 140,
         alTocarLogo: () => context.go('/dashboard'),
         accionDerecha: BotonNuevoRegistro(
           alPulsar: () => context.push('/registro-clinico'),
@@ -138,8 +137,8 @@ class _HistorialScreenState extends ConsumerState<HistorialScreen> {
     ];
 
     if (async.isLoading && visibles.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.only(top: 48),
+      return Padding(
+        padding: const EdgeInsets.only(top: 48),
         child: Center(
           child: CircularProgressIndicator(color: Paleta.doradoPrincipal),
         ),

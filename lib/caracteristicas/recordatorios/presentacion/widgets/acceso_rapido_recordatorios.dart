@@ -39,7 +39,7 @@ class AccesoRapidoRecordatorios extends StatelessWidget {
             color: Paleta.doradoPrincipal.withValues(alpha: 0.30),
           ),
         ),
-        child: const Icon(Icons.add, size: 18, color: Paleta.doradoPrincipal),
+        child: Icon(Icons.add, size: 18, color: Paleta.doradoPrincipal),
       ),
     );
   }

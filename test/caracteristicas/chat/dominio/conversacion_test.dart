@@ -56,6 +56,23 @@ void main() {
     });
   });
 
+  group('resumirPalabras', () {
+    test('un nombre corto queda igual', () {
+      expect(resumirPalabras('Dudas de fiebre'), 'Dudas de fiebre');
+      expect(resumirPalabras('Fiebre'), 'Fiebre');
+    });
+
+    test('un nombre largo se corta a tres palabras con puntos suspensivos', () {
+      expect(resumirPalabras('Dudas de la semana pasada'), 'Dudas de la…');
+    });
+
+    test('ignora espacios de más y soporta un máximo distinto', () {
+      expect(resumirPalabras('  uno   dos  tres  cuatro '), 'uno dos tres…');
+      expect(resumirPalabras('uno dos tres', maximo: 2), 'uno dos…');
+      expect(resumirPalabras('   '), '');
+    });
+  });
+
   group('etiquetaDia', () {
     final ahora = DateTime(2026, 10, 4, 12);
 

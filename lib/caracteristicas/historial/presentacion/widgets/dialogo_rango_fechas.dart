@@ -71,7 +71,7 @@ class _DialogoRangoFechasState extends State<_DialogoRangoFechas> {
   Widget build(BuildContext context) {
     return DialogoTarjeta(
       icono: Icons.date_range_rounded,
-      colores: const [Paleta.doradoMedio, Paleta.doradoOscuro],
+      colores: [Paleta.doradoMedio, Paleta.doradoRelleno],
       colorSombra: Paleta.doradoOscuro,
       titulo: 'Filtrar por fecha',
       hijos: [
@@ -163,7 +163,7 @@ class _CampoFechaDialogo extends StatelessWidget {
         hintText: 'DD/MM/AAAA',
         hintStyle: GoogleFonts.nunito(fontSize: 13, color: Paleta.textoAyuda),
         counterText: '',
-        prefixIcon: const Icon(
+        prefixIcon: Icon(
           Icons.calendar_today_outlined,
           size: 18,
           color: Paleta.doradoOscuro,
@@ -172,18 +172,15 @@ class _CampoFechaDialogo extends StatelessWidget {
         fillColor: Paleta.fondoEntrada,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Paleta.bordeTarjeta),
+          borderSide: BorderSide(color: Paleta.bordeTarjeta),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Paleta.bordeTarjeta),
+          borderSide: BorderSide(color: Paleta.bordeTarjeta),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(
-            color: Paleta.doradoPrincipal,
-            width: 1.5,
-          ),
+          borderSide: BorderSide(color: Paleta.doradoPrincipal, width: 1.5),
         ),
       ),
     );

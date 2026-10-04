@@ -1,19 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:oncuidar/app/tema/paleta.dart';
 import 'package:oncuidar/caracteristicas/registro_clinico/dominio/registro_clinico.dart';
 
 class ConfigAlerta {
   const ConfigAlerta({
     required this.label,
     required this.color,
-    required this.fondo,
+    required Color fondo,
     required this.icono,
     required this.titulo,
     required this.subtitulo,
-  });
+  }) : _fondoClaro = fondo;
 
   final String label;
   final Color color;
-  final Color fondo;
+  final Color _fondoClaro;
+
+  Color get fondo =>
+      Paleta.esOscura ? color.withValues(alpha: 0.16) : _fondoClaro;
   final IconData icono;
   final String titulo;
   final String subtitulo;

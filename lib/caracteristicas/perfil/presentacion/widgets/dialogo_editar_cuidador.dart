@@ -126,8 +126,8 @@ class _DialogoEditarCuidadorState extends State<_DialogoEditarCuidador> {
         direccion: direccion,
       );
       messenger.showSnackBar(
-        const SnackBar(
-          content: Text('Datos actualizados'),
+        SnackBar(
+          content: const Text('Datos actualizados'),
           backgroundColor: Paleta.doradoPrincipal,
         ),
       );

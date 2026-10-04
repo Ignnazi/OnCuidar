@@ -17,6 +17,7 @@ import 'package:oncuidar/caracteristicas/biblioteca/presentacion/widgets/encabez
 import 'package:oncuidar/caracteristicas/biblioteca/presentacion/widgets/tarjeta_material.dart';
 import 'package:oncuidar/compartido/widgets/buscador.dart';
 import 'package:oncuidar/compartido/widgets/encabezado_gradiente.dart';
+import 'package:oncuidar/compartido/widgets/insignia_conteo.dart';
 
 class BibliotecaScreen extends ConsumerStatefulWidget {
   const BibliotecaScreen({super.key, this.abrirId});
@@ -184,7 +185,6 @@ class _BibliotecaScreenState extends ConsumerState<BibliotecaScreen> {
             logo: const AssetImage('assets/images/OnCuidar.png'),
             tamanoTitulo: 20,
             alto: 100,
-            reservaDerecha: 104,
             alTocarLogo: () => context.go('/dashboard'),
             accionDerecha: Row(
               children: [
@@ -245,6 +245,7 @@ class _BibliotecaScreenState extends ConsumerState<BibliotecaScreen> {
           : 'Ver materiales guardados',
       alTocar: () => setState(() => _soloFavoritos = !_soloFavoritos),
       hijo: Stack(
+        clipBehavior: Clip.none,
         alignment: Alignment.center,
         children: [
           Icon(
@@ -255,27 +256,9 @@ class _BibliotecaScreenState extends ConsumerState<BibliotecaScreen> {
             size: 22,
           ),
           if (totalFavoritos > 0 && !_soloFavoritos)
-            Positioned(
-              top: 0,
-              right: 0,
-              child: Container(
-                width: 18,
-                height: 18,
-                decoration: const BoxDecoration(
-                  color: Paleta.doradoOscuro,
-                  shape: BoxShape.circle,
-                ),
-                child: Center(
-                  child: Text(
-                    '$totalFavoritos',
-                    style: GoogleFonts.nunito(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ),
+            InsigniaConteo.enEsquina(
+              totalFavoritos,
+              clave: const Key('insigniaFavoritos'),
             ),
         ],
       ),
@@ -327,7 +310,9 @@ class _BibliotecaScreenState extends ConsumerState<BibliotecaScreen> {
                 style: GoogleFonts.nunito(
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
-                  color: seleccionado ? Colors.white : const Color(0xFF7A6030),
+                  color: seleccionado
+                      ? Paleta.sobreDorado
+                      : Paleta.textoTerciario,
                 ),
               ),
             ),
@@ -389,7 +374,7 @@ class _EstadoVacio extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
+            Icon(
               Icons.menu_book_outlined,
               size: 48,
               color: Paleta.textoSecundario,

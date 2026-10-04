@@ -345,7 +345,7 @@ void main() {
       reason: 'aparece en la tarjeta del cuidador y en la fila de correo',
     );
 
-    await tester.tap(find.text('Cerrar sesión').first);
+    await tester.tap(find.byKey(const Key('botonCerrarSesion')));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Cerrar sesión').last);
     await tester.pumpAndSettle();

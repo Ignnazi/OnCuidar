@@ -141,10 +141,10 @@ class _DocumentoPdfState extends State<_DocumentoPdf> {
             backgroundDecoration: const BoxDecoration(color: Color(0xFF0B0B0D)),
             builders: PdfViewPinchBuilders<DefaultBuilderOptions>(
               options: const DefaultBuilderOptions(),
-              documentLoaderBuilder: (_) => const Center(
+              documentLoaderBuilder: (_) => Center(
                 child: CircularProgressIndicator(color: Paleta.doradoMedio),
               ),
-              pageLoaderBuilder: (_) => const Center(
+              pageLoaderBuilder: (_) => Center(
                 child: CircularProgressIndicator(color: Paleta.doradoMedio),
               ),
               errorBuilder: (_, _) => Center(

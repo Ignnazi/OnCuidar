@@ -91,7 +91,7 @@ Future<int?> mostrarDialogoTope(
             onPressed: () => Navigator.of(ctx).pop(valor),
             style: ElevatedButton.styleFrom(
               backgroundColor: Paleta.doradoPrincipal,
-              foregroundColor: Colors.white,
+              foregroundColor: Paleta.sobreDorado,
               minimumSize: const Size(0, 44),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14),
@@ -134,7 +134,7 @@ class _BotonStepper extends StatelessWidget {
         child: Icon(
           icono,
           size: 20,
-          color: habilitado ? Colors.white : Paleta.textoSecundario,
+          color: habilitado ? Paleta.sobreDorado : Paleta.textoSecundario,
         ),
       ),
     );

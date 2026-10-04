@@ -22,7 +22,7 @@ class DetalleRegistro extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFFBF0),
+        color: Paleta.fondoEntrada,
         border: Border(
           top: BorderSide(
             color: Paleta.doradoPrincipal.withValues(alpha: 0.12),

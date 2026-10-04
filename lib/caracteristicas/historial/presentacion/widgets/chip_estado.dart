@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:oncuidar/app/tema/paleta.dart';
 
 class ChipEstado extends StatelessWidget {
   const ChipEstado({
@@ -22,7 +23,7 @@ class ChipEstado extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 14),
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: activo ? const Color(0xFFE8A820) : const Color(0xFFFFF4D0),
+          color: activo ? const Color(0xFFE8A820) : Paleta.doradoClaro,
           borderRadius: BorderRadius.circular(20),
         ),
         child: Text(
@@ -30,7 +31,7 @@ class ChipEstado extends StatelessWidget {
           style: GoogleFonts.nunito(
             fontSize: 13,
             fontWeight: FontWeight.w800,
-            color: activo ? Colors.white : const Color(0xFF7A6030),
+            color: activo ? Paleta.sobreDorado : Paleta.textoTerciario,
           ),
         ),
       ),

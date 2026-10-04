@@ -32,7 +32,7 @@ class BotonPrincipal extends StatelessWidget {
     return OutlinedButton(
       onPressed: alPulsar,
       style: OutlinedButton.styleFrom(
-        side: const BorderSide(color: Paleta.doradoPrincipal, width: 2),
+        side: BorderSide(color: Paleta.doradoPrincipal, width: 2),
         foregroundColor: Paleta.doradoPrincipal,
         minimumSize: const Size(double.infinity, 54),
         textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),

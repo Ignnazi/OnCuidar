@@ -19,7 +19,7 @@ class MensajeErrorDatos extends StatelessWidget {
       ),
       child: Column(
         children: [
-          const Icon(Icons.cloud_off_outlined, size: 48, color: Paleta.error),
+          Icon(Icons.cloud_off_outlined, size: 48, color: Paleta.error),
           const SizedBox(height: 12),
           Text(
             'No se pudieron cargar tus datos.',

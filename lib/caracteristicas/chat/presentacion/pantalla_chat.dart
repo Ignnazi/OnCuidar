@@ -7,8 +7,10 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:oncuidar/app/tema/paleta.dart';
 import 'package:oncuidar/caracteristicas/biblioteca/presentacion/proveedores_biblioteca.dart';
 import 'package:oncuidar/caracteristicas/chat/dominio/conversacion.dart';
+import 'package:oncuidar/caracteristicas/chat/dominio/respuestas_chat.dart';
 import 'package:oncuidar/caracteristicas/chat/presentacion/controlador_chat.dart';
 import 'package:oncuidar/caracteristicas/chat/presentacion/proveedor_chat_activo.dart';
+import 'package:oncuidar/caracteristicas/chat/presentacion/proveedores_chat.dart';
 import 'package:oncuidar/caracteristicas/chat/presentacion/widgets/burbujas_chat.dart';
 import 'package:oncuidar/caracteristicas/chat/presentacion/widgets/entrada_chat.dart';
 import 'package:oncuidar/caracteristicas/chat/presentacion/widgets/hoja_conversaciones.dart';
@@ -17,6 +19,7 @@ import 'package:oncuidar/caracteristicas/preguntas_frecuentes/dominio/catalogo_p
 import 'package:oncuidar/compartido/estilos.dart';
 import 'package:oncuidar/compartido/widgets/buscador.dart';
 import 'package:oncuidar/compartido/widgets/encabezado_gradiente.dart';
+import 'package:oncuidar/compartido/widgets/insignia_conteo.dart';
 import 'package:oncuidar/nucleo/utilidades/formato_fecha.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
@@ -125,12 +128,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     if (_avisoGuardadoMostrado) return;
     _avisoGuardadoMostrado = true;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
+      SnackBar(
+        content: const Text(
           'No se pudo guardar la conversación. Revisa tu conexión.',
         ),
         backgroundColor: Paleta.doradoPrincipal,
-        duration: Duration(seconds: 2),
+        duration: const Duration(seconds: 2),
       ),
     );
   }
@@ -210,11 +213,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         children: [
           EncabezadoGradiente(
             titulo: 'Chat de orientación',
-            subtitulo: _chat.tituloConversacion ?? 'Resuelve tus dudas',
+            subtitulo: switch (_chat.tituloConversacion) {
+              final titulo? when titulo.trim().isNotEmpty => resumirPalabras(
+                titulo,
+              ),
+              _ => 'Resuelve tus dudas',
+            },
             logo: const AssetImage('assets/images/OnCuidar.png'),
             tamanoTitulo: 20,
             alto: 100,
-            reservaDerecha: 104,
             alTocarLogo: () => context.go('/dashboard'),
             accionDerecha: _botonesAccion(),
           ),
@@ -236,12 +243,24 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     required IconData icono,
     required String tooltip,
     required VoidCallback alTocar,
+    int total = 0,
   }) {
     return BotonCircular(
       clave: key,
       tooltip: tooltip,
       alTocar: alTocar,
-      hijo: Icon(icono, color: Paleta.doradoOscuro, size: 22),
+      hijo: Stack(
+        clipBehavior: Clip.none,
+        alignment: Alignment.center,
+        children: [
+          Icon(icono, color: Paleta.doradoOscuro, size: 22),
+          if (total > 0)
+            InsigniaConteo.enEsquina(
+              total,
+              clave: const Key('insigniaConversaciones'),
+            ),
+        ],
+      ),
     );
   }
 
@@ -261,6 +280,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           icono: Icons.folder_rounded,
           tooltip: 'Mis conversaciones',
           alTocar: _abrirHojaConversaciones,
+          total: ref.watch(conversacionesProvider).value?.length ?? 0,
         ),
       ],
     );
@@ -277,7 +297,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         decoration:
             entradaDorada(
               hintText: 'Buscar en el chat…',
-              prefixIcon: const Icon(
+              prefixIcon: Icon(
                 Icons.search,
                 color: Paleta.textoSecundario,
                 size: 20,
@@ -287,7 +307,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   ? GestureDetector(
                       key: const Key('borrarBusquedaChat'),
                       onTap: _controladorBusqueda.clear,
-                      child: const Icon(
+                      child: Icon(
                         Icons.cancel_rounded,
                         color: Paleta.textoSecundario,
                         size: 18,
@@ -358,7 +378,7 @@ class _SinResultados extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
+            Icon(
               Icons.search_off_rounded,
               size: 40,
               color: Paleta.textoSecundario,

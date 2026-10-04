@@ -30,7 +30,7 @@ class BotonCircular extends StatelessWidget {
           width: tamano,
           height: tamano,
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Paleta.tarjeta,
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
@@ -76,7 +76,7 @@ class CampoBusqueda extends StatelessWidget {
       decoration:
           entradaDorada(
             hintText: pista,
-            prefixIcon: const Icon(
+            prefixIcon: Icon(
               Icons.search,
               color: Paleta.textoSecundario,
               size: 20,
@@ -89,7 +89,7 @@ class CampoBusqueda extends StatelessWidget {
                       controlador.clear();
                       alCambiar('');
                     },
-                    child: const Icon(
+                    child: Icon(
                       Icons.cancel_rounded,
                       color: Paleta.textoSecundario,
                       size: 18,

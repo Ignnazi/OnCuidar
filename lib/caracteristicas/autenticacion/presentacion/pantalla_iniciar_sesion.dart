@@ -65,8 +65,8 @@ class _IniciarSesionState extends ConsumerState<IniciarSesion> {
       if (mounted) {
         FocusManager.instance.primaryFocus?.unfocus();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('¡Bienvenido de vuelta!'),
+          SnackBar(
+            content: const Text('¡Bienvenido de vuelta!'),
             backgroundColor: Paleta.doradoPrincipal,
           ),
         );
@@ -103,8 +103,8 @@ class _IniciarSesionState extends ConsumerState<IniciarSesion> {
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Error inesperado. Intenta de nuevo.'),
+        SnackBar(
+          content: const Text('Error inesperado. Intenta de nuevo.'),
           backgroundColor: Paleta.error,
         ),
       );
@@ -117,8 +117,8 @@ class _IniciarSesionState extends ConsumerState<IniciarSesion> {
     final correo = _correoController.text.trim();
     if (correo.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Ingresa tu correo para recuperar el acceso.'),
+        SnackBar(
+          content: const Text('Ingresa tu correo para recuperar el acceso.'),
           backgroundColor: Paleta.error,
         ),
       );
@@ -136,8 +136,8 @@ class _IniciarSesionState extends ConsumerState<IniciarSesion> {
           );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
+        SnackBar(
+          content: const Text(
             'Te enviamos un correo para restablecer tu contraseña.',
           ),
           backgroundColor: Paleta.doradoPrincipal,
@@ -162,8 +162,8 @@ class _IniciarSesionState extends ConsumerState<IniciarSesion> {
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('No se pudo enviar el correo. Intenta de nuevo.'),
+        SnackBar(
+          content: const Text('No se pudo enviar el correo. Intenta de nuevo.'),
           backgroundColor: Paleta.error,
         ),
       );

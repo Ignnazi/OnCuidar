@@ -19,7 +19,7 @@ class BotonCargarMas extends StatelessWidget {
       child: OutlinedButton.icon(
         onPressed: cargando ? null : alPulsar,
         icon: cargando
-            ? const SizedBox(
+            ? SizedBox(
                 width: 16,
                 height: 16,
                 child: CircularProgressIndicator(
@@ -27,7 +27,7 @@ class BotonCargarMas extends StatelessWidget {
                   color: Paleta.doradoOscuro,
                 ),
               )
-            : const Icon(Icons.expand_more, color: Paleta.doradoOscuro),
+            : Icon(Icons.expand_more, color: Paleta.doradoOscuro),
         label: Text(
           'Cargar más registros',
           style: GoogleFonts.nunito(
@@ -38,7 +38,7 @@ class BotonCargarMas extends StatelessWidget {
         ),
         style: OutlinedButton.styleFrom(
           minimumSize: const Size.fromHeight(46),
-          side: const BorderSide(color: Paleta.doradoMedio),
+          side: BorderSide(color: Paleta.doradoMedio),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),

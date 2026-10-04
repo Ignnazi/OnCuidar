@@ -78,7 +78,7 @@ class SeccionTipoRegistro extends StatelessWidget {
                             ),
                           ),
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.tune,
                           size: 18,
                           color: Paleta.doradoOscuro,

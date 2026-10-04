@@ -9,6 +9,7 @@ import 'package:oncuidar/caracteristicas/chat/presentacion/widgets/hoja_renombra
 import 'package:oncuidar/caracteristicas/chat/presentacion/widgets/tarjeta_conversacion.dart';
 import 'package:oncuidar/compartido/estilos.dart';
 import 'package:oncuidar/compartido/widgets/dialogo_confirmacion.dart';
+import 'package:oncuidar/compartido/widgets/fondo_hoja.dart';
 
 Future<void> mostrarHojaConversaciones(
   BuildContext context, {
@@ -20,15 +21,14 @@ Future<void> mostrarHojaConversaciones(
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
-    backgroundColor: Paleta.crema,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-    ),
-    builder: (_) => _HojaConversaciones(
-      alEntrar: alEntrar,
-      alEliminar: alEliminar,
-      alCrearNueva: alCrearNueva,
-      alRenombrar: alRenombrar,
+    backgroundColor: Colors.transparent,
+    builder: (_) => FondoHoja(
+      child: _HojaConversaciones(
+        alEntrar: alEntrar,
+        alEliminar: alEliminar,
+        alCrearNueva: alCrearNueva,
+        alRenombrar: alRenombrar,
+      ),
     ),
   );
 }
@@ -197,9 +197,9 @@ class _HojaConversacionesState extends ConsumerState<_HojaConversaciones> {
                   height: 120,
                   child: Center(child: CircularProgressIndicator()),
                 ),
-                error: (_, _) => _estadoError(),
+                error: (_, _) => SingleChildScrollView(child: _estadoError()),
                 data: (conversaciones) => conversaciones.isEmpty
-                    ? _estadoVacio()
+                    ? SingleChildScrollView(child: _estadoVacio())
                     : _listaConversaciones(conversaciones),
               ),
             ),
@@ -275,9 +275,9 @@ class _HojaConversacionesState extends ConsumerState<_HojaConversaciones> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.add_rounded,
-                      color: Colors.white,
+                      color: Paleta.sobreDorado,
                       size: 18,
                     ),
                     const SizedBox(width: 4),
@@ -286,7 +286,7 @@ class _HojaConversacionesState extends ConsumerState<_HojaConversaciones> {
                       style: GoogleFonts.nunito(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
-                        color: Colors.white,
+                        color: Paleta.sobreDorado,
                       ),
                     ),
                   ],
@@ -305,7 +305,7 @@ class _HojaConversacionesState extends ConsumerState<_HojaConversaciones> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(
+          Icon(
             Icons.cloud_off_rounded,
             size: 44,
             color: Paleta.textoSecundario,
@@ -336,11 +336,7 @@ class _HojaConversacionesState extends ConsumerState<_HojaConversaciones> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(
-            Icons.forum_outlined,
-            size: 44,
-            color: Paleta.textoSecundario,
-          ),
+          Icon(Icons.forum_outlined, size: 44, color: Paleta.textoSecundario),
           const SizedBox(height: 10),
           Text(
             'Aún no tienes conversaciones.',
@@ -390,7 +386,7 @@ class _HojaConversacionesState extends ConsumerState<_HojaConversaciones> {
           style: GoogleFonts.nunito(
             fontSize: 14,
             fontWeight: FontWeight.w700,
-            color: Colors.white,
+            color: Paleta.sobreDorado,
           ),
         ),
       ),
