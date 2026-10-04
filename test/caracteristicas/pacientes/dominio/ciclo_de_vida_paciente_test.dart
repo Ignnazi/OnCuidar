@@ -36,6 +36,7 @@ class _AvisosQueFallan extends NotificacionesFalsas {
     required DateTime fechaHora,
     List<String>? diasRepeticion,
     bool mensual = false,
+    String? idPaciente,
   }) async {
     throw StateError('plugin_local_notifications no disponible');
   }

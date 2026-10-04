@@ -238,7 +238,7 @@ class _SeccionConfiguracionState extends ConsumerState<SeccionConfiguracion> {
             activeThumbColor: Colors.white,
             activeTrackColor: Paleta.doradoPrincipal,
             title: Text(
-              'Silenciar avisos',
+              'Silenciar todos los avisos',
               style: GoogleFonts.nunito(
                 fontSize: 14,
                 fontWeight: FontWeight.w800,
@@ -246,7 +246,8 @@ class _SeccionConfiguracionState extends ConsumerState<SeccionConfiguracion> {
               ),
             ),
             subtitle: Text(
-              'Los recordatorios no te avisarán, pero se conservan.',
+              'Ningún paciente te avisará, pero los recordatorios se conservan. '
+              'Para silenciar a uno solo, usa la campana en Recordatorios.',
               style: GoogleFonts.nunito(
                 fontSize: 12.5,
                 color: Paleta.textoSecundario,
