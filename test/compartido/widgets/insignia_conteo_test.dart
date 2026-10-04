@@ -22,22 +22,22 @@ void main() {
     ('claro', coloresClaros),
     ('oscuro', coloresOscuros),
   ]) {
-    testWidgets(
-      'el aro claro separa la insignia del degradado en modo $nombre',
-      (tester) async {
-        Paleta.usar(colores);
-        await tester.pumpWidget(_envolver(const InsigniaConteo(total: 3)));
+    testWidgets('el aro claro separa la insignia del degradado en modo $nombre', (
+      tester,
+    ) async {
+      Paleta.usar(colores);
+      await tester.pumpWidget(_envolver(const InsigniaConteo(total: 3)));
 
-        final decoracion =
-            tester.widget<Container>(find.byType(Container)).decoration!
-                as BoxDecoration;
-        expect(decoracion.color, InsigniaConteo.colorFondo());
-        expect((decoracion.border! as Border).top.color, Paleta.aroInsignia);
-        // El aro es claro en ambos modos.
-        expect(Paleta.aroInsignia.computeLuminance(), greaterThan(0.7));
-        final numero = tester.widget<Text>(find.text('3'));
-        expect(numero.style!.color, InsigniaConteo.colorNumero);
-      },
-    );
+      final decoracion =
+          tester.widget<Container>(find.byType(Container)).decoration!
+              as BoxDecoration;
+      expect(decoracion.color, InsigniaConteo.colorFondo());
+      expect((decoracion.border! as Border).top.color, Paleta.aroInsignia);
+      // El aro es claro en ambos modos.
+      expect(Paleta.aroInsignia.computeLuminance(), greaterThan(0.7));
+      final numero = tester.widget<Text>(find.text('3'));
+      expect(numero.style!.color, const Color(0xFFFFFFFF));
+      expect(numero.style!.shadows, isNotEmpty);
+    });
   }
 }

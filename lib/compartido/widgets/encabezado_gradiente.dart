@@ -183,11 +183,20 @@ class EncabezadoGradiente extends StatelessWidget {
               textAlign: tituloCentrado ? TextAlign.center : TextAlign.left,
               style: GoogleFonts.nunito(
                 color: Paleta.sobreDorado.withValues(
-                  alpha: Paleta.alfa(claro: 0.9, oscuro: 0.8),
+                  alpha: Paleta.alfa(claro: 1.0, oscuro: 0.9),
                 ),
                 fontSize: 14,
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w700,
                 height: 1.3,
+                shadows: Paleta.esOscura
+                    ? null
+                    : const [
+                        Shadow(
+                          color: Colors.black26,
+                          offset: Offset(0, 1),
+                          blurRadius: 2,
+                        ),
+                      ],
               ),
             ),
           ),
