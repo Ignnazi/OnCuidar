@@ -611,6 +611,45 @@ void main() {
       expect(notif.programados, isEmpty);
     });
 
+    testWidgets(
+      'el interruptor de cada recordatorio va abajo a la derecha y más grande',
+      (tester) async {
+        final (base, _) = await _baseDatos();
+        final idPaciente = await _sembrarPaciente(base);
+        final notif = _FakeNotificaciones();
+        final fecha = DateTime.now();
+        final id = await RepositorioRecordatorios(base).agregarRecordatorio(
+          idPaciente,
+          Recordatorio(
+            id: '',
+            pacienteId: idPaciente,
+            tipo: 'medicamento',
+            titulo: 'Tomar jarabe',
+            fechaHora: fecha,
+            activo: true,
+            creadoEn: fecha,
+          ),
+        );
+        await _montar(tester, _pantalla(base, notif));
+
+        final interruptor = find.byKey(Key('switchActivo_$id'));
+        final menu = find.byKey(Key('menuRecordatorio_$id'));
+        final tarjeta = find
+            .ancestor(of: interruptor, matching: find.byType(Container))
+            .last;
+
+        final rInterruptor = tester.getRect(interruptor);
+        final rMenu = tester.getRect(menu);
+        final rTarjeta = tester.getRect(tarjeta);
+        expect(rMenu.top, lessThan(rTarjeta.top + 30));
+        expect(rInterruptor.top, greaterThan(rMenu.bottom));
+        expect(rTarjeta.bottom - rInterruptor.bottom, lessThan(20));
+        expect(rTarjeta.right - rInterruptor.right, lessThan(20));
+        expect(rInterruptor.width, greaterThan(48));
+        expect(rInterruptor.height, greaterThan(26));
+      },
+    );
+
     testWidgets('la campanita silencia solo al paciente activo y se ve gris', (
       tester,
     ) async {

@@ -86,10 +86,7 @@ class BurbujaMensaje extends StatelessWidget {
                 constraints: BoxConstraints(
                   maxWidth: MediaQuery.of(context).size.width * 0.75,
                 ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 11,
-                ),
+                padding: const EdgeInsets.fromLTRB(12, 8, 12, 6),
                 decoration: BoxDecoration(
                   gradient: delUsuario ? Paleta.degradadoCabecera : null,
                   color: delUsuario ? null : Paleta.tarjeta,
@@ -110,65 +107,134 @@ class BurbujaMensaje extends StatelessWidget {
                     ),
                   ],
                 ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        mensaje.texto,
-                        style: GoogleFonts.nunito(
-                          fontSize: 14,
-                          color: delUsuario
-                              ? Paleta.sobreDorado
-                              : Paleta.textoPrincipal,
-                          height: 1.45,
-                        ),
-                      ),
-                    ),
-                    if (!delUsuario && mensaje.sugerenciaConsulta)
-                      const _SugerenciaConsulta(),
-                    if (!delUsuario && alAbrirMaterial != null)
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: TextButton.icon(
-                          key: const Key('verMaterialChat'),
-                          onPressed: alAbrirMaterial,
-                          icon: const Icon(Icons.menu_book_rounded, size: 18),
-                          label: const Text('Ver material relacionado'),
-                          style: TextButton.styleFrom(
-                            foregroundColor: Paleta.doradoOscuro,
-                            padding: EdgeInsets.zero,
-                            minimumSize: const Size(0, 32),
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            textStyle: GoogleFonts.nunito(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                        ),
-                      ),
-                    if (mensaje.enviadoEn != null) ...[
-                      const SizedBox(height: 3),
-                      Text(
-                        hora12(mensaje.enviadoEn!),
-                        key: const Key('horaMensajeChat'),
-                        style: GoogleFonts.nunito(
-                          fontSize: 10.5,
-                          color: delUsuario
-                              ? Colors.white.withValues(alpha: 0.8)
-                              : Paleta.textoSecundario,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
+                child: _contenido(delUsuario),
               ),
             ),
           ),
         ],
       ),
+    );
+  }
+
+  TextStyle _estiloTexto(bool delUsuario) => GoogleFonts.nunito(
+    fontSize: 14,
+    fontWeight: delUsuario ? FontWeight.w700 : FontWeight.w400,
+    color: delUsuario ? Paleta.sobreDorado : Paleta.textoPrincipal,
+    height: 1.4,
+  );
+
+  TextStyle _estiloHora(bool delUsuario) => GoogleFonts.nunito(
+    fontSize: 10.5,
+    fontWeight: FontWeight.w600,
+    color: delUsuario
+        ? Paleta.sobreDorado.withValues(alpha: 0.85)
+        : Paleta.textoSecundario,
+  );
+
+  Widget _contenido(bool delUsuario) {
+    final hora = mensaje.enviadoEn == null ? null : hora12(mensaje.enviadoEn!);
+    final conExtras =
+        !delUsuario && (mensaje.sugerenciaConsulta || alAbrirMaterial != null);
+    if (!conExtras) {
+      return TextoConHora(
+        texto: mensaje.texto,
+        hora: hora,
+        estiloTexto: _estiloTexto(delUsuario),
+        estiloHora: _estiloHora(delUsuario),
+      );
+    }
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Align(
+          alignment: Alignment.centerLeft,
+          child: Text(mensaje.texto, style: _estiloTexto(delUsuario)),
+        ),
+        if (mensaje.sugerenciaConsulta) const _SugerenciaConsulta(),
+        if (alAbrirMaterial != null)
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              key: const Key('verMaterialChat'),
+              onPressed: alAbrirMaterial,
+              icon: const Icon(Icons.menu_book_rounded, size: 18),
+              label: const Text('Ver material relacionado'),
+              style: TextButton.styleFrom(
+                foregroundColor: Paleta.doradoOscuro,
+                padding: EdgeInsets.zero,
+                minimumSize: const Size(0, 32),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                textStyle: GoogleFonts.nunito(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+          ),
+        if (hora != null)
+          Text(
+            hora,
+            key: const Key('horaMensajeChat'),
+            style: _estiloHora(delUsuario),
+          ),
+      ],
+    );
+  }
+}
+
+class TextoConHora extends StatelessWidget {
+  const TextoConHora({
+    super.key,
+    required this.texto,
+    required this.estiloTexto,
+    required this.estiloHora,
+    this.hora,
+  });
+
+  final String texto;
+  final String? hora;
+  final TextStyle estiloTexto;
+  final TextStyle estiloHora;
+
+  /// Espacio entre el final del texto y la hora.
+  static const separacion = 8.0;
+
+  @override
+  Widget build(BuildContext context) {
+    final hora = this.hora;
+    if (hora == null) return Text(texto, style: estiloTexto);
+    return Stack(
+      children: [
+        Text.rich(
+          TextSpan(
+            style: estiloTexto,
+            children: [
+              TextSpan(text: texto),
+              WidgetSpan(
+                alignment: PlaceholderAlignment.baseline,
+                baseline: TextBaseline.alphabetic,
+                child: Padding(
+                  padding: const EdgeInsets.only(left: separacion),
+                  child: Opacity(
+                    opacity: 0,
+                    child: Text(hora, style: estiloHora),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        Positioned(
+          right: 0,
+          bottom: 0,
+          child: Text(
+            hora,
+            key: const Key('horaMensajeChat'),
+            style: estiloHora,
+          ),
+        ),
+      ],
     );
   }
 }

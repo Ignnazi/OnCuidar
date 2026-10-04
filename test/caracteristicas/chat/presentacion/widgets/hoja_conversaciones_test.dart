@@ -333,7 +333,7 @@ void main() {
         await tester.pump(const Duration(milliseconds: 1000));
         await tester.pumpAndSettle();
 
-        expect(find.text('temperatura de 38'), findsOneWidget);
+        expect(find.textContaining('temperatura de 38'), findsOneWidget);
         final conversaciones = await repositorio
             .conversacionesEnTiempoReal()
             .first;

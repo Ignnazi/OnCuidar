@@ -68,4 +68,12 @@ void main() {
       },
     );
   }
+
+  testWidgets('el subtítulo va en negrita para leerse sobre el dorado', (
+    tester,
+  ) async {
+    await tester.pumpWidget(_app(escala: 1.0));
+    final subtitulo = tester.widget<Text>(find.text('Resuelve tus dudas'));
+    expect(subtitulo.style!.fontWeight, FontWeight.w700);
+  });
 }

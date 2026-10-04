@@ -7,7 +7,8 @@ class InsigniaConteo extends StatelessWidget {
 
   final int total;
 
-  static const colorNumero = Color(0xFF3B2400);
+  /// Color del número.
+  static const colorNumero = Colors.white;
 
   /// Cuánto sobresale de la esquina del botón.
   static const sobresale = 8.0;
@@ -49,6 +50,13 @@ class InsigniaConteo extends StatelessWidget {
           height: 1,
           fontWeight: FontWeight.w900,
           color: colorNumero,
+          shadows: const [
+            Shadow(
+              color: Color(0x80000000),
+              blurRadius: 2,
+              offset: Offset(0, 1),
+            ),
+          ],
         ),
       ),
     );

@@ -246,8 +246,7 @@ class _SeccionConfiguracionState extends ConsumerState<SeccionConfiguracion> {
               ),
             ),
             subtitle: Text(
-              'Ningún paciente te avisará, pero los recordatorios se conservan. '
-              'Para silenciar a uno solo, usa la campana en Recordatorios.',
+              'Se desactivarán todos los recordatorios de los pacientes activos.',
               style: GoogleFonts.nunito(
                 fontSize: 12.5,
                 color: Paleta.textoSecundario,
