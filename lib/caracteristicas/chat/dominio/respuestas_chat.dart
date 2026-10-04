@@ -39,6 +39,29 @@ PreguntaBase? resolverPregunta(String texto, List<PreguntaBase> preguntas) {
   return mejorPuntaje >= 2 ? mejor : null;
 }
 
+const _senalesParaConsultar = [
+  'fiebre',
+  'sangr',
+  'petequia',
+  'moreton',
+  'vomit',
+  'respirar',
+  'respiracion',
+  'convuls',
+  'desmay',
+  'no despierta',
+  'muy decaido',
+  'dolor fuerte',
+  'mucho dolor',
+  'se ve mal',
+];
+
+bool sugiereConsultarEquipo(String texto) {
+  final entrada = normalizarTexto(texto);
+  if (entrada.isEmpty) return false;
+  return _senalesParaConsultar.any(entrada.contains);
+}
+
 const largoMaximoTituloConversacion = 40;
 
 String tituloAutomaticoConversacion(String primeraPregunta) {

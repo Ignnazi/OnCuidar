@@ -27,6 +27,15 @@ String hora12(DateTime fecha) {
   return '$hora:${fecha.minute.toString().padLeft(2, '0')} $sufijo';
 }
 
+String etiquetaDia(DateTime fecha, DateTime ahora) {
+  final hoy = DateTime(ahora.year, ahora.month, ahora.day);
+  final dia = DateTime(fecha.year, fecha.month, fecha.day);
+  final diferencia = hoy.difference(dia).inDays;
+  if (diferencia == 0) return 'Hoy';
+  if (diferencia == 1) return 'Ayer';
+  return fechalarga(fecha);
+}
+
 String fechaEntrada(DateTime fecha) =>
     '${_dd(fecha.day)}/${_dd(fecha.month)}/${fecha.year}';
 

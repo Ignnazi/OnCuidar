@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:oncuidar/app/tema/paleta.dart';
+import 'package:oncuidar/caracteristicas/biblioteca/presentacion/proveedores_biblioteca.dart';
 import 'package:oncuidar/caracteristicas/chat/dominio/conversacion.dart';
 import 'package:oncuidar/caracteristicas/chat/presentacion/controlador_chat.dart';
 import 'package:oncuidar/caracteristicas/chat/presentacion/proveedor_chat_activo.dart';
@@ -16,6 +17,7 @@ import 'package:oncuidar/caracteristicas/preguntas_frecuentes/dominio/catalogo_p
 import 'package:oncuidar/compartido/estilos.dart';
 import 'package:oncuidar/compartido/widgets/buscador.dart';
 import 'package:oncuidar/compartido/widgets/encabezado_gradiente.dart';
+import 'package:oncuidar/nucleo/utilidades/formato_fecha.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
   const ChatScreen({super.key});
@@ -105,7 +107,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           return;
         }
         setState(() => _escribiendo = false);
-        _chat.responder(respuesta);
+        _chat.responder(respuesta, consulta: texto);
         _irAlFinal();
         _encolarGuardado();
       }),
@@ -201,6 +203,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     ref.watch(chatActivoProvider);
+    ref.watch(contenidosEducativosProvider);
     return Scaffold(
       backgroundColor: Paleta.crema,
       body: Column(
@@ -296,21 +299,41 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     );
   }
 
+  bool _empiezaDia(List<MensajeConversacion> mensajes, int i) {
+    final fecha = mensajes[i].enviadoEn;
+    if (fecha == null) return false;
+    final previa = mensajes.take(i).map((m) => m.enviadoEn).nonNulls.lastOrNull;
+    return previa == null || !mismoDia(previa, fecha);
+  }
+
   Widget _zonaChat() {
     final filtrados = _chat.filtrar(_busqueda);
     if (_buscando && _busqueda.trim().isNotEmpty && filtrados.isEmpty) {
       return const _SinResultados();
     }
+    final ahora = DateTime.now();
     return ListView(
       controller: _scroll,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       children: [
-        for (var i = 0; i < filtrados.length; i++)
+        for (var i = 0; i < filtrados.length; i++) ...[
+          if (_empiezaDia(filtrados, i))
+            SeparadorDia(fecha: filtrados[i].enviadoEn!, ahora: ahora),
           BurbujaMensaje(
             mensaje: filtrados[i],
+            alAbrirMaterial: filtrados[i].materialId == null
+                ? null
+                : () => unawaited(
+                    context.push(
+                      '/biblioteca?abrir=${filtrados[i].materialId}',
+                    ),
+                  ),
             agrupado:
-                i > 0 && filtrados[i - 1].delUsuario == filtrados[i].delUsuario,
+                i > 0 &&
+                !_empiezaDia(filtrados, i) &&
+                filtrados[i - 1].delUsuario == filtrados[i].delUsuario,
           ),
+        ],
         if (!_buscando && _escribiendo) const BurbujaEscribiendo(),
         if (_muestraSeguimiento)
           SugerenciasSeguimiento(

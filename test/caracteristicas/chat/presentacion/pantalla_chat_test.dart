@@ -7,6 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:oncuidar/caracteristicas/biblioteca/dominio/material_educativo.dart';
+import 'package:oncuidar/caracteristicas/biblioteca/presentacion/proveedores_biblioteca.dart';
 import 'package:oncuidar/caracteristicas/chat/datos/repositorio_conversaciones.dart';
 import 'package:oncuidar/caracteristicas/chat/dominio/conversacion.dart';
 import 'package:oncuidar/caracteristicas/chat/dominio/respuestas_chat.dart';
@@ -33,7 +35,7 @@ Future<BaseDatosSegura> _base() async {
   );
 }
 
-Widget _pantalla(BaseDatosSegura base) {
+Widget _pantalla(BaseDatosSegura base, {List<MaterialEducativo>? catalogo}) {
   final router = GoRouter(
     initialLocation: '/chat',
     routes: [
@@ -51,18 +53,28 @@ Widget _pantalla(BaseDatosSegura base) {
     ],
   );
   return ProviderScope(
-    overrides: [baseDatosSeguraProvider.overrideWith((_) => base)],
+    overrides: [
+      baseDatosSeguraProvider.overrideWith((_) => base),
+      if (catalogo != null)
+        contenidosEducativosProvider.overrideWith(
+          (_) => Stream.value(catalogo),
+        ),
+    ],
     child: MaterialApp.router(routerConfig: router),
   );
 }
 
-Future<void> _montar(WidgetTester tester, BaseDatosSegura base) async {
+Future<void> _montar(
+  WidgetTester tester,
+  BaseDatosSegura base, {
+  List<MaterialEducativo>? catalogo,
+}) async {
   SharedPreferences.setMockInitialValues({});
   tester.view.physicalSize = const Size(800, 1600);
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.resetPhysicalSize);
   addTearDown(tester.view.resetDevicePixelRatio);
-  await tester.pumpWidget(_pantalla(base));
+  await tester.pumpWidget(_pantalla(base, catalogo: catalogo));
   await tester.pumpAndSettle();
 }
 
@@ -174,6 +186,28 @@ void main() {
       expect(find.textContaining('Se considera fiebre'), findsOneWidget);
       expect(find.byKey(const Key('seguimiento_cateter')), findsOneWidget);
       expect(find.byKey(const Key('seguimiento_alimentacion')), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'la respuesta de fiebre enlaza al material y sugiere consultar al equipo',
+    (tester) async {
+      final video = MaterialEducativo(
+        id: 'videos-como-medir-la-fiebre',
+        titulo: 'Cómo medir la fiebre',
+        categoria: 'Videos',
+        tema: 'Fiebre',
+        cuerpo: 'Video paso a paso.',
+        creadoEn: DateTime.utc(2026, 1, 1),
+      );
+      await _montar(tester, await _base(), catalogo: [video]);
+
+      await tester.tap(find.byKey(const Key('sugerencia_fiebre')));
+      await tester.pump(const Duration(milliseconds: 1000));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('verMaterialChat')), findsOneWidget);
+      expect(find.byKey(const Key('sugerenciaConsultaChat')), findsOneWidget);
     },
   );
 
