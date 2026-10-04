@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:oncuidar/caracteristicas/biblioteca/presentacion/proveedores_biblioteca.dart';
 import 'package:oncuidar/caracteristicas/chat/datos/proveedores_chat.dart';
 import 'package:oncuidar/caracteristicas/chat/dominio/conversacion.dart';
 import 'package:oncuidar/caracteristicas/chat/dominio/respuestas_chat.dart';
@@ -43,18 +44,31 @@ class ControladorChat {
 
   PreguntaBase? preguntar(String texto) {
     final respuesta = resolverPregunta(texto, preguntasFrecuentes);
-    _activo.agregarMensaje(MensajeConversacion(texto: texto, delUsuario: true));
+    _activo.agregarMensaje(
+      MensajeConversacion(
+        texto: texto,
+        delUsuario: true,
+        enviadoEn: DateTime.now(),
+      ),
+    );
     if (respuesta != null && _ref.read(chatActivoProvider).categoria == null) {
       _activo.fijarCategoria(respuesta.categoria);
     }
     return respuesta;
   }
 
-  void responder(PreguntaBase? respuesta) {
+  void responder(PreguntaBase? respuesta, {required String consulta}) {
+    final catalogo = _ref.read(contenidosEducativosProvider).value ?? const [];
+    final material = respuesta == null
+        ? null
+        : materialRelacionado(respuesta, catalogo);
     _activo.agregarMensaje(
       MensajeConversacion(
         texto: respuesta?.respuesta ?? mensajeSinCoincidencia,
         delUsuario: false,
+        enviadoEn: DateTime.now(),
+        materialId: material?.id,
+        sugerenciaConsulta: sugiereConsultarEquipo(consulta),
       ),
     );
   }
