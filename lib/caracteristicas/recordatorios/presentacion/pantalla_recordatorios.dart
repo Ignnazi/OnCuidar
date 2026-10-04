@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:oncuidar/app/tema/paleta.dart';
+import 'package:oncuidar/caracteristicas/pacientes/dominio/paciente.dart';
 import 'package:oncuidar/caracteristicas/pacientes/presentacion/proveedores_pacientes.dart';
 import 'package:oncuidar/caracteristicas/recordatorios/dominio/recordatorio.dart';
 import 'package:oncuidar/caracteristicas/recordatorios/presentacion/controlador_recordatorios.dart';
@@ -28,7 +29,13 @@ class RecordatoriosScreen extends ConsumerStatefulWidget {
 
 class _RecordatoriosScreenState extends ConsumerState<RecordatoriosScreen> {
   final List<TextEditingController> _controladoresAbiertos = [];
-  bool _silenciadas = false;
+
+  bool _silenciadasTodas = false;
+
+  bool _silenciadoPaciente = false;
+  String? _pacienteCargado;
+
+  bool get _silenciadas => _silenciadasTodas || _silenciadoPaciente;
 
   @override
   void initState() {
@@ -42,10 +49,17 @@ class _RecordatoriosScreenState extends ConsumerState<RecordatoriosScreen> {
   }
 
   Future<void> _cargarEstadoSilencio() async {
-    final silenciadas = await ControladorRecordatorios.silencioGuardado();
-    if (mounted && silenciadas != _silenciadas) {
-      setState(() => _silenciadas = silenciadas);
-    }
+    final todas = await ControladorRecordatorios.silencioGuardado();
+    final idPaciente = ref.read(pacienteActivoProvider).value?.id;
+    final delPaciente = idPaciente == null
+        ? false
+        : await ControladorRecordatorios.silencioPacienteGuardado(idPaciente);
+    if (!mounted) return;
+    setState(() {
+      _silenciadasTodas = todas;
+      _silenciadoPaciente = delPaciente;
+      _pacienteCargado = idPaciente;
+    });
   }
 
   @override
@@ -58,6 +72,12 @@ class _RecordatoriosScreenState extends ConsumerState<RecordatoriosScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final paciente = ref.watch(pacienteActivoProvider).value;
+    if (paciente?.id != _pacienteCargado) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _cargarEstadoSilencio();
+      });
+    }
     return PantallaConEncabezado(
       alRegresar: _regresar,
       encabezado: EncabezadoGradiente(
@@ -68,9 +88,11 @@ class _RecordatoriosScreenState extends ConsumerState<RecordatoriosScreen> {
         alTocarLogo: () => context.go('/dashboard'),
         accionDerecha: BotonCircular(
           clave: const Key('campanitaSilencio'),
-          tooltip: _silenciadas
-              ? 'Activar notificaciones'
-              : 'Silenciar notificaciones',
+          tooltip: _silenciadasTodas
+              ? 'Avisos silenciados para todos (Configuración)'
+              : _silenciadoPaciente
+              ? 'Activar avisos de ${_nombreCorto(paciente)}'
+              : 'Silenciar avisos de ${_nombreCorto(paciente)}',
           alTocar: _alternarSilencio,
           hijo: Icon(
             _silenciadas ? Icons.notifications_off : Icons.notifications_active,
@@ -198,17 +220,35 @@ class _RecordatoriosScreenState extends ConsumerState<RecordatoriosScreen> {
     );
   }
 
+  String _nombreCorto(Paciente? paciente) {
+    final nombre = paciente?.nombreCompleto.trim() ?? '';
+    return nombre.isEmpty ? 'este paciente' : nombre.split(' ').first;
+  }
+
   Future<void> _alternarSilencio() async {
-    final silenciar = !_silenciadas;
-    setState(() => _silenciadas = silenciar);
-    await _controlador.fijarSilencio(silenciar);
+    final paciente = ref.read(pacienteActivoProvider).value;
+    if (paciente == null) return;
+    if (_silenciadasTodas) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Todos los avisos están silenciados. Actívalos en Mi perfil › '
+            'Configuración de la app.',
+          ),
+        ),
+      );
+      return;
+    }
+    final silenciar = !_silenciadoPaciente;
+    setState(() => _silenciadoPaciente = silenciar);
+    await _controlador.fijarSilencioPaciente(paciente.id, silenciar);
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
             silenciar
-                ? 'Notificaciones silenciadas'
-                : 'Notificaciones reactivadas',
+                ? 'Avisos de ${_nombreCorto(paciente)} silenciados'
+                : 'Avisos de ${_nombreCorto(paciente)} reactivados',
           ),
         ),
       );

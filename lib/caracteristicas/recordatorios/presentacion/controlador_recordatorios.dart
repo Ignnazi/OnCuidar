@@ -7,10 +7,8 @@ import 'package:oncuidar/caracteristicas/recordatorios/datos/proveedores_recorda
 import 'package:oncuidar/caracteristicas/recordatorios/datos/repositorio_recordatorios.dart';
 import 'package:oncuidar/caracteristicas/recordatorios/dominio/recordatorio.dart';
 import 'package:oncuidar/nucleo/notificaciones/servicio_notificaciones.dart';
+import 'package:oncuidar/nucleo/notificaciones/silencio_avisos.dart';
 import 'package:oncuidar/nucleo/proveedores.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-
-const _claveSilencio = 'notificaciones_silenciadas';
 
 class DatosRecordatorio {
   const DatosRecordatorio({
@@ -68,6 +66,7 @@ class ControladorRecordatorios {
       fechaHora: r.fechaHora,
       diasRepeticion: r.diasRepeticion,
       mensual: r.esMensual,
+      idPaciente: r.pacienteId,
     );
   }
 
@@ -162,24 +161,27 @@ class ControladorRecordatorios {
     }
   }
 
-  static Future<bool> silencioGuardado() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      return prefs.getBool(_claveSilencio) ?? false;
-    } catch (_) {
-      return false;
+  static Future<bool> silencioGuardado() => SilencioAvisos.global();
+
+  static Future<bool> silencioPacienteGuardado(String idPaciente) =>
+      SilencioAvisos.pacienteSilenciado(idPaciente);
+
+  Future<void> fijarSilencio(bool silenciar) async {
+    await SilencioAvisos.fijarGlobal(silenciar);
+    if (silenciar) {
+      await notificaciones.cancelarTodas();
+    } else {
+      await cicloDeVida.reagendarNotificaciones();
     }
   }
 
-  Future<void> fijarSilencio(bool silenciar) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool(_claveSilencio, silenciar);
-    } catch (_) {
-      // Si falla, se sigue igual.
-    }
+  Future<void> fijarSilencioPaciente(String idPaciente, bool silenciar) async {
+    await SilencioAvisos.fijarPaciente(idPaciente, silenciar);
     if (silenciar) {
-      await notificaciones.cancelarTodas();
+      await repositorio.cancelarNotificacionesPaciente(
+        idPaciente,
+        notificaciones,
+      );
     } else {
       await cicloDeVida.reagendarNotificaciones();
     }

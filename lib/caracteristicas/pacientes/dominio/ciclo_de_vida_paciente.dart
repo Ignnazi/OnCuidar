@@ -4,6 +4,7 @@ import 'package:oncuidar/caracteristicas/pacientes/datos/repositorio_pacientes.d
 import 'package:oncuidar/caracteristicas/recordatorios/datos/repositorio_recordatorios.dart';
 import 'package:oncuidar/caracteristicas/recordatorios/dominio/recordatorio.dart';
 import 'package:oncuidar/nucleo/notificaciones/servicio_notificaciones.dart';
+import 'package:oncuidar/nucleo/notificaciones/silencio_avisos.dart';
 
 class CicloDeVidaPaciente {
   CicloDeVidaPaciente({
@@ -37,6 +38,7 @@ class CicloDeVidaPaciente {
       notificaciones,
     );
     await pacientes.eliminarPaciente(idPaciente);
+    await SilencioAvisos.fijarPaciente(idPaciente, false);
   }
 
   Future<void> reagendarNotificaciones() async {
@@ -64,6 +66,7 @@ class CicloDeVidaPaciente {
               fechaHora: r.fechaHora,
               diasRepeticion: r.diasRepeticion,
               mensual: r.esMensual,
+              idPaciente: paciente.id,
             );
           }
         } catch (_) {
