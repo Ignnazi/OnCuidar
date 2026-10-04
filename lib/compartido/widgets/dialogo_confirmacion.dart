@@ -9,21 +9,19 @@ Future<bool?> mostrarDialogoConfirmacion(
   required String titulo,
   required String mensaje,
   required String textoConfirmar,
-  Color colorConfirmar = Paleta.doradoOscuro,
+  Color? colorConfirmar,
   IconData? iconoConfirmar,
   Key? keyConfirmar,
   String textoCancelar = 'Cancelar',
 }) {
+  final color = colorConfirmar ?? Paleta.doradoRelleno;
   return showDialog<bool>(
     context: context,
     builder: (dialogCtx) => DialogoTarjeta(
       key: key,
       icono: icono,
-      colores: [
-        colorConfirmar,
-        Color.lerp(colorConfirmar, Colors.black, 0.18)!,
-      ],
-      colorSombra: colorConfirmar,
+      colores: [color, Color.lerp(color, Colors.black, 0.18)!],
+      colorSombra: color,
       titulo: titulo,
       hijos: [
         const SizedBox(height: 8),
@@ -42,7 +40,7 @@ Future<bool?> mostrarDialogoConfirmacion(
           textoCancelar: textoCancelar,
           alConfirmar: () => Navigator.of(dialogCtx).pop(true),
           textoConfirmar: textoConfirmar,
-          colorConfirmar: colorConfirmar,
+          colorConfirmar: color,
           iconoConfirmar: iconoConfirmar,
           keyConfirmar: keyConfirmar,
         ),
@@ -126,7 +124,7 @@ class BotonesDialogo extends StatelessWidget {
     required this.alConfirmar,
     required this.textoConfirmar,
     this.textoCancelar = 'Cancelar',
-    this.colorConfirmar = Paleta.doradoOscuro,
+    this.colorConfirmar,
     this.iconoConfirmar,
     this.keyConfirmar,
   });
@@ -135,7 +133,7 @@ class BotonesDialogo extends StatelessWidget {
   final VoidCallback alConfirmar;
   final String textoConfirmar;
   final String textoCancelar;
-  final Color colorConfirmar;
+  final Color? colorConfirmar;
   final IconData? iconoConfirmar;
   final Key? keyConfirmar;
 
@@ -146,7 +144,7 @@ class BotonesDialogo extends StatelessWidget {
       fontWeight: FontWeight.w700,
     );
     final estiloConfirmar = ElevatedButton.styleFrom(
-      backgroundColor: colorConfirmar,
+      backgroundColor: colorConfirmar ?? Paleta.doradoRelleno,
       foregroundColor: Colors.white,
       elevation: 0,
       minimumSize: const Size(0, 48),
@@ -161,7 +159,7 @@ class BotonesDialogo extends StatelessWidget {
             onPressed: alCancelar,
             style: OutlinedButton.styleFrom(
               foregroundColor: Paleta.textoSecundario,
-              side: const BorderSide(color: Paleta.bordeTarjeta),
+              side: BorderSide(color: Paleta.bordeTarjeta),
               minimumSize: const Size(0, 48),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14),

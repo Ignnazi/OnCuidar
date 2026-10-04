@@ -28,7 +28,7 @@ Future<void> mostrarDialogoArchivados(
           tamanoMaximo: 0.8,
           tamanoTitulo: 16,
           cuerpo: (ctx, scrollController) => [
-            const Divider(height: 1, color: Paleta.bordeTarjeta),
+            Divider(height: 1, color: Paleta.bordeTarjeta),
             if (archivados.isEmpty)
               Expanded(
                 child: Center(
@@ -37,7 +37,7 @@ Future<void> mostrarDialogoArchivados(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.inbox_outlined,
                           size: 40,
                           color: Paleta.textoSecundario,
@@ -139,7 +139,7 @@ class _FilaArchivado extends StatelessWidget {
             IconButton(
               onPressed: () => alDesarchivar(paciente),
               tooltip: 'Restaurar ${paciente.nombreCompleto}',
-              icon: const Icon(
+              icon: Icon(
                 Icons.unarchive_outlined,
                 color: Paleta.doradoOscuro,
                 size: 20,

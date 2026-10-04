@@ -275,7 +275,7 @@ class _PantallaVideoState extends ConsumerState<PantallaVideo> {
                   ),
                 )
               else
-                const Center(
+                Center(
                   child: CircularProgressIndicator(color: Paleta.doradoMedio),
                 ),
               if (_mostrarControles && _inicializado && !_hayError)
@@ -431,7 +431,7 @@ class _PantallaVideoState extends ConsumerState<PantallaVideo> {
                 VideoProgressIndicator(
                   controlador,
                   allowScrubbing: true,
-                  colors: const VideoProgressColors(
+                  colors: VideoProgressColors(
                     playedColor: Paleta.doradoPrincipal,
                     bufferedColor: Colors.white54,
                     backgroundColor: Colors.white24,
@@ -600,10 +600,7 @@ class _HojaVelocidad extends StatelessWidget {
                 leading: SizedBox(
                   width: 24,
                   child: velocidad == actual
-                      ? const Icon(
-                          Icons.check_rounded,
-                          color: Paleta.doradoMedio,
-                        )
+                      ? Icon(Icons.check_rounded, color: Paleta.doradoMedio)
                       : null,
                 ),
                 title: Text(

@@ -211,6 +211,31 @@ void main() {
     },
   );
 
+  testWidgets('el botón de carpetas muestra cuántas conversaciones hay', (
+    tester,
+  ) async {
+    final base = await _base();
+    final repositorio = RepositorioConversaciones(base);
+    await _montar(tester, base);
+    expect(find.byKey(const Key('insigniaConversaciones')), findsNothing);
+
+    for (final titulo in ['Una', 'Dos']) {
+      await repositorio.crearConversacion(
+        titulo: titulo,
+        mensajes: const [MensajeConversacion(texto: 'Hola', delUsuario: true)],
+      );
+    }
+    await tester.pumpAndSettle();
+
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('insigniaConversaciones')),
+        matching: find.text('2'),
+      ),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('el texto libre con palabras clave resuelve la pregunta', (
     tester,
   ) async {

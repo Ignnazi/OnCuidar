@@ -45,8 +45,8 @@ class _RegistroState extends ConsumerState<Registro> {
         if (mounted) {
           FocusManager.instance.primaryFocus?.unfocus();
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('¡Cuenta creada exitosamente!'),
+            SnackBar(
+              content: const Text('¡Cuenta creada exitosamente!'),
               backgroundColor: Paleta.doradoPrincipal,
             ),
           );

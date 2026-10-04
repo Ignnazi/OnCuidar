@@ -4,7 +4,9 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:oncuidar/app/tema/paleta.dart';
 import 'package:oncuidar/caracteristicas/pacientes/presentacion/gestion_pacientes.dart';
+import 'package:oncuidar/caracteristicas/perfil/presentacion/cerrar_sesion.dart';
 import 'package:oncuidar/caracteristicas/perfil/presentacion/perfil_cuidador.dart';
+import 'package:oncuidar/caracteristicas/perfil/presentacion/widgets/boton_salir.dart';
 import 'package:oncuidar/compartido/widgets/encabezado_gradiente.dart';
 
 class Perfil extends ConsumerStatefulWidget {
@@ -18,6 +20,7 @@ enum _VistaPerfil { cuidador, pacientes }
 
 class _PerfilState extends ConsumerState<Perfil> {
   _VistaPerfil _vista = _VistaPerfil.pacientes;
+  bool _cerrandoSesion = false;
   final PageController _controladorPagina = PageController();
 
   @override
@@ -69,7 +72,7 @@ class _PerfilState extends ConsumerState<Perfil> {
                         showSelectedIcon: false,
                         style: SegmentedButton.styleFrom(
                           foregroundColor: Paleta.doradoOscuro,
-                          selectedForegroundColor: Colors.white,
+                          selectedForegroundColor: Paleta.sobreDorado,
                           selectedBackgroundColor: Paleta.doradoPrincipal,
                           backgroundColor: Colors.transparent,
                           side: BorderSide.none,
@@ -120,11 +123,21 @@ class _PerfilState extends ConsumerState<Perfil> {
             right: 0,
             child: EncabezadoGradiente(
               titulo: 'Perfiles',
-              subtitulo: 'Gestiona la información',
+              subtitulo: 'Información general',
               logo: const AssetImage('assets/images/OnCuidar.png'),
               tamanoTitulo: 20,
               alto: 100,
               alTocarLogo: () => context.go('/dashboard'),
+              accionDerecha: BotonSalir(
+                cargando: _cerrandoSesion,
+                alPulsar: () => cerrarSesionConfirmando(
+                  context,
+                  ref,
+                  alCambiarEstado: (en) {
+                    if (mounted) setState(() => _cerrandoSesion = en);
+                  },
+                ),
+              ),
             ),
           ),
         ],

@@ -84,7 +84,7 @@ class TarjetaPerfilCuidador extends StatelessWidget {
             color: Colors.white.withValues(alpha: 0.4),
             shape: BoxShape.circle,
           ),
-          child: const Icon(Icons.more_vert_rounded, color: Colors.white),
+          child: Icon(Icons.more_vert_rounded, color: Paleta.sobreDorado),
         ),
         color: Paleta.tarjeta,
       ),
@@ -244,17 +244,17 @@ class _TarjetaAutenticacion extends StatelessWidget {
               ],
               icon: Container(
                 padding: const EdgeInsets.all(6),
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [Paleta.doradoPrincipal, Paleta.doradoOscuro],
+                    colors: [Paleta.doradoPrincipal, Paleta.doradoRelleno],
                   ),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.more_vert_rounded,
-                  color: Colors.white,
+                  color: Paleta.sobreDorado,
                   size: 20,
                 ),
               ),
@@ -278,11 +278,7 @@ class _AvisoPendiente extends StatelessWidget {
       padding: const EdgeInsets.only(left: 44, top: 4),
       child: Row(
         children: [
-          const Icon(
-            Icons.schedule_rounded,
-            size: 14,
-            color: Paleta.doradoOscuro,
-          ),
+          Icon(Icons.schedule_rounded, size: 14, color: Paleta.doradoOscuro),
           const SizedBox(width: 4),
           Expanded(
             child: Text(

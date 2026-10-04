@@ -73,7 +73,7 @@ class _EstadoBannerConexion extends ConsumerState<BannerConexion>
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         child: Row(
           children: [
-            const Icon(Icons.cloud_off, size: 18, color: Paleta.textoTerciario),
+            Icon(Icons.cloud_off, size: 18, color: Paleta.textoTerciario),
             const SizedBox(width: 8),
             Text(
               'Sin conexión',

@@ -1,57 +1,40 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:oncuidar/app/tema/paleta.dart';
-
-class _TransicionWhatsApp extends PageTransitionsBuilder {
-  const _TransicionWhatsApp();
-
-  @override
-  Widget buildTransitions<T>(
-    PageRoute<T> route,
-    BuildContext context,
-    Animation<double> animation,
-    Animation<double> secondaryAnimation,
-    Widget child,
-  ) {
-    final curva = CurvedAnimation(
-      parent: animation,
-      curve: Curves.easeOutCubic,
-      reverseCurve: Curves.easeInCubic,
-    );
-    return FadeTransition(
-      opacity: curva,
-      child: SlideTransition(
-        position: Tween<Offset>(
-          begin: const Offset(0.10, 0),
-          end: Offset.zero,
-        ).animate(curva),
-        child: child,
-      ),
-    );
-  }
-}
+import 'package:oncuidar/app/tema/transicion_fundido.dart';
 
 class Tema {
   static ThemeData obtener() {
+    final brillo = Paleta.esOscura ? Brightness.dark : Brightness.light;
     final esquema = ColorScheme.fromSeed(
+      brightness: brillo,
       seedColor: Paleta.doradoPrincipal,
       primary: Paleta.doradoPrincipal,
       secondary: Paleta.doradoMedio,
       surface: Paleta.tarjeta,
       onSurface: Paleta.textoPrincipal,
+      error: Paleta.error,
     );
 
     return ThemeData(
       useMaterial3: true,
+      brightness: brillo,
       colorScheme: esquema,
       scaffoldBackgroundColor: Paleta.crema,
+      dialogTheme: DialogThemeData(backgroundColor: Paleta.tarjeta),
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: Paleta.tarjeta,
+        modalBackgroundColor: Paleta.tarjeta,
+      ),
+      dividerColor: Paleta.bordeTarjeta,
       pageTransitionsTheme: const PageTransitionsTheme(
         builders: {
-          TargetPlatform.android: _TransicionWhatsApp(),
-          TargetPlatform.iOS: _TransicionWhatsApp(),
-          TargetPlatform.windows: _TransicionWhatsApp(),
-          TargetPlatform.macOS: _TransicionWhatsApp(),
-          TargetPlatform.linux: _TransicionWhatsApp(),
+          TargetPlatform.android: TransicionFundido(),
+          TargetPlatform.iOS: TransicionFundido(),
+          TargetPlatform.macOS: TransicionFundido(),
+          TargetPlatform.windows: TransicionFundido(),
+          TargetPlatform.linux: TransicionFundido(),
+          TargetPlatform.fuchsia: TransicionFundido(),
         },
       ),
       textTheme: GoogleFonts.nunitoTextTheme().apply(
@@ -60,19 +43,19 @@ class Tema {
       ),
       appBarTheme: AppBarTheme(
         backgroundColor: Paleta.doradoPrincipal,
-        foregroundColor: Colors.white,
+        foregroundColor: Paleta.sobreDorado,
         elevation: 0,
         centerTitle: true,
         titleTextStyle: GoogleFonts.nunito(
           fontSize: 18,
           fontWeight: FontWeight.w700,
-          color: Colors.white,
+          color: Paleta.sobreDorado,
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: Paleta.doradoPrincipal,
-          foregroundColor: Colors.white,
+          foregroundColor: Paleta.sobreDorado,
           minimumSize: const Size(double.infinity, 54),
           elevation: 2,
           shape: RoundedRectangleBorder(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:oncuidar/app/tema/paleta.dart';
 
 class ChipFranja extends StatelessWidget {
   const ChipFranja(this.icono, this.texto, {super.key});
@@ -12,13 +13,15 @@ class ChipFranja extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.18),
+        color: Colors.white.withValues(
+          alpha: Paleta.alfa(claro: 0.18, oscuro: 0.35),
+        ),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icono, size: 14.5, color: Colors.white),
+          Icon(icono, size: 14.5, color: Paleta.sobreDorado),
           const SizedBox(width: 5),
           Flexible(
             child: Text(
@@ -28,7 +31,7 @@ class ChipFranja extends StatelessWidget {
               style: GoogleFonts.nunito(
                 fontSize: 12.5,
                 fontWeight: FontWeight.w800,
-                color: Colors.white,
+                color: Paleta.sobreDorado,
               ),
             ),
           ),

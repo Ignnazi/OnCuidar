@@ -55,11 +55,11 @@ class PreguntasSugeridas extends StatelessWidget {
                     Container(
                       width: 36,
                       height: 36,
-                      decoration: const BoxDecoration(
+                      decoration: BoxDecoration(
                         color: Paleta.doradoBannerClaro,
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.question_answer_outlined,
                         color: Paleta.doradoOscuro,
                         size: 18,
@@ -78,7 +78,7 @@ class PreguntasSugeridas extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    const Icon(
+                    Icon(
                       Icons.chevron_right_rounded,
                       color: Paleta.textoSecundario,
                       size: 22,
@@ -99,18 +99,20 @@ class PreguntasSugeridas extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.help_outline_rounded,
                     size: 16,
                     color: Paleta.doradoOscuro,
                   ),
                   const SizedBox(width: 6),
-                  Text(
-                    'Ver todas las preguntas frecuentes',
-                    style: GoogleFonts.nunito(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: Paleta.doradoOscuro,
+                  Flexible(
+                    child: Text(
+                      'Ver todas las preguntas frecuentes',
+                      style: GoogleFonts.nunito(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: Paleta.doradoOscuro,
+                      ),
                     ),
                   ),
                 ],

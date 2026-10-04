@@ -7,7 +7,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:oncuidar/app/enrutador/destino_aviso.dart';
 import 'package:oncuidar/app/enrutador/enrutador.dart';
+import 'package:oncuidar/app/tema/fundido_de_tema.dart';
+import 'package:oncuidar/app/tema/paleta.dart';
+import 'package:oncuidar/app/tema/repintar.dart';
 import 'package:oncuidar/app/tema/tema.dart';
+import 'package:oncuidar/caracteristicas/configuracion/presentacion/proveedores_configuracion.dart';
 import 'package:oncuidar/firebase_options.dart';
 import 'package:oncuidar/nucleo/proveedores.dart';
 
@@ -28,10 +32,12 @@ class OncuidarApp extends ConsumerStatefulWidget {
   ConsumerState<OncuidarApp> createState() => _OncuidarAppState();
 }
 
-class _OncuidarAppState extends ConsumerState<OncuidarApp> {
+class _OncuidarAppState extends ConsumerState<OncuidarApp>
+    with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _escucharAvisos();
     var sesionPrevia = false;
     ref.read(firebaseAuthProvider).authStateChanges().listen((usuario) {
@@ -45,6 +51,30 @@ class _OncuidarAppState extends ConsumerState<OncuidarApp> {
         unawaited(ref.read(orquestadorSincronizacionProvider).drenar());
       }
     });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangePlatformBrightness() {
+    if (mounted) setState(() {});
+  }
+
+  void _aplicarPaleta() {
+    final brilloSistema =
+        WidgetsBinding.instance.platformDispatcher.platformBrightness;
+    final oscuro = ref.watch(modoTemaProvider).esOscuro(brilloSistema);
+    if (Paleta.usar(oscuro ? coloresOscuros : coloresClaros)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _repintarTodo());
+    }
+  }
+
+  void _repintarTodo() {
+    if (mounted) repintarArbol(context);
   }
 
   void _escucharAvisos() {
@@ -66,18 +96,30 @@ class _OncuidarAppState extends ConsumerState<OncuidarApp> {
   Widget build(BuildContext context) {
     final usuario = ref.watch(estadoAutenticacionProvider).value;
     final desbloqueado = ref.watch(bloqueoCifradoProvider);
+    final escalaTexto = ref.watch(escalaTextoProvider).factor;
+    _aplicarPaleta();
     if (usuario != null) ref.watch(orquestadorSincronizacionProvider);
     return MaterialApp.router(
       title: 'Oncuidar',
       debugShowCheckedModeBanner: false,
       theme: Tema.obtener(),
       routerConfig: router,
-      builder: (context, child) => Stack(
-        children: [
-          child ?? const SizedBox.shrink(),
-          if (usuario != null && !desbloqueado)
-            const Positioned.fill(child: _GateClave()),
-        ],
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(context).copyWith(
+          textScaler: TextScaler.linear(
+            MediaQuery.textScalerOf(context).scale(1) * escalaTexto,
+          ),
+        ),
+        child: Stack(
+          children: [
+            FundidoDeTema(
+              oscuro: Paleta.esOscura,
+              child: child ?? const SizedBox.shrink(),
+            ),
+            if (usuario != null && !desbloqueado)
+              const Positioned.fill(child: _GateClave()),
+          ],
+        ),
       ),
     );
   }

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:oncuidar/app/tema/paleta.dart';
+import 'package:oncuidar/compartido/widgets/buscador.dart';
 import 'package:oncuidar/compartido/widgets/encabezado_gradiente.dart';
 
 class CabeceraRegistro extends StatelessWidget {
@@ -28,48 +28,13 @@ class CabeceraRegistro extends StatelessWidget {
             : 'Registra el cuidado',
         logo: const AssetImage('assets/images/OnCuidar.png'),
         tamanoTitulo: 20,
-        reservaDerecha: 140,
         alTocarLogo: () => context.go('/dashboard'),
         accionDerecha: !esEdicion
-            ? Tooltip(
-                message: 'Ver historial',
-                child: GestureDetector(
-                  onTap: onVerHistorial,
-                  child: Container(
-                    height: 36,
-                    padding: const EdgeInsets.symmetric(horizontal: 14),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(18),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Paleta.doradoOscuro.withValues(alpha: 0.25),
-                          blurRadius: 6,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(
-                          Icons.history_rounded,
-                          color: Paleta.doradoOscuro,
-                          size: 17,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          'Ver historial',
-                          style: GoogleFonts.nunito(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w800,
-                            color: Paleta.doradoOscuro,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+            ? BotonCircular(
+                clave: const Key('botonVerHistorial'),
+                tooltip: 'Ver historial',
+                alTocar: onVerHistorial ?? () {},
+                hijo: Icon(Icons.history, color: Paleta.doradoOscuro, size: 22),
               )
             : null,
       ),

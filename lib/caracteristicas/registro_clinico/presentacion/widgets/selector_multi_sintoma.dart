@@ -89,7 +89,7 @@ class _SelectorMultiSintomaState extends State<SelectorMultiSintoma> {
         setState(() {});
       },
       activeColor: Paleta.doradoPrincipal,
-      checkColor: Colors.white,
+      checkColor: Paleta.sobreDorado,
       controlAffinity: ListTileControlAffinity.leading,
       dense: true,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16),
@@ -115,7 +115,7 @@ class _SelectorMultiSintomaState extends State<SelectorMultiSintoma> {
       labelStyle: GoogleFonts.nunito(
         fontSize: 11.5,
         fontWeight: FontWeight.w700,
-        color: seleccionado ? Colors.white : Paleta.textoSecundario,
+        color: seleccionado ? Paleta.sobreDorado : Paleta.textoSecundario,
       ),
       backgroundColor: Paleta.fondoEntrada,
       selectedColor: Paleta.doradoPrincipal,
@@ -237,7 +237,7 @@ class _SelectorMultiSintomaState extends State<SelectorMultiSintoma> {
                   tooltip: 'Agregar síntoma',
                   style: IconButton.styleFrom(
                     backgroundColor: Paleta.doradoPrincipal,
-                    foregroundColor: Colors.white,
+                    foregroundColor: Paleta.sobreDorado,
                   ),
                   icon: const Icon(Icons.add),
                 ),
@@ -276,7 +276,7 @@ class _SelectorMultiSintomaState extends State<SelectorMultiSintoma> {
               },
               style: FilledButton.styleFrom(
                 backgroundColor: Paleta.doradoPrincipal,
-                foregroundColor: Colors.white,
+                foregroundColor: Paleta.sobreDorado,
                 minimumSize: const Size.fromHeight(44),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),

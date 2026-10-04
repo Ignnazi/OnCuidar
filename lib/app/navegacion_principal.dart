@@ -85,7 +85,7 @@ class _NavegacionPrincipalState extends ConsumerState<NavegacionPrincipal> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Divider(height: 1, color: Paleta.bordeTarjeta),
+          Divider(height: 1, color: Paleta.bordeTarjeta),
           SizedBox(
             height: _alturaBarra,
             child: Row(
@@ -152,7 +152,7 @@ class _NavegacionPrincipalState extends ConsumerState<NavegacionPrincipal> {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: activo
-                      ? const [Paleta.doradoMedio, Paleta.doradoOscuro]
+                      ? [Paleta.doradoMedio, Paleta.doradoRelleno]
                       : const [Colors.transparent, Colors.transparent],
                 ),
                 borderRadius: BorderRadius.circular(17),
@@ -175,7 +175,7 @@ class _NavegacionPrincipalState extends ConsumerState<NavegacionPrincipal> {
                   size: 22,
                   color: Color.lerp(
                     Paleta.textoSecundario,
-                    Colors.white,
+                    Paleta.sobreDorado,
                     valor,
                   ),
                 ),

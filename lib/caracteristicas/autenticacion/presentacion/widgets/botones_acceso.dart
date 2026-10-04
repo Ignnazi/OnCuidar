@@ -23,10 +23,10 @@ class BotonDegradado extends StatelessWidget {
         opacity: cargando ? 0.6 : 1,
         child: DecoratedBox(
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
+            gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [Paleta.doradoPrincipal, Paleta.doradoOscuro],
+              colors: [Paleta.doradoPrincipal, Paleta.doradoRelleno],
             ),
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
@@ -41,7 +41,7 @@ class BotonDegradado extends StatelessWidget {
             onPressed: cargando ? null : alPulsar,
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.transparent,
-              foregroundColor: Colors.white,
+              foregroundColor: Paleta.sobreDorado,
               disabledBackgroundColor: Colors.transparent,
               elevation: 0,
               shadowColor: Colors.transparent,
@@ -50,11 +50,11 @@ class BotonDegradado extends StatelessWidget {
               ),
             ),
             child: cargando
-                ? const SizedBox(
+                ? SizedBox(
                     height: 22,
                     width: 22,
                     child: CircularProgressIndicator(
-                      color: Colors.white,
+                      color: Paleta.sobreDorado,
                       strokeWidth: 2.5,
                     ),
                   )

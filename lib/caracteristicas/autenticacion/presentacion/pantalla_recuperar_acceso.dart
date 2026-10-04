@@ -167,7 +167,7 @@ class _RecuperarAccesoState extends State<RecuperarAcceso> {
                           onPressed: _bloquearEnvios ? null : _recuperarAcceso,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Paleta.doradoPrincipal,
-                            foregroundColor: Colors.white,
+                            foregroundColor: Paleta.sobreDorado,
                             elevation: 2,
                             shadowColor: Paleta.doradoPrincipal.withValues(
                               alpha: 0.35,
@@ -179,11 +179,11 @@ class _RecuperarAccesoState extends State<RecuperarAcceso> {
                                 .withValues(alpha: 0.5),
                           ),
                           child: _cargando
-                              ? const SizedBox(
+                              ? SizedBox(
                                   height: 22,
                                   width: 22,
                                   child: CircularProgressIndicator(
-                                    color: Colors.white,
+                                    color: Paleta.sobreDorado,
                                     strokeWidth: 2.5,
                                   ),
                                 )
@@ -198,7 +198,7 @@ class _RecuperarAccesoState extends State<RecuperarAcceso> {
                       ),
                       const SizedBox(height: 16),
                       if (_enviado) ...[
-                        const _PanelEstado(
+                        _PanelEstado(
                           color: Paleta.doradoPrincipal,
                           icono: Icons.mark_email_read_outlined,
                           texto:

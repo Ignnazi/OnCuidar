@@ -20,15 +20,15 @@ InputDecoration entradaDorada({
     fillColor: Paleta.fondoEntrada,
     border: OutlineInputBorder(
       borderRadius: BorderRadius.circular(14),
-      borderSide: const BorderSide(color: Paleta.bordeTarjeta),
+      borderSide: BorderSide(color: Paleta.bordeTarjeta),
     ),
     enabledBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(14),
-      borderSide: const BorderSide(color: Paleta.bordeTarjeta),
+      borderSide: BorderSide(color: Paleta.bordeTarjeta),
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(14),
-      borderSide: const BorderSide(color: Paleta.doradoPrincipal, width: 1.5),
+      borderSide: BorderSide(color: Paleta.doradoPrincipal, width: 1.5),
     ),
   );
 }

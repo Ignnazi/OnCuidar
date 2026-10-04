@@ -97,7 +97,7 @@ class _EstadoCargando extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
+    return Scaffold(
       backgroundColor: Paleta.crema,
       body: Center(
         child: CircularProgressIndicator(color: Paleta.doradoPrincipal),
@@ -111,9 +111,9 @@ class _EstadoError extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
+    return Scaffold(
       backgroundColor: Paleta.crema,
-      body: Center(child: Text('Error al cargar datos.')),
+      body: const Center(child: Text('Error al cargar datos.')),
     );
   }
 }

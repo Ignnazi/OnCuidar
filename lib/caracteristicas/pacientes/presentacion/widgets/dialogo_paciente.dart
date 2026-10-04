@@ -185,8 +185,8 @@ class _DialogoPacienteState extends State<_DialogoPaciente> {
       );
     } catch (_) {
       messenger.showSnackBar(
-        const SnackBar(
-          content: Text('No se pudo guardar. Intenta de nuevo.'),
+        SnackBar(
+          content: const Text('No se pudo guardar. Intenta de nuevo.'),
           backgroundColor: Paleta.error,
         ),
       );

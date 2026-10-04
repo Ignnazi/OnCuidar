@@ -21,10 +21,10 @@ class BotonGuardar extends StatelessWidget {
       child: Ink(
         height: 48,
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
+          gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [Paleta.doradoMedio, Paleta.doradoOscuro],
+            colors: [Paleta.doradoMedio, Paleta.doradoRelleno],
           ),
           borderRadius: BorderRadius.circular(16),
         ),
@@ -32,34 +32,37 @@ class BotonGuardar extends StatelessWidget {
           onTap: guardando ? null : onPressed,
           borderRadius: BorderRadius.circular(16),
           child: Center(
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (guardando)
-                  const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (guardando)
+                    SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Paleta.sobreDorado,
+                      ),
+                    )
+                  else
+                    Icon(Icons.save, size: 18, color: Paleta.sobreDorado),
+                  const SizedBox(width: 8),
+                  Text(
+                    guardando
+                        ? 'Guardando…'
+                        : (esEdicion
+                              ? 'Actualizar registro'
+                              : 'Guardar registro'),
+                    style: GoogleFonts.nunito(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                      color: Paleta.sobreDorado,
                     ),
-                  )
-                else
-                  const Icon(Icons.save, size: 18, color: Colors.white),
-                const SizedBox(width: 8),
-                Text(
-                  guardando
-                      ? 'Guardando…'
-                      : (esEdicion
-                            ? 'Actualizar registro'
-                            : 'Guardar registro'),
-                  style: GoogleFonts.nunito(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.white,
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

@@ -68,7 +68,7 @@ class TarjetaConversacion extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             child: Row(
               children: [
-                const Icon(
+                Icon(
                   Icons.folder_rounded,
                   color: Paleta.doradoOscuro,
                   size: 22,
@@ -103,7 +103,7 @@ class TarjetaConversacion extends StatelessWidget {
                 ),
                 PopupMenuButton<String>(
                   key: Key('menuConversacion_${conversacion.id}'),
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.more_vert,
                     color: Paleta.textoSecundario,
                     size: 20,

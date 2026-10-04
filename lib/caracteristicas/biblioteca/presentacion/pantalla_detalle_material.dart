@@ -11,6 +11,7 @@ import 'package:oncuidar/caracteristicas/biblioteca/presentacion/acciones_materi
 import 'package:oncuidar/caracteristicas/biblioteca/presentacion/pantalla_visor_imagen.dart';
 import 'package:oncuidar/caracteristicas/biblioteca/presentacion/proveedores_biblioteca.dart';
 import 'package:oncuidar/caracteristicas/biblioteca/presentacion/widgets/imagen_cacheada.dart';
+import 'package:oncuidar/compartido/widgets/buscador.dart';
 import 'package:oncuidar/compartido/widgets/encabezado_gradiente.dart';
 
 class PantallaDetalleMaterial extends ConsumerStatefulWidget {
@@ -84,17 +85,18 @@ class _PantallaDetalleMaterialState
           EncabezadoGradiente(
             titulo: 'Material educativo',
             subtitulo: materialActual?.tema,
-            reservaDerecha: 48,
-            accionDerecha: GestureDetector(
-              onTap: () =>
+            accionDerecha: BotonCircular(
+              tooltip: esFavorito
+                  ? 'Quitar de favoritos'
+                  : 'Guardar en favoritos',
+              alTocar: () =>
                   unawaited(alternarFavoritoMaterial(ref, context, widget.id)),
-              child: Padding(
-                padding: const EdgeInsets.all(6),
-                child: Icon(
-                  esFavorito ? Icons.bookmark : Icons.bookmark_border,
-                  color: esFavorito ? Paleta.doradoClaro : Colors.white,
-                  size: 24,
-                ),
+              hijo: Icon(
+                esFavorito ? Icons.bookmark : Icons.bookmark_border,
+                color: esFavorito
+                    ? Paleta.doradoOscuro
+                    : Paleta.textoSecundario,
+                size: 22,
               ),
             ),
           ),
@@ -106,7 +108,7 @@ class _PantallaDetalleMaterialState
 
   Widget _cuerpo(MaterialEducativo? material) {
     if (material == null) {
-      return const Center(
+      return Center(
         child: Text(
           'Material no encontrado.',
           style: TextStyle(color: Paleta.textoSecundario),
@@ -183,12 +185,12 @@ class _PantallaDetalleMaterialState
               child: FilledButton.icon(
                 onPressed: _descargando ? null : _abrirArchivo,
                 icon: _descargando
-                    ? const SizedBox(
+                    ? SizedBox(
                         width: 18,
                         height: 18,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: Colors.white,
+                          color: Paleta.sobreDorado,
                         ),
                       )
                     : const Icon(Icons.open_in_new, size: 18),
@@ -218,7 +220,7 @@ class _PantallaDetalleMaterialState
   Widget _reemplazoImagen() {
     return Container(
       color: Paleta.fondoEntrada,
-      child: const Icon(
+      child: Icon(
         Icons.image_not_supported_outlined,
         size: 48,
         color: Paleta.textoSecundario,

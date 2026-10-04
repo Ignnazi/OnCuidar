@@ -20,7 +20,7 @@ class TarjetaSeccion extends StatelessWidget {
       width: double.infinity,
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Paleta.tarjeta,
         borderRadius: BorderRadius.circular(28),
         border: Border.all(color: Paleta.doradoClaro),
         boxShadow: [
@@ -37,15 +37,11 @@ class TarjetaSeccion extends StatelessWidget {
           Container(
             width: double.infinity,
             padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [
-                  Paleta.doradoOscuro,
-                  Paleta.doradoPrincipal,
-                  Paleta.doradoMedio,
-                ],
+                colors: Paleta.degradadoBanner,
               ),
             ),
             child: Row(
@@ -54,10 +50,12 @@ class TarjetaSeccion extends StatelessWidget {
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.22),
+                    color: Colors.white.withValues(
+                      alpha: Paleta.alfa(claro: 0.22, oscuro: 0.35),
+                    ),
                     borderRadius: BorderRadius.circular(14),
                   ),
-                  child: Icon(icono, color: Colors.white, size: 26),
+                  child: Icon(icono, color: Paleta.sobreDorado, size: 26),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -67,7 +65,7 @@ class TarjetaSeccion extends StatelessWidget {
                     style: GoogleFonts.nunito(
                       fontSize: 18,
                       fontWeight: FontWeight.w800,
-                      color: Colors.white,
+                      color: Paleta.sobreDorado,
                     ),
                   ),
                 ),
@@ -169,23 +167,23 @@ InputDecoration decoracionEntrada({
     fillColor: Paleta.fondoEntrada,
     border: OutlineInputBorder(
       borderRadius: BorderRadius.circular(16),
-      borderSide: const BorderSide(color: Paleta.bordeTarjeta),
+      borderSide: BorderSide(color: Paleta.bordeTarjeta),
     ),
     enabledBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(16),
-      borderSide: const BorderSide(color: Paleta.bordeTarjeta),
+      borderSide: BorderSide(color: Paleta.bordeTarjeta),
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(16),
-      borderSide: const BorderSide(color: Paleta.doradoPrincipal, width: 2),
+      borderSide: BorderSide(color: Paleta.doradoPrincipal, width: 2),
     ),
     errorBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(16),
-      borderSide: const BorderSide(color: Paleta.error),
+      borderSide: BorderSide(color: Paleta.error),
     ),
     focusedErrorBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(16),
-      borderSide: const BorderSide(color: Paleta.error, width: 2),
+      borderSide: BorderSide(color: Paleta.error, width: 2),
     ),
     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
   );

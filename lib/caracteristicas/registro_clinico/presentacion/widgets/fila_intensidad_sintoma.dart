@@ -94,7 +94,7 @@ class FilaIntensidadSintoma extends StatelessWidget {
           accionDerecha: IconButton(
             onPressed: onEliminar,
             visualDensity: VisualDensity.compact,
-            icon: const Icon(
+            icon: Icon(
               Icons.close_rounded,
               size: 18,
               color: Paleta.textoSecundario,

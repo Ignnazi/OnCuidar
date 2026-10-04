@@ -32,9 +32,9 @@ class HojaDialogo extends StatelessWidget {
       minChildSize: tamanoMinimo,
       maxChildSize: tamanoMaximo,
       builder: (ctx, controlador) => Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: Paleta.tarjeta,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: Column(
           children: [
@@ -55,14 +55,14 @@ class HojaDialogo extends StatelessWidget {
                     width: 36,
                     height: 36,
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(
+                      gradient: LinearGradient(
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
-                        colors: [Paleta.doradoPrincipal, Paleta.doradoOscuro],
+                        colors: [Paleta.doradoPrincipal, Paleta.doradoRelleno],
                       ),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: Icon(icono, color: Colors.white, size: 18),
+                    child: Icon(icono, color: Paleta.sobreDorado, size: 18),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -77,10 +77,7 @@ class HojaDialogo extends StatelessWidget {
                   ),
                   IconButton(
                     onPressed: () => Navigator.of(ctx).pop(),
-                    icon: const Icon(
-                      Icons.close,
-                      color: Paleta.textoSecundario,
-                    ),
+                    icon: Icon(Icons.close, color: Paleta.textoSecundario),
                   ),
                 ],
               ),

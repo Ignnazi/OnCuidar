@@ -15,11 +15,7 @@ class TarjetaSinPacientes extends StatelessWidget {
       icono: Icons.child_care_outlined,
       titulo: 'Pacientes',
       hijos: [
-        const Icon(
-          Icons.child_care_outlined,
-          size: 44,
-          color: Paleta.doradoMedio,
-        ),
+        Icon(Icons.child_care_outlined, size: 44, color: Paleta.doradoMedio),
         const SizedBox(height: 12),
         Text(
           'Aún no tienes pacientes registrados.',

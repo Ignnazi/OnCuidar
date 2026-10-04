@@ -24,7 +24,7 @@ class TarjetaMapa extends StatelessWidget {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            const CustomPaint(painter: _MapaPintor()),
+            CustomPaint(painter: _MapaPintor(oscuro: Paleta.esOscura)),
             Center(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -51,12 +51,12 @@ class TarjetaMapa extends StatelessWidget {
                           vertical: 5,
                         ),
                         decoration: BoxDecoration(
-                          gradient: const LinearGradient(
+                          gradient: LinearGradient(
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                             colors: [
                               Paleta.doradoPrincipal,
-                              Paleta.doradoOscuro,
+                              Paleta.doradoRelleno,
                             ],
                           ),
                           borderRadius: BorderRadius.circular(20),
@@ -73,10 +73,10 @@ class TarjetaMapa extends StatelessWidget {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(
+                            Icon(
                               Icons.touch_app_outlined,
                               size: 17,
-                              color: Colors.white,
+                              color: Paleta.sobreDorado,
                             ),
                             const SizedBox(width: 6),
                             Text(
@@ -84,7 +84,7 @@ class TarjetaMapa extends StatelessWidget {
                               style: GoogleFonts.nunito(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w800,
-                                color: Colors.white,
+                                color: Paleta.sobreDorado,
                               ),
                             ),
                           ],
@@ -103,17 +103,21 @@ class TarjetaMapa extends StatelessWidget {
 }
 
 class _MapaPintor extends CustomPainter {
-  const _MapaPintor();
+  const _MapaPintor({required this.oscuro});
+
+  final bool oscuro;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final fondo = Paint()..color = const Color(0xFFF7ECDA);
+    final fondo = Paint()
+      ..color = oscuro ? const Color(0xFF2A2318) : const Color(0xFFF7ECDA);
     canvas.drawRRect(
       RRect.fromRectAndRadius(Offset.zero & size, const Radius.circular(4)),
       fondo,
     );
 
-    final bloque = Paint()..color = const Color(0xFFFDF6EC);
+    final bloque = Paint()
+      ..color = oscuro ? const Color(0xFF342B1E) : const Color(0xFFFDF6EC);
     canvas.drawRRect(
       RRect.fromRectAndRadius(
         Rect.fromLTWH(
@@ -140,7 +144,7 @@ class _MapaPintor extends CustomPainter {
     );
 
     final calle = Paint()
-      ..color = Colors.white
+      ..color = oscuro ? const Color(0xFF4A3F2E) : Colors.white
       ..style = PaintingStyle.stroke
       ..strokeWidth = size.height * 0.12
       ..strokeCap = StrokeCap.round;
@@ -150,7 +154,9 @@ class _MapaPintor extends CustomPainter {
       calle,
     );
     final calle2 = Paint()
-      ..color = Colors.white.withValues(alpha: 0.85)
+      ..color = (oscuro ? const Color(0xFF4A3F2E) : Colors.white).withValues(
+        alpha: 0.85,
+      )
       ..style = PaintingStyle.stroke
       ..strokeWidth = size.height * 0.07
       ..strokeCap = StrokeCap.round;
@@ -161,7 +167,8 @@ class _MapaPintor extends CustomPainter {
     );
 
     final via = Paint()
-      ..color = const Color(0xFFF3DCA8).withValues(alpha: 0.6)
+      ..color = (oscuro ? const Color(0xFF7A6230) : const Color(0xFFF3DCA8))
+          .withValues(alpha: 0.6)
       ..style = PaintingStyle.stroke
       ..strokeWidth = size.height * 0.035
       ..strokeCap = StrokeCap.round;
@@ -173,5 +180,6 @@ class _MapaPintor extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _MapaPintor oldDelegate) => false;
+  bool shouldRepaint(covariant _MapaPintor oldDelegate) =>
+      oldDelegate.oscuro != oscuro;
 }
