@@ -66,7 +66,9 @@ class ControladorHistorial {
     required Paciente? paciente,
     required String nombreCuidador,
     required FiltroHistorial filtro,
+    DateTime? generadoEn,
   }) async {
+    final momento = generadoEn ?? DateTime.now();
     return switch (formato) {
       FormatoExportacion.pdf => await generarPdfHistorial(
         registros: registros,
@@ -74,7 +76,7 @@ class ControladorHistorial {
         nombreCuidador: nombreCuidador,
         fechaInicio: filtro.inicio,
         fechaFin: filtro.fin,
-        generadoEn: DateTime.now(),
+        generadoEn: momento,
       ),
       FormatoExportacion.excel => generarExcelHistorial(
         registros: registros,
@@ -82,7 +84,7 @@ class ControladorHistorial {
         nombreCuidador: nombreCuidador,
         fechaInicio: filtro.inicio,
         fechaFin: filtro.fin,
-        generadoEn: DateTime.now(),
+        generadoEn: momento,
       ),
     };
   }

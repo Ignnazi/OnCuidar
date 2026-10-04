@@ -1,12 +1,15 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:oncuidar/app/tema/paleta.dart';
+import 'package:oncuidar/caracteristicas/biblioteca/presentacion/pantalla_visor_pdf.dart';
 import 'package:oncuidar/caracteristicas/historial/datos/archivo_exportacion.dart';
 import 'package:oncuidar/caracteristicas/historial/dominio/filtro_historial.dart';
 import 'package:oncuidar/caracteristicas/historial/presentacion/controlador_historial.dart';
+import 'package:oncuidar/caracteristicas/historial/presentacion/pantalla_vista_excel.dart';
 import 'package:oncuidar/caracteristicas/historial/presentacion/widgets/boton_cargar_mas.dart';
 import 'package:oncuidar/caracteristicas/historial/presentacion/widgets/cabecera_tarjeta_registro.dart';
 import 'package:oncuidar/caracteristicas/historial/presentacion/widgets/dialogo_rango_fechas.dart';
@@ -21,7 +24,6 @@ import 'package:oncuidar/caracteristicas/registro_clinico/dominio/registro_clini
 import 'package:oncuidar/caracteristicas/registro_clinico/presentacion/proveedores_registro_clinico.dart';
 import 'package:oncuidar/compartido/widgets/dialogo_confirmacion.dart';
 import 'package:oncuidar/compartido/widgets/encabezado_gradiente.dart';
-import 'package:open_filex/open_filex.dart';
 
 class HistorialScreen extends ConsumerStatefulWidget {
   const HistorialScreen({super.key, this.filtroFechaInicial});
@@ -230,15 +232,29 @@ class _HistorialScreenState extends ConsumerState<HistorialScreen> {
         _filtro,
         _filtradosActuales,
       );
+      final nombreCuidador = await _nombreCuidador();
+      final generadoEn = DateTime.now();
       final bytes = await _controlador.generar(
         formato,
         registros: registros,
         paciente: paciente,
-        nombreCuidador: await _nombreCuidador(),
+        nombreCuidador: nombreCuidador,
         filtro: _filtro,
+        generadoEn: generadoEn,
       );
       if (!mounted) return;
-      await _ofrecerArchivo(bytes, formato.extension);
+      await _ofrecerArchivo(
+        bytes,
+        formato,
+        DatosHojaExcel(
+          registros: registros,
+          paciente: paciente,
+          nombreCuidador: nombreCuidador,
+          fechaInicio: _filtro.inicio,
+          fechaFin: _filtro.fin,
+          generadoEn: generadoEn,
+        ),
+      );
     } catch (e) {
       if (mounted) {
         _snack('No se pudo generar el ${formato.nombre}: $e', Paleta.error);
@@ -257,28 +273,50 @@ class _HistorialScreenState extends ConsumerState<HistorialScreen> {
     }
   }
 
-  Future<void> _ofrecerArchivo(Uint8List bytes, String extension) async {
+  Future<void> _ofrecerArchivo(
+    Uint8List bytes,
+    FormatoExportacion formato,
+    DatosHojaExcel hoja,
+  ) async {
     final accion = await mostrarHojaExportacion(context);
     if (!mounted || accion == null) return;
+    Future<void> compartir() =>
+        compartirArchivoExportado(bytes, formato.extension);
     if (accion == AccionExportacion.compartir) {
-      await compartirArchivoExportado(bytes, extension);
-    } else {
-      await _abrirArchivo(bytes, extension);
+      await compartir();
+      return;
     }
+    await _abrirDentroDeLaApp(bytes, formato, hoja, compartir);
   }
 
-  Future<void> _abrirArchivo(Uint8List bytes, String extension) async {
-    final resultado = await abrirArchivoExportado(bytes, extension);
-    if (resultado.type == ResultType.noAppToOpen) {
-      if (!mounted) return;
-      _snack(
-        'No hay una app para abrir el archivo; se abre el menú de compartir',
-        Paleta.doradoOscuro,
-      );
-      await compartirArchivoExportado(bytes, extension);
-    } else if (resultado.type != ResultType.done) {
-      if (!mounted) return;
-      _snack('No se pudo abrir el archivo: ${resultado.message}', Paleta.error);
+  Future<void> _abrirDentroDeLaApp(
+    Uint8List bytes,
+    FormatoExportacion formato,
+    DatosHojaExcel hoja,
+    Future<void> Function() compartir,
+  ) async {
+    try {
+      switch (formato) {
+        case FormatoExportacion.pdf:
+          final archivo = await escribirArchivoTemporal(bytes, 'pdf');
+          if (!mounted) return;
+          await abrirVisorPdf(
+            context,
+            ruta: archivo.path,
+            titulo: 'Historial clínico',
+            alCompartir: () => unawaited(compartir()),
+          );
+        case FormatoExportacion.excel:
+          await abrirVistaExcel(
+            context,
+            datos: hoja,
+            alCompartir: () => unawaited(compartir()),
+          );
+      }
+    } catch (e) {
+      if (mounted) {
+        _snack('No se pudo abrir el archivo: $e', Paleta.error);
+      }
     }
   }
 

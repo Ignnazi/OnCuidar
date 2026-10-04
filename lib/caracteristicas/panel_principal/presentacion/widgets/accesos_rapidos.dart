@@ -99,7 +99,9 @@ class AccesosRapidos extends StatelessWidget {
         : acceso.color.withValues(alpha: 0.10);
     final colorTitulo = degradado ? Paleta.sobreDorado : Paleta.textoPrincipal;
     final colorSubtitulo = degradado
-        ? Colors.white.withValues(alpha: 0.85)
+        ? Paleta.sobreDorado.withValues(
+            alpha: Paleta.alfa(claro: 0.85, oscuro: 0.8),
+          )
         : Paleta.textoSecundario;
 
     return Material(
@@ -179,7 +181,7 @@ class AccesosRapidos extends StatelessWidget {
                   Icons.chevron_right,
                   size: 16,
                   color: degradado
-                      ? Colors.white.withValues(alpha: 0.8)
+                      ? Paleta.sobreDorado.withValues(alpha: 0.8)
                       : Paleta.textoSecundario,
                 ),
               ],

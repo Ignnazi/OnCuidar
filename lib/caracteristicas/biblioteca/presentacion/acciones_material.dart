@@ -36,12 +36,7 @@ Future<void> abrirArchivoMaterial(
     alDescargar?.call();
     if (material.esPdf) {
       unawaited(
-        Navigator.of(context).push(
-          MaterialPageRoute<void>(
-            builder: (_) =>
-                PantallaVisorPdf(ruta: archivo.path, titulo: material.titulo),
-          ),
-        ),
+        abrirVisorPdf(context, ruta: archivo.path, titulo: material.titulo),
       );
       return;
     }
