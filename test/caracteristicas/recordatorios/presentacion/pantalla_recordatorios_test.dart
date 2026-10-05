@@ -612,6 +612,45 @@ void main() {
     });
 
     testWidgets(
+      'el interruptor queda a la altura de la fila de los días, no más abajo',
+      (tester) async {
+        final (base, _) = await _baseDatos();
+        final idPaciente = await _sembrarPaciente(base);
+        final notif = _FakeNotificaciones();
+        final fecha = DateTime.now();
+        final id = await RepositorioRecordatorios(base).agregarRecordatorio(
+          idPaciente,
+          Recordatorio(
+            id: '',
+            pacienteId: idPaciente,
+            tipo: 'medicamento',
+            titulo: 'Tomar jarabe',
+            fechaHora: fecha,
+            diasRepeticion: const ['lun', 'mie'],
+            activo: true,
+            creadoEn: fecha,
+          ),
+        );
+        await _montar(tester, _pantalla(base, notif));
+
+        final interruptor = tester.getRect(find.byKey(Key('switchActivo_$id')));
+        final dias = tester.getRect(find.text('Lun'));
+        final tarjeta = tester.getRect(
+          find
+              .ancestor(
+                of: find.byKey(Key('switchActivo_$id')),
+                matching: find.byType(Container),
+              )
+              .last,
+        );
+
+        expect((interruptor.center.dy - dias.center.dy).abs(), lessThan(12));
+        expect(tarjeta.bottom - interruptor.bottom, lessThan(20));
+        expect(interruptor.left, greaterThan(dias.right));
+      },
+    );
+
+    testWidgets(
       'el interruptor de cada recordatorio va abajo a la derecha y más grande',
       (tester) async {
         final (base, _) = await _baseDatos();

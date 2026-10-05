@@ -11,11 +11,11 @@ import 'package:oncuidar/caracteristicas/historial/dominio/filtro_historial.dart
 import 'package:oncuidar/caracteristicas/historial/presentacion/controlador_historial.dart';
 import 'package:oncuidar/caracteristicas/historial/presentacion/pantalla_vista_excel.dart';
 import 'package:oncuidar/caracteristicas/historial/presentacion/widgets/boton_cargar_mas.dart';
+import 'package:oncuidar/caracteristicas/historial/presentacion/widgets/boton_nuevo_registro.dart';
 import 'package:oncuidar/caracteristicas/historial/presentacion/widgets/cabecera_tarjeta_registro.dart';
 import 'package:oncuidar/caracteristicas/historial/presentacion/widgets/dialogo_rango_fechas.dart';
 import 'package:oncuidar/caracteristicas/historial/presentacion/widgets/estado_vacio.dart';
 import 'package:oncuidar/caracteristicas/historial/presentacion/widgets/filtros_historial.dart';
-import 'package:oncuidar/caracteristicas/historial/presentacion/widgets/hoja_exportacion.dart';
 import 'package:oncuidar/caracteristicas/historial/presentacion/widgets/tarjeta_registro.dart';
 import 'package:oncuidar/caracteristicas/pacientes/presentacion/proveedores_pacientes.dart';
 import 'package:oncuidar/caracteristicas/perfil/presentacion/proveedores_perfil.dart';
@@ -243,7 +243,7 @@ class _HistorialScreenState extends ConsumerState<HistorialScreen> {
         generadoEn: generadoEn,
       );
       if (!mounted) return;
-      await _ofrecerArchivo(
+      await _abrirDentroDeLaApp(
         bytes,
         formato,
         DatosHojaExcel(
@@ -273,28 +273,15 @@ class _HistorialScreenState extends ConsumerState<HistorialScreen> {
     }
   }
 
-  Future<void> _ofrecerArchivo(
-    Uint8List bytes,
-    FormatoExportacion formato,
-    DatosHojaExcel hoja,
-  ) async {
-    final accion = await mostrarHojaExportacion(context);
-    if (!mounted || accion == null) return;
-    Future<void> compartir() =>
-        compartirArchivoExportado(bytes, formato.extension);
-    if (accion == AccionExportacion.compartir) {
-      await compartir();
-      return;
-    }
-    await _abrirDentroDeLaApp(bytes, formato, hoja, compartir);
-  }
-
   Future<void> _abrirDentroDeLaApp(
     Uint8List bytes,
     FormatoExportacion formato,
     DatosHojaExcel hoja,
-    Future<void> Function() compartir,
   ) async {
+    Future<void> compartir() =>
+        compartirArchivoExportado(bytes, formato.extension);
+    Future<bool> descargar() =>
+        descargarArchivoExportado(bytes, formato.extension);
     try {
       switch (formato) {
         case FormatoExportacion.pdf:
@@ -305,12 +292,14 @@ class _HistorialScreenState extends ConsumerState<HistorialScreen> {
             ruta: archivo.path,
             titulo: 'Historial clínico',
             alCompartir: () => unawaited(compartir()),
+            alDescargar: descargar,
           );
         case FormatoExportacion.excel:
           await abrirVistaExcel(
             context,
             datos: hoja,
             alCompartir: () => unawaited(compartir()),
+            alDescargar: descargar,
           );
       }
     } catch (e) {

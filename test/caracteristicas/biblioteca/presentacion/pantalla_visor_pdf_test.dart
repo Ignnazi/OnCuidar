@@ -177,4 +177,9 @@ void main() {
     );
     expect(_material().esPdf, isFalse);
   });
+
+  testWidgets('tiene el botón para girar a pantalla completa', (tester) async {
+    await abrir(tester);
+    expect(find.byKey(const Key('girarVisor')), findsOneWidget);
+  });
 }

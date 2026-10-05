@@ -152,7 +152,14 @@ void main() {
     );
     expect(find.byType(AppBar), findsOneWidget);
     expect(find.text('Cómo medir la fiebre'), findsOneWidget);
-    expect(find.byIcon(Icons.fullscreen), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(AppBar),
+        matching: find.byIcon(Icons.screen_rotation_rounded),
+      ),
+      findsOneWidget,
+    );
+    expect(find.byIcon(Icons.fullscreen), findsNothing);
     expect(video.llamadas, contains('play'));
 
     await cerrar(tester);
@@ -174,7 +181,7 @@ void main() {
         'DeviceOrientation.landscapeRight',
       ]);
       expect(find.byType(AppBar), findsNothing);
-      expect(find.byIcon(Icons.fullscreen_exit), findsOneWidget);
+      expect(find.byIcon(Icons.screen_lock_portrait_rounded), findsOneWidget);
       expect(contenedor.read(pantallaCompletaProvider), isTrue);
 
       await tester.tap(find.byKey(const Key('alternarPantallaCompleta')));
@@ -297,6 +304,26 @@ void main() {
     await tester.tap(find.byIcon(Icons.replay_10_rounded));
     await tester.pump();
     expect(video.llamadas.last, 'seek:30');
+
+    await cerrar(tester);
+  });
+
+  testWidgets('el botón reiniciar vuelve al inicio y reproduce', (
+    tester,
+  ) async {
+    await abrir(tester);
+    video.posicion = const Duration(seconds: 45);
+    await tester.pump(const Duration(milliseconds: 600));
+    await tester.tap(find.byIcon(Icons.pause_rounded));
+    await tester.pump();
+
+    await tester.tap(find.byKey(const Key('reiniciarVideo')));
+    await tester.pump();
+
+    final busqueda = video.llamadas.lastIndexOf('seek:0');
+    expect(busqueda, greaterThanOrEqualTo(0));
+    // Después de volver al inicio, se reproduce.
+    expect(video.llamadas.sublist(busqueda), contains('play'));
 
     await cerrar(tester);
   });

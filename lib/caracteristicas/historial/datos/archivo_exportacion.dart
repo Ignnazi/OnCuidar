@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:flutter_file_dialog/flutter_file_dialog.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -21,6 +22,28 @@ Future<File> escribirArchivoTemporal(Uint8List bytes, String extension) async {
   );
   await archivo.writeAsBytes(bytes, flush: true);
   return archivo;
+}
+
+Future<bool> descargarArchivoExportado(
+  Uint8List bytes,
+  String extension,
+) async {
+  try {
+    final ruta = await FlutterFileDialog.saveFile(
+      params: SaveFileDialogParams(
+        data: bytes,
+        fileName: nombreArchivoExportacion(DateTime.now(), extension),
+        mimeTypesFilter: [
+          extension == 'pdf'
+              ? 'application/pdf'
+              : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ],
+      ),
+    );
+    return ruta != null;
+  } catch (_) {
+    return false;
+  }
 }
 
 Future<void> compartirArchivoExportado(
