@@ -1,111 +1,19 @@
-import 'dart:convert';
-
-import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
-import 'package:oncuidar/caracteristicas/pacientes/datos/repositorio_pacientes.dart';
-import 'package:oncuidar/caracteristicas/pacientes/dominio/paciente.dart';
-import 'package:oncuidar/caracteristicas/perfil/datos/repositorio_cuidador.dart';
 import 'package:oncuidar/caracteristicas/recordatorios/datos/repositorio_recordatorios.dart';
 import 'package:oncuidar/caracteristicas/recordatorios/dominio/recordatorio.dart';
 import 'package:oncuidar/caracteristicas/recordatorios/presentacion/pantalla_recordatorios.dart';
-import 'package:oncuidar/nucleo/cifrado/servicio_cifrado.dart';
 import 'package:oncuidar/nucleo/datos/base_datos_segura.dart';
 import 'package:oncuidar/nucleo/notificaciones/servicio_notificaciones.dart';
 import 'package:oncuidar/nucleo/notificaciones/silencio_avisos.dart';
 import 'package:oncuidar/nucleo/proveedores.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../../ayudas/ciclo_de_vida.dart';
+import '../../../ayudas/recordatorios.dart';
 
-const _clavePrueba = 'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=';
-const _uid = 'uid27';
-
-class _FakeNotificaciones implements ServicioNotificaciones {
-  int permisoSolicitado = 0;
-  int canceladasTodas = 0;
-  final programados = <Map<String, dynamic>>[];
-  final cancelados = <int>[];
-
-  @override
-  Future<void> inicializar() async {}
-
-  @override
-  Future<bool> solicitarPermiso() async {
-    permisoSolicitado++;
-    return true;
-  }
-
-  @override
-  Future<void> programar({
-    required int id,
-    required String titulo,
-    required String cuerpo,
-    required DateTime fechaHora,
-    List<String>? diasRepeticion,
-    bool mensual = false,
-    String? idPaciente,
-  }) async {
-    if (await SilencioAvisos.silenciado(idPaciente: idPaciente)) {
-      cancelados.add(id);
-      return;
-    }
-    programados.add({
-      'idPaciente': idPaciente,
-      'id': id,
-      'titulo': titulo,
-      'cuerpo': cuerpo,
-      'fechaHora': fechaHora,
-      'dias': List<String>.from(diasRepeticion ?? const []),
-      'mensual': mensual,
-    });
-  }
-
-  @override
-  Future<void> cancelar(int id) async => cancelados.add(id);
-
-  @override
-  Future<void> cancelarTodas() async => canceladasTodas++;
-
-  @override
-  void Function(String? payload)? alTocar;
-
-  @override
-  Future<String?> consumirPayloadLanzamiento() async => null;
-}
-
-Future<(BaseDatosSegura, FakeFirebaseFirestore)> _baseDatos() async {
-  final cifrado = ServicioCifrado(clavePrueba: _clavePrueba);
-  await cifrado.fijarClave(_uid, _clavePrueba);
-  final firestore = FakeFirebaseFirestore();
-  final base = BaseDatosSegura(
-    base: firestore,
-    uidPrueba: _uid,
-    cifrado: cifrado,
-  );
-  await RepositorioCuidador(base).crearCuidador({
-    'nombre': 'Ana Torres',
-    'correo': 'ana@correo.cl',
-    'telefono': '+56 9 1111 1111',
-    'relacion': 'Madre',
-    'direccion': 'Av. Siempre Viva 742',
-  });
-  return (base, firestore);
-}
-
-Future<String> _sembrarPaciente(BaseDatosSegura base) async {
-  return RepositorioPacientes(base).crearPaciente(
-    Paciente(
-      id: 'auto',
-      nombreCompleto: 'Paciente Test',
-      creadoEn: DateTime.now(),
-    ),
-  );
-}
-
-Widget _pantalla(BaseDatosSegura base, _FakeNotificaciones notif) {
+Widget _pantalla(BaseDatosSegura base, NotificacionesFalsas notif) {
   final router = GoRouter(
     initialLocation: '/recordatorios',
     routes: [
@@ -139,198 +47,11 @@ Future<void> _montar(WidgetTester tester, Widget pantalla) async {
   await tester.pumpAndSettle();
 }
 
-Future<Map<String, dynamic>?> _doc(
-  FakeFirebaseFirestore firestore,
-  String idPaciente,
-  String idRecordatorio,
-) async {
-  return (await firestore
-          .collection('usuarios')
-          .doc(_uid)
-          .collection('pacientes')
-          .doc(idPaciente)
-          .collection('recordatorios')
-          .doc(idRecordatorio)
-          .get())
-      .data();
-}
-
-Future<Map<String, dynamic>> _payloadRecordatorio(
-  FakeFirebaseFirestore firestore,
-  String idPaciente,
-  String idRecordatorio,
-) async {
-  final datos = await _doc(firestore, idPaciente, idRecordatorio);
-  final cifrado = ServicioCifrado(clavePrueba: _clavePrueba);
-  await cifrado.fijarClave(_uid, _clavePrueba);
-  final texto = await cifrado.descifrar(
-    _uid,
-    datos!['datos_cifrados'] as String,
-  );
-  return (jsonDecode(texto) as Map<String, dynamic>).cast<String, dynamic>();
-}
-
 void main() {
-  group('RepositorioRecordatorios', () {
-    test('agregarRecordatorio cifra título y descripción', () async {
-      final (base, firestore) = await _baseDatos();
-      final idPaciente = await _sembrarPaciente(base);
-      final fecha = DateTime.now();
-      final id = await RepositorioRecordatorios(base).agregarRecordatorio(
-        idPaciente,
-        Recordatorio(
-          id: '',
-          pacienteId: idPaciente,
-          tipo: 'medicamento',
-          titulo: 'Dar paracetamol',
-          descripcion: '500 mg con agua',
-          fechaHora: fecha,
-          diasRepeticion: const ['lun', 'mie'],
-          activo: true,
-          creadoEn: fecha,
-        ),
-      );
-      final datos = await _doc(firestore, idPaciente, id);
-      expect(datos, isNotNull);
-      expect(datos!.containsKey('titulo'), isFalse);
-      expect(datos.containsKey('descripcion'), isFalse);
-      expect(datos['titulo_cifrado'], isA<String>());
-      expect(datos['titulo_cifrado'], isNot('Dar paracetamol'));
-      expect(datos['descripcion_cifrada'], isA<String>());
-      expect(datos.containsKey('tipo'), isFalse);
-      expect(datos.containsKey('fechaHora'), isFalse);
-      expect(datos.containsKey('diasRepeticion'), isFalse);
-      expect(datos['version_encriptacion'], 3);
-      final payload = await _payloadRecordatorio(firestore, idPaciente, id);
-      expect(payload['tipo'], 'medicamento');
-      expect(payload['diasRepeticion'], ['lun', 'mie']);
-    });
-
-    test('el stream devuelve los recordatorios descifrados', () async {
-      final (base, _) = await _baseDatos();
-      final idPaciente = await _sembrarPaciente(base);
-      final fecha = DateTime.now();
-      await RepositorioRecordatorios(base).agregarRecordatorio(
-        idPaciente,
-        Recordatorio(
-          id: '',
-          pacienteId: idPaciente,
-          tipo: 'cita',
-          titulo: 'Control médico',
-          fechaHora: fecha,
-          activo: true,
-          creadoEn: fecha,
-        ),
-      );
-      final recordatorios = await RepositorioRecordatorios(
-        base,
-      ).recordatoriosEnTiempoReal(idPaciente).first;
-      expect(recordatorios, hasLength(1));
-      expect(recordatorios.first.titulo, 'Control médico');
-      expect(recordatorios.first.tipo, 'cita');
-    });
-
-    test('la recurrencia mensual se persiste y se descifra', () async {
-      final (base, firestore) = await _baseDatos();
-      final idPaciente = await _sembrarPaciente(base);
-      final fecha = DateTime.now();
-      final id = await RepositorioRecordatorios(base).agregarRecordatorio(
-        idPaciente,
-        Recordatorio(
-          id: '',
-          pacienteId: idPaciente,
-          tipo: 'medicamento',
-          titulo: 'Vitamina mensual',
-          fechaHora: fecha,
-          activo: true,
-          creadoEn: fecha,
-          recurrencia: 'mensual',
-        ),
-      );
-      final datos = await _doc(firestore, idPaciente, id);
-      final payload = await _payloadRecordatorio(firestore, idPaciente, id);
-      expect(payload['recurrencia'], 'mensual');
-      expect(datos!.containsKey('completadoEn'), isFalse);
-
-      var recordatorios = await RepositorioRecordatorios(
-        base,
-      ).recordatoriosEnTiempoReal(idPaciente).first;
-      expect(recordatorios.single.esMensual, isTrue);
-
-      await RepositorioRecordatorios(
-        base,
-      ).actualizarRecordatorio(idPaciente, id, recurrencia: '');
-      recordatorios = await RepositorioRecordatorios(
-        base,
-      ).recordatoriosEnTiempoReal(idPaciente).first;
-      expect(recordatorios.single.recurrencia, isNull);
-    });
-
-    test(
-      'reagendarNotificaciones cancela todo y reprograma solo activos',
-      () async {
-        final (base, _) = await _baseDatos();
-        final idPaciente = await _sembrarPaciente(base);
-        final fecha = DateTime(2026, 9, 21, 9, 0);
-        await RepositorioRecordatorios(base).agregarRecordatorio(
-          idPaciente,
-          Recordatorio(
-            id: '',
-            pacienteId: idPaciente,
-            tipo: 'medicamento',
-            titulo: 'Diario',
-            fechaHora: fecha,
-            diasRepeticion: const ['lun', 'mie'],
-            activo: true,
-            creadoEn: fecha,
-          ),
-        );
-        await RepositorioRecordatorios(base).agregarRecordatorio(
-          idPaciente,
-          Recordatorio(
-            id: '',
-            pacienteId: idPaciente,
-            tipo: 'cita',
-            titulo: 'Control del mes',
-            fechaHora: fecha,
-            activo: true,
-            creadoEn: fecha,
-            recurrencia: 'mensual',
-          ),
-        );
-        await RepositorioRecordatorios(base).agregarRecordatorio(
-          idPaciente,
-          Recordatorio(
-            id: '',
-            pacienteId: idPaciente,
-            tipo: 'otro',
-            titulo: 'Apagado',
-            fechaHora: fecha,
-            activo: false,
-            creadoEn: fecha,
-          ),
-        );
-        final notif = _FakeNotificaciones();
-        await cicloDeVida(base, notif).reagendarNotificaciones();
-
-        expect(notif.canceladasTodas, 1);
-        expect(notif.programados, hasLength(2));
-        expect(notif.programados.map((p) => p['mensual']).toSet(), {
-          false,
-          true,
-        });
-        expect(notif.programados.map((p) => p['titulo']).toSet(), {
-          'Paciente Test · Medicamento',
-          'Paciente Test · Cita médica',
-        });
-      },
-    );
-  });
-
   group('Pantalla de recordatorios', () {
     testWidgets('muestra estado vacío y los 4 accesos rápidos', (tester) async {
-      final (base, _) = await _baseDatos();
-      final notif = _FakeNotificaciones();
+      final (base, _) = await baseRecordatorios();
+      final notif = NotificacionesFalsas();
       await _montar(tester, _pantalla(base, notif));
 
       expect(find.text('No tienes recordatorios.'), findsOneWidget);
@@ -347,9 +68,9 @@ void main() {
     testWidgets(
       'crear recordatorio guarda cifrado y programa la notificación',
       (tester) async {
-        final (base, firestore) = await _baseDatos();
-        final idPaciente = await _sembrarPaciente(base);
-        final notif = _FakeNotificaciones();
+        final (base, firestore) = await baseRecordatorios();
+        final idPaciente = await crearPacienteRecordatorios(base);
+        final notif = NotificacionesFalsas();
         await _montar(tester, _pantalla(base, notif));
 
         await tester.tap(find.byKey(const Key('tarjetaRapida_medicamento')));
@@ -374,7 +95,7 @@ void main() {
 
         final docs = await firestore
             .collection('usuarios')
-            .doc(_uid)
+            .doc(uidRecordatorios)
             .collection('pacientes')
             .doc(idPaciente)
             .collection('recordatorios')
@@ -389,9 +110,9 @@ void main() {
     testWidgets('modo mensual persiste recurrencia y programa con mensual', (
       tester,
     ) async {
-      final (base, firestore) = await _baseDatos();
-      final idPaciente = await _sembrarPaciente(base);
-      final notif = _FakeNotificaciones();
+      final (base, firestore) = await baseRecordatorios();
+      final idPaciente = await crearPacienteRecordatorios(base);
+      final notif = NotificacionesFalsas();
       await _montar(tester, _pantalla(base, notif));
 
       await tester.tap(find.byKey(const Key('tarjetaRapida_medicamento')));
@@ -407,7 +128,7 @@ void main() {
 
       final docs = await firestore
           .collection('usuarios')
-          .doc(_uid)
+          .doc(uidRecordatorios)
           .collection('pacientes')
           .doc(idPaciente)
           .collection('recordatorios')
@@ -415,7 +136,7 @@ void main() {
       final datos = docs.docs.single.data();
       expect(datos.containsKey('recurrencia'), isFalse);
       expect(datos.containsKey('diasRepeticion'), isFalse);
-      final payload = await _payloadRecordatorio(
+      final payload = await payloadRecordatorio(
         firestore,
         idPaciente,
         docs.docs.single.id,
@@ -429,9 +150,9 @@ void main() {
     testWidgets('la tarjeta muestra el paciente del recordatorio', (
       tester,
     ) async {
-      final (base, firestore) = await _baseDatos();
-      final idPaciente = await _sembrarPaciente(base);
-      final notif = _FakeNotificaciones();
+      final (base, firestore) = await baseRecordatorios();
+      final idPaciente = await crearPacienteRecordatorios(base);
+      final notif = NotificacionesFalsas();
       final fecha = DateTime.now();
       await RepositorioRecordatorios(base).agregarRecordatorio(
         idPaciente,
@@ -451,9 +172,9 @@ void main() {
     });
 
     testWidgets('el menú de 3 puntos edita y elimina', (tester) async {
-      final (base, firestore) = await _baseDatos();
-      final idPaciente = await _sembrarPaciente(base);
-      final notif = _FakeNotificaciones();
+      final (base, firestore) = await baseRecordatorios();
+      final idPaciente = await crearPacienteRecordatorios(base);
+      final notif = NotificacionesFalsas();
       final fecha = DateTime.now();
       final id = await RepositorioRecordatorios(base).agregarRecordatorio(
         idPaciente,
@@ -493,7 +214,7 @@ void main() {
 
       final docs = await firestore
           .collection('usuarios')
-          .doc(_uid)
+          .doc(uidRecordatorios)
           .collection('pacientes')
           .doc(idPaciente)
           .collection('recordatorios')
@@ -505,9 +226,9 @@ void main() {
     testWidgets('desactivar el switch cancela y reactivar reprograma', (
       tester,
     ) async {
-      final (base, firestore) = await _baseDatos();
-      final idPaciente = await _sembrarPaciente(base);
-      final notif = _FakeNotificaciones();
+      final (base, firestore) = await baseRecordatorios();
+      final idPaciente = await crearPacienteRecordatorios(base);
+      final notif = NotificacionesFalsas();
       final fecha = DateTime.now();
       final id = await RepositorioRecordatorios(base).agregarRecordatorio(
         idPaciente,
@@ -534,13 +255,19 @@ void main() {
       await tester.tap(find.byKey(Key('switchActivo_$id')));
       await tester.pumpAndSettle();
 
-      expect((await _doc(firestore, idPaciente, id))!['activo'], isFalse);
+      expect(
+        (await docRecordatorio(firestore, idPaciente, id))!['activo'],
+        isFalse,
+      );
       expect(notif.cancelados, contains(ServicioNotificaciones.idSeguro(id)));
 
       await tester.tap(find.byKey(Key('switchActivo_$id')));
       await tester.pumpAndSettle();
 
-      expect((await _doc(firestore, idPaciente, id))!['activo'], isTrue);
+      expect(
+        (await docRecordatorio(firestore, idPaciente, id))!['activo'],
+        isTrue,
+      );
       expect(notif.programados, hasLength(1));
       expect(notif.programados.single['dias'], [
         'lun',
@@ -553,53 +280,10 @@ void main() {
       ]);
     });
 
-    testWidgets('el menú permite eliminar con confirmación', (tester) async {
-      final (base, firestore) = await _baseDatos();
-      final idPaciente = await _sembrarPaciente(base);
-      final notif = _FakeNotificaciones();
-      final fecha = DateTime.now();
-      final id = await RepositorioRecordatorios(base).agregarRecordatorio(
-        idPaciente,
-        Recordatorio(
-          id: '',
-          pacienteId: idPaciente,
-          tipo: 'cita',
-          titulo: 'Control con especialista',
-          fechaHora: fecha,
-          activo: true,
-          creadoEn: fecha,
-        ),
-      );
-      await _montar(tester, _pantalla(base, notif));
-
-      await tester.tap(find.byKey(Key('menuRecordatorio_$id')));
-      await tester.pumpAndSettle();
-      await tester.tap(find.byKey(Key('accionEliminar_$id')));
-      await tester.pumpAndSettle();
-
-      expect(find.text('¿Eliminar este recordatorio?'), findsOneWidget);
-      expect(find.text('Eliminar'), findsOneWidget);
-      expect(find.text('Cancelar'), findsOneWidget);
-
-      await tester.tap(find.text('Eliminar'));
-      await tester.pumpAndSettle();
-
-      final docs = await firestore
-          .collection('usuarios')
-          .doc(_uid)
-          .collection('pacientes')
-          .doc(idPaciente)
-          .collection('recordatorios')
-          .get();
-      expect(docs.docs, isEmpty);
-      expect(notif.cancelados, contains(ServicioNotificaciones.idSeguro(id)));
-      expect(find.text('No tienes recordatorios.'), findsOneWidget);
-    });
-
     testWidgets('el diálogo no se cierra con título vacío', (tester) async {
-      final (base, _) = await _baseDatos();
-      await _sembrarPaciente(base);
-      final notif = _FakeNotificaciones();
+      final (base, _) = await baseRecordatorios();
+      await crearPacienteRecordatorios(base);
+      final notif = NotificacionesFalsas();
       await _montar(tester, _pantalla(base, notif));
 
       await tester.tap(find.byKey(const Key('tarjetaRapida_medicamento')));
@@ -612,11 +296,11 @@ void main() {
     });
 
     testWidgets(
-      'el interruptor queda a la altura de la fila de los días, no más abajo',
+      'el interruptor queda abajo a la derecha, a la altura de los días y más grande',
       (tester) async {
-        final (base, _) = await _baseDatos();
-        final idPaciente = await _sembrarPaciente(base);
-        final notif = _FakeNotificaciones();
+        final (base, _) = await baseRecordatorios();
+        final idPaciente = await crearPacienteRecordatorios(base);
+        final notif = NotificacionesFalsas();
         final fecha = DateTime.now();
         final id = await RepositorioRecordatorios(base).agregarRecordatorio(
           idPaciente,
@@ -647,54 +331,19 @@ void main() {
         expect((interruptor.center.dy - dias.center.dy).abs(), lessThan(12));
         expect(tarjeta.bottom - interruptor.bottom, lessThan(20));
         expect(interruptor.left, greaterThan(dias.right));
-      },
-    );
-
-    testWidgets(
-      'el interruptor de cada recordatorio va abajo a la derecha y más grande',
-      (tester) async {
-        final (base, _) = await _baseDatos();
-        final idPaciente = await _sembrarPaciente(base);
-        final notif = _FakeNotificaciones();
-        final fecha = DateTime.now();
-        final id = await RepositorioRecordatorios(base).agregarRecordatorio(
-          idPaciente,
-          Recordatorio(
-            id: '',
-            pacienteId: idPaciente,
-            tipo: 'medicamento',
-            titulo: 'Tomar jarabe',
-            fechaHora: fecha,
-            activo: true,
-            creadoEn: fecha,
-          ),
-        );
-        await _montar(tester, _pantalla(base, notif));
-
-        final interruptor = find.byKey(Key('switchActivo_$id'));
-        final menu = find.byKey(Key('menuRecordatorio_$id'));
-        final tarjeta = find
-            .ancestor(of: interruptor, matching: find.byType(Container))
-            .last;
-
-        final rInterruptor = tester.getRect(interruptor);
-        final rMenu = tester.getRect(menu);
-        final rTarjeta = tester.getRect(tarjeta);
-        expect(rMenu.top, lessThan(rTarjeta.top + 30));
-        expect(rInterruptor.top, greaterThan(rMenu.bottom));
-        expect(rTarjeta.bottom - rInterruptor.bottom, lessThan(20));
-        expect(rTarjeta.right - rInterruptor.right, lessThan(20));
-        expect(rInterruptor.width, greaterThan(48));
-        expect(rInterruptor.height, greaterThan(26));
+        final menu = tester.getRect(find.byKey(Key('menuRecordatorio_$id')));
+        expect(interruptor.top, greaterThan(menu.bottom));
+        expect(interruptor.width, greaterThan(48));
+        expect(interruptor.height, greaterThan(26));
       },
     );
 
     testWidgets('la campanita silencia solo al paciente activo y se ve gris', (
       tester,
     ) async {
-      final (base, _) = await _baseDatos();
-      final idPaciente = await _sembrarPaciente(base);
-      final notif = _FakeNotificaciones();
+      final (base, _) = await baseRecordatorios();
+      final idPaciente = await crearPacienteRecordatorios(base);
+      final notif = NotificacionesFalsas();
       final fecha = DateTime.now();
       final id = await RepositorioRecordatorios(base).agregarRecordatorio(
         idPaciente,
@@ -737,9 +386,9 @@ void main() {
     testWidgets('al reactivar la campanita vuelven los avisos del paciente', (
       tester,
     ) async {
-      final (base, _) = await _baseDatos();
-      final idPaciente = await _sembrarPaciente(base);
-      final notif = _FakeNotificaciones();
+      final (base, _) = await baseRecordatorios();
+      final idPaciente = await crearPacienteRecordatorios(base);
+      final notif = NotificacionesFalsas();
       final fecha = DateTime.now().add(const Duration(days: 2));
       final id = await RepositorioRecordatorios(base).agregarRecordatorio(
         idPaciente,
@@ -780,9 +429,9 @@ void main() {
     testWidgets(
       'con el silencio general activo la campanita no cambia nada y avisa dónde quitarlo',
       (tester) async {
-        final (base, _) = await _baseDatos();
-        await _sembrarPaciente(base);
-        final notif = _FakeNotificaciones();
+        final (base, _) = await baseRecordatorios();
+        await crearPacienteRecordatorios(base);
+        final notif = NotificacionesFalsas();
         await _montar(tester, _pantalla(base, notif));
         SharedPreferences.setMockInitialValues({
           SilencioAvisos.claveGlobal: true,

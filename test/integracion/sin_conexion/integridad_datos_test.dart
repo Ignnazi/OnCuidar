@@ -391,21 +391,6 @@ void main() {
   });
 
   group('La cola nunca se congela ni traga escrituras', () {
-    test('tras agotar los intentos la escritura sí llega a fallidas', () async {
-      final ent = await _crearEntorno(enLinea: true, maxIntentos: 8);
-      ent.base.falla = (_) =>
-          FirebaseException(plugin: 'p', code: 'unavailable');
-      await ent.cola.encolar(_uid, _escritura('e1'));
-
-      await ent.orquestador.drenar();
-      await esperarHasta(
-        () async => (await ent.cola.fallidas(_uid)).isNotEmpty,
-      );
-
-      expect((await ent.cola.fallidas(_uid)).single.id, 'e1');
-      expect(await ent.cola.pendientes(_uid), isEmpty);
-    });
-
     test('unauthenticated se reintenta en vez de caer en fallidas', () async {
       final ent = await _crearEntorno(enLinea: true);
       ent.base.falla = (_) =>

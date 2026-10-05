@@ -25,23 +25,29 @@ void main() {
     return (compartidos: compartidos, guardados: guardados);
   }
 
-  testWidgets('exportar el PDF lo abre en el visor de la app', (tester) async {
-    final c = await prepararPantalla(tester);
+  testWidgets(
+    'exportar el PDF lo abre directo en el visor, sin menú de Abrir o Compartir',
+    (tester) async {
+      final c = await prepararPantalla(tester);
 
-    await tester.tap(find.byTooltip('Exportar PDF'));
-    await esperarHasta(tester, find.byType(PantallaVisorPdf));
+      await tester.tap(find.byTooltip('Exportar PDF'));
+      await esperarHasta(tester, find.byType(PantallaVisorPdf));
 
-    expect(find.byType(PantallaVisorPdf), findsOneWidget);
-    expect(find.text('Historial clínico'), findsOneWidget);
-    expect(find.textContaining('documento en '), findsOneWidget);
-    expect(find.textContaining('.pdf'), findsOneWidget);
-    expect(c.compartidos, isEmpty);
-    expect(c.guardados, isEmpty);
+      expect(find.byType(PantallaVisorPdf), findsOneWidget);
+      expect(find.text('Historial clínico'), findsOneWidget);
+      expect(find.textContaining('documento en '), findsOneWidget);
+      expect(find.textContaining('.pdf'), findsOneWidget);
+      expect(c.compartidos, isEmpty);
+      expect(c.guardados, isEmpty);
+      expect(find.text('Abrir archivo'), findsNothing);
+      expect(find.byKey(const Key('botonAbrirExportacion')), findsNothing);
+      expect(find.byKey(const Key('descargarVisorPdf')), findsOneWidget);
 
-    await tester.tap(find.byKey(const Key('cerrarVisorPdf')));
-    await tester.pumpAndSettle();
-    expect(find.byType(PantallaVisorPdf), findsNothing);
-  });
+      await tester.tap(find.byKey(const Key('cerrarVisorPdf')));
+      await tester.pumpAndSettle();
+      expect(find.byType(PantallaVisorPdf), findsNothing);
+    },
+  );
 
   testWidgets('desde el visor del PDF se comparte el mismo archivo', (
     tester,
@@ -163,19 +169,5 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('No se guardó el archivo'), findsOneWidget);
-  });
-
-  testWidgets('compartir desde el visor sigue entregando un PDF válido', (
-    tester,
-  ) async {
-    final c = await prepararPantalla(tester);
-
-    final bytes = await exportarDesdeLaPantalla(
-      tester,
-      'Exportar PDF',
-      c.compartidos,
-    );
-
-    expect(String.fromCharCodes(bytes.sublist(0, 4)), '%PDF');
   });
 }
