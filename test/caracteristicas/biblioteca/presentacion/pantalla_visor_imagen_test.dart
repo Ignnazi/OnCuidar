@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -9,6 +8,7 @@ import 'package:oncuidar/app/proveedores_navegacion.dart';
 import 'package:oncuidar/caracteristicas/biblioteca/datos/proveedores_biblioteca.dart';
 import 'package:oncuidar/caracteristicas/biblioteca/datos/servicio_cache_contenido.dart';
 import 'package:oncuidar/caracteristicas/biblioteca/presentacion/pantalla_visor_imagen.dart';
+import 'package:oncuidar/compartido/widgets/visor_con_zoom.dart';
 import 'package:oncuidar/nucleo/cifrado/servicio_cifrado.dart';
 import 'package:oncuidar/nucleo/datos/base_datos_segura.dart';
 import 'package:oncuidar/nucleo/proveedores.dart';
@@ -73,15 +73,8 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  double escala(WidgetTester tester) => tester
-      .widget<InteractiveViewer>(find.byType(InteractiveViewer))
-      .transformationController!
-      .value
-      .getMaxScaleOnAxis();
-
-  double opacidadBarra(WidgetTester tester) => tester
-      .widget<AnimatedOpacity>(find.byKey(const Key('barraVisorImagen')))
-      .opacity;
+  double escala(WidgetTester tester) =>
+      tester.state<EstadoVisorConZoom>(find.byType(VisorConZoom)).escalaTotal;
 
   testWidgets('se abre a pantalla completa sobre fondo oscuro', (tester) async {
     await abrir(tester);
@@ -94,28 +87,34 @@ void main() {
     );
     expect(scaffold.backgroundColor!.computeLuminance(), lessThan(0.01));
     expect(find.text('Guía de seguimiento'), findsOneWidget);
-    expect(contenedor.read(pantallaCompletaProvider), isTrue);
     final visor = tester.widget<InteractiveViewer>(
       find.byType(InteractiveViewer),
     );
     expect(visor.minScale, 1);
-    expect(visor.maxScale, 5);
+    expect(visor.maxScale, 8);
   });
 
-  testWidgets('un toque oculta y muestra la barra superior', (tester) async {
-    await abrir(tester);
-    expect(opacidadBarra(tester), 1);
+  testWidgets(
+    'es la misma pantalla que las guías: barra dorada y botones de zoom',
+    (tester) async {
+      await abrir(tester);
 
-    await tester.tap(find.byKey(const Key('areaVisorImagen')));
-    await tester.pump(kDoubleTapTimeout + const Duration(milliseconds: 50));
-    await tester.pumpAndSettle();
-    expect(opacidadBarra(tester), 0);
-
-    await tester.tap(find.byKey(const Key('areaVisorImagen')));
-    await tester.pump(kDoubleTapTimeout + const Duration(milliseconds: 50));
-    await tester.pumpAndSettle();
-    expect(opacidadBarra(tester), 1);
-  });
+      expect(find.byType(VisorConZoom), findsOneWidget);
+      expect(find.byKey(const Key('zoomMas')), findsOneWidget);
+      final fondo = tester.getSize(
+        find.descendant(
+          of: find.byType(AppBar),
+          matching: find.byWidgetPredicate(
+            (w) =>
+                w is DecoratedBox &&
+                w.decoration is BoxDecoration &&
+                (w.decoration as BoxDecoration).gradient != null,
+          ),
+        ),
+      );
+      expect(fondo.height, greaterThan(40));
+    },
+  );
 
   testWidgets('el doble toque acerca y vuelve al tamaño original', (
     tester,
@@ -132,20 +131,80 @@ void main() {
 
     expect(escala(tester), 1);
     await dobleToque();
-    expect(escala(tester), closeTo(escalaDobleToque, 0.01));
+    expect(escala(tester), closeTo(2, 0.01));
     await dobleToque();
     expect(escala(tester), closeTo(1, 0.01));
   });
 
-  testWidgets('volver cierra el visor y devuelve la barra inferior', (
-    tester,
-  ) async {
+  testWidgets('volver cierra el visor', (tester) async {
     await abrir(tester);
 
     await tester.tap(find.byKey(const Key('cerrarVisorImagen')));
     await tester.pumpAndSettle();
 
     expect(find.byType(PantallaVisorImagen), findsNothing);
-    expect(contenedor.read(pantallaCompletaProvider), isFalse);
+  });
+
+  testWidgets(
+    'abre encima de toda la app, sin ocultar la barra inferior después',
+    (tester) async {
+      tester.view.physicalSize = const Size(400, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final contenedorLocal = ProviderContainer(
+        overrides: [
+          servicioCacheContenidoProvider.overrideWithValue(_CacheFalso()),
+        ],
+      );
+      addTearDown(contenedorLocal.dispose);
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: contenedorLocal,
+          child: MaterialApp(
+            home: Scaffold(
+              bottomNavigationBar: const SizedBox(
+                height: 60,
+                child: Text('barra inferior'),
+              ),
+              body: Navigator(
+                onGenerateRoute: (_) => MaterialPageRoute<void>(
+                  builder: (interno) => Center(
+                    child: TextButton(
+                      onPressed: () => abrirVisorImagen(
+                        interno,
+                        url: 'https://localhost/guia.png',
+                        titulo: 'Guía',
+                      ),
+                      child: const Text('abrir'),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('abrir'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+      final alAbrir = tester.getSize(find.byKey(const Key('areaVisorImagen')));
+      await tester.pumpAndSettle();
+      final final_ = tester.getSize(find.byKey(const Key('areaVisorImagen')));
+
+      expect(final_, alAbrir);
+      expect(find.text('barra inferior'), findsNothing);
+      expect(contenedorLocal.read(pantallaCompletaProvider), isFalse);
+
+      await tester.tap(find.byKey(const Key('cerrarVisorImagen')));
+      await tester.pumpAndSettle();
+      expect(find.text('barra inferior'), findsOneWidget);
+    },
+  );
+
+  testWidgets('tiene el botón para girar a pantalla completa', (tester) async {
+    await abrir(tester);
+    expect(find.byKey(const Key('girarVisor')), findsOneWidget);
   });
 }

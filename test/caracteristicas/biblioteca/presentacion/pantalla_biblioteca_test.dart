@@ -464,7 +464,7 @@ void main() {
         find.byType(InteractiveViewer),
       );
       expect(visor.minScale, 1);
-      expect(visor.maxScale, 5);
+      expect(visor.maxScale, 8);
       expect(
         find.descendant(
           of: find.byType(PantallaVisorImagen),

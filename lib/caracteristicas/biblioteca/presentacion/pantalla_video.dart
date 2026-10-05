@@ -8,6 +8,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:oncuidar/app/proveedores_navegacion.dart';
 import 'package:oncuidar/app/tema/paleta.dart';
 import 'package:oncuidar/caracteristicas/biblioteca/datos/servicio_cache_contenido.dart';
+import 'package:oncuidar/compartido/widgets/barra_visor.dart';
 import 'package:video_player/video_player.dart';
 
 String formatearDuracion(Duration d) {
@@ -185,6 +186,15 @@ class _PantallaVideoState extends ConsumerState<PantallaVideo> {
     setState(() {});
   }
 
+  void _reiniciar() {
+    final controlador = _controlador;
+    if (controlador == null || !_inicializado) return;
+    controlador.seekTo(Duration.zero);
+    controlador.play();
+    _reiniciarTimerControles();
+    setState(() {});
+  }
+
   void _retroceder() {
     final controlador = _controlador;
     if (controlador == null || !_inicializado) return;
@@ -288,25 +298,17 @@ class _PantallaVideoState extends ConsumerState<PantallaVideo> {
   }
 
   PreferredSizeWidget _barraSuperior() {
-    return AppBar(
-      backgroundColor: Colors.black,
-      foregroundColor: Colors.white,
-      elevation: 0,
-      leading: IconButton(
-        tooltip: 'Volver',
-        icon: const Icon(Icons.arrow_back_ios_new, size: 20),
-        onPressed: _cerrar,
-      ),
-      title: Text(
-        widget.titulo,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: GoogleFonts.nunito(
-          fontSize: 16,
-          fontWeight: FontWeight.w700,
-          color: Colors.white,
+    return barraVisor(
+      titulo: widget.titulo,
+      alVolver: _cerrar,
+      acciones: [
+        IconButton(
+          key: const Key('alternarPantallaCompleta'),
+          tooltip: 'Girar a pantalla completa',
+          icon: const Icon(Icons.screen_rotation_rounded),
+          onPressed: _alternarPantallaCompleta,
         ),
-      ),
+      ],
     );
   }
 
@@ -449,22 +451,17 @@ class _PantallaVideoState extends ConsumerState<PantallaVideo> {
                       ),
                     ),
                     const Spacer(),
-                    _chipVelocidad(controlador.value.playbackSpeed),
-                    const SizedBox(width: 4),
                     IconButton(
-                      key: const Key('alternarPantallaCompleta'),
-                      tooltip: _pantallaCompleta
-                          ? 'Salir de pantalla completa'
-                          : 'Pantalla completa',
-                      onPressed: _alternarPantallaCompleta,
-                      icon: Icon(
-                        _pantallaCompleta
-                            ? Icons.fullscreen_exit
-                            : Icons.fullscreen,
+                      key: const Key('reiniciarVideo'),
+                      tooltip: 'Reiniciar',
+                      onPressed: _reiniciar,
+                      icon: const Icon(
+                        Icons.restart_alt_rounded,
                         color: Colors.white,
-                        size: 28,
+                        size: 26,
                       ),
                     ),
+                    _chipVelocidad(controlador.value.playbackSpeed),
                   ],
                 ),
               ],
@@ -485,11 +482,11 @@ class _PantallaVideoState extends ConsumerState<PantallaVideo> {
       child: Row(
         children: [
           IconButton(
-            tooltip: 'Salir de pantalla completa',
+            key: const Key('alternarPantallaCompleta'),
+            tooltip: 'Volver a vertical',
             icon: const Icon(
-              Icons.arrow_back_ios_new,
+              Icons.screen_lock_portrait_rounded,
               color: Colors.white,
-              size: 20,
             ),
             onPressed: _alternarPantallaCompleta,
           ),
