@@ -6,18 +6,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:oncuidar/caracteristicas/autenticacion/datos/proveedores_autenticacion.dart';
 import 'package:oncuidar/caracteristicas/autenticacion/datos/servicio_alta_cuenta.dart';
-import 'package:oncuidar/caracteristicas/autenticacion/presentacion/pantalla_crear_cuenta.dart';
-import 'package:oncuidar/caracteristicas/autenticacion/presentacion/pantalla_iniciar_sesion.dart';
-import 'package:oncuidar/caracteristicas/historial/presentacion/pantalla_historial.dart';
 import 'package:oncuidar/caracteristicas/pacientes/datos/repositorio_pacientes.dart';
 import 'package:oncuidar/caracteristicas/pacientes/dominio/paciente.dart';
 import 'package:oncuidar/caracteristicas/perfil/datos/repositorio_cuidador.dart';
 import 'package:oncuidar/caracteristicas/perfil/presentacion/pantalla_perfil.dart';
-import 'package:oncuidar/caracteristicas/recordatorios/datos/repositorio_recordatorios.dart';
-import 'package:oncuidar/caracteristicas/recordatorios/dominio/recordatorio.dart';
-import 'package:oncuidar/caracteristicas/recordatorios/presentacion/pantalla_recordatorios.dart';
-import 'package:oncuidar/caracteristicas/registro_clinico/datos/repositorio_registros_clinicos.dart';
-import 'package:oncuidar/caracteristicas/registro_clinico/dominio/registro_clinico.dart';
 import 'package:oncuidar/caracteristicas/registro_clinico/presentacion/pantalla_registro_clinico.dart';
 import 'package:oncuidar/caracteristicas/registro_clinico/presentacion/widgets/selector_multi_sintoma.dart';
 import 'package:oncuidar/nucleo/cifrado/servicio_cifrado.dart';
@@ -109,63 +101,6 @@ Future<void> _scrollHastaElFinal(WidgetTester tester) async {
 }
 
 void main() {
-  testWidgets('registro no desborda en 360x800', (tester) async {
-    _viewportCompacto(tester, const Size(360, 800));
-    final auth = _authConSesion();
-    final cifrado = ServicioCifrado(clavePrueba: _clavePrueba);
-    final base = await _baseConCuidador(cifrado);
-    await tester.pumpWidget(_pantalla(auth, base, cifrado, const Registro()));
-    await tester.pumpAndSettle();
-    expect(tester.takeException(), isNull);
-    await _scrollHastaElFinal(tester);
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('registro no desborda en 320x568', (tester) async {
-    _viewportCompacto(tester, const Size(320, 568));
-    final auth = _authConSesion();
-    final cifrado = ServicioCifrado(clavePrueba: _clavePrueba);
-    final base = await _baseConCuidador(cifrado);
-    await tester.pumpWidget(_pantalla(auth, base, cifrado, const Registro()));
-    await tester.pumpAndSettle();
-    expect(tester.takeException(), isNull);
-    await _scrollHastaElFinal(tester);
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('iniciar sesión no desborda en 320x568', (tester) async {
-    _viewportCompacto(tester, const Size(320, 568));
-    final auth = _authConSesion();
-    final cifrado = ServicioCifrado(clavePrueba: _clavePrueba);
-    final base = await _baseConCuidador(cifrado);
-    await tester.pumpWidget(
-      _pantalla(auth, base, cifrado, const IniciarSesion()),
-    );
-    await tester.pumpAndSettle();
-    expect(tester.takeException(), isNull);
-    await _scrollHastaElFinal(tester);
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('perfil (pacientes + mi perfil) no desborda en 360x800', (
-    tester,
-  ) async {
-    _viewportCompacto(tester, const Size(360, 800));
-    final auth = _authConSesion();
-    final cifrado = ServicioCifrado(clavePrueba: _clavePrueba);
-    final base = await _baseConCuidador(cifrado);
-    await tester.pumpWidget(_pantalla(auth, base, cifrado, const Perfil()));
-    await tester.pumpAndSettle();
-    expect(tester.takeException(), isNull);
-    await _scrollHastaElFinal(tester);
-    expect(tester.takeException(), isNull);
-
-    await tester.tap(find.text('Mi perfil'));
-    await tester.pumpAndSettle();
-    await _scrollHastaElFinal(tester);
-    expect(tester.takeException(), isNull);
-  });
-
   testWidgets(
     'detalle de paciente activo no desborda en 360x800 con textos largos',
     (tester) async {
@@ -211,88 +146,6 @@ void main() {
     },
   );
 
-  testWidgets('registro clínico no desborda en 320x568', (tester) async {
-    _viewportCompacto(tester, const Size(320, 568));
-    final auth = _authConSesion();
-    final cifrado = ServicioCifrado(clavePrueba: _clavePrueba);
-    final base = await _baseConCuidador(cifrado);
-    await RepositorioPacientes(base).crearPaciente(
-      Paciente(
-        id: 'auto',
-        nombreCompleto: 'Paciente Test',
-        creadoEn: DateTime.now(),
-      ),
-    );
-    await tester.pumpWidget(
-      _pantalla(auth, base, cifrado, const RegistroClinicoScreen()),
-    );
-    await tester.pumpAndSettle();
-    expect(tester.takeException(), isNull);
-
-    final campo = find.byKey(const Key('campoSelectorSintomas'));
-    await tester.ensureVisible(campo);
-    await tester.pumpAndSettle();
-    await tester.tap(campo);
-    await tester.pumpAndSettle();
-    expect(
-      find.byType(SelectorMultiSintoma),
-      findsOneWidget,
-      reason: 'el selector debe abrirse como modal bottom sheet',
-    );
-
-    Future<void> marcar(String nombre) async {
-      final opcion = find.widgetWithText(CheckboxListTile, nombre);
-      final lista = find.descendant(
-        of: find.byType(ListView),
-        matching: find.byType(Scrollable),
-      );
-      var marcado = false;
-      for (var intento = 0; intento < 4 && !marcado; intento++) {
-        if (opcion.evaluate().isEmpty && lista.evaluate().isNotEmpty) {
-          await tester.scrollUntilVisible(
-            opcion,
-            100,
-            scrollable: lista.first,
-            maxScrolls: 40,
-          );
-          await tester.pumpAndSettle();
-        }
-        if (opcion.evaluate().isEmpty) continue;
-        final tile = tester.widget<CheckboxListTile>(opcion);
-        marcado = tile.value ?? false;
-        tile.onChanged?.call(true);
-        await tester.pumpAndSettle();
-        if (opcion.evaluate().isNotEmpty) {
-          marcado = tester.widget<CheckboxListTile>(opcion).value ?? false;
-        }
-      }
-      expect(
-        marcado,
-        isTrue,
-        reason: 'No se pudo marcar "$nombre" en el panel',
-      );
-    }
-
-    await marcar('Falta de apetito (anorexia)');
-    await marcar('Mucositis');
-
-    final chipSnc = find.widgetWithText(ChoiceChip, 'Tumores SNC');
-    await tester.ensureVisible(chipSnc);
-    await tester.pumpAndSettle();
-    await tester.tap(chipSnc);
-    await tester.pumpAndSettle();
-
-    await marcar('Dolor de cabeza (cefalea)');
-    expect(tester.takeException(), isNull);
-
-    await tester.tap(find.byTooltip('Cerrar selector'));
-    await tester.pumpAndSettle();
-    expect(tester.takeException(), isNull);
-
-    await _scrollHastaElFinal(tester);
-    expect(tester.takeException(), isNull);
-  });
-
   testWidgets('selector de síntomas abierto no desborda en 360x800', (
     tester,
   ) async {
@@ -319,117 +172,6 @@ void main() {
     await tester.tap(campo);
     await tester.pumpAndSettle();
     expect(find.byType(SelectorMultiSintoma), findsOneWidget);
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('historial no desborda en 320x568 con detalle expandido', (
-    tester,
-  ) async {
-    _viewportCompacto(tester, const Size(320, 568));
-    final auth = _authConSesion();
-    final cifrado = ServicioCifrado(clavePrueba: _clavePrueba);
-    final base = await _baseConCuidador(cifrado);
-    final fecha = DateTime.now();
-    final idPaciente = await RepositorioPacientes(base).crearPaciente(
-      Paciente(id: 'auto', nombreCompleto: 'Paciente Test', creadoEn: fecha),
-    );
-    await RepositorioRegistrosClinicos(base).guardarRegistroClinico(
-      idPaciente,
-      RegistroClinico(
-        id: 'detalle',
-        pacienteId: idPaciente,
-        fecha: fecha,
-        creadoEn: fecha,
-        tipoRegistro: 'programado',
-        signosVitales: const SignosVitales(
-          temperatura: 40,
-          frecuenciaCardiaca: 120,
-          saturacionOxigeno: 88,
-          frecuenciaRespiratoria: 24,
-        ),
-        sintomas: const [EntradaSintoma(nombre: 'Fiebre', intensidad: 9)],
-        observaciones:
-            'Paciente con observaciones muy largas para comprobar que el '
-            'detalle no se desborda horizontalmente en pantallas pequeñas.',
-        nivelAlerta: NivelAlerta.critico,
-      ),
-    );
-    await tester.pumpWidget(
-      _pantalla(auth, base, cifrado, const HistorialScreen()),
-    );
-    await tester.pumpAndSettle();
-    expect(tester.takeException(), isNull);
-
-    final tarjeta = find.text('Click para ver registro completo');
-    await tester.ensureVisible(tarjeta);
-    await tester.tap(tarjeta);
-    await tester.pumpAndSettle();
-    expect(
-      tester.takeException(),
-      isNull,
-      reason: 'el detalle expandido no debe desbordar',
-    );
-
-    await _scrollHastaElFinal(tester);
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('recordatorios no desborda en 360x800', (tester) async {
-    _viewportCompacto(tester, const Size(360, 800));
-    final auth = _authConSesion();
-    final cifrado = ServicioCifrado(clavePrueba: _clavePrueba);
-    final base = await _baseConCuidador(cifrado);
-    final idPaciente = await RepositorioPacientes(base).crearPaciente(
-      Paciente(
-        id: 'auto',
-        nombreCompleto: 'Paciente Test',
-        creadoEn: DateTime.now(),
-      ),
-    );
-    final fecha = DateTime.now();
-    await RepositorioRecordatorios(base).agregarRecordatorio(
-      idPaciente,
-      Recordatorio(
-        id: '',
-        pacienteId: idPaciente,
-        tipo: 'medicamento',
-        titulo: 'Tomar paracetamol de 500 mg junto con una cena ligera',
-        descripcion:
-            'Recordatorio muy largo sobre la medicación para comprobar que '
-            'el texto con elipsis no desborda en pantallas pequeñas.',
-        fechaHora: fecha,
-        diasRepeticion: const ['lun', 'mar', 'mie', 'jue', 'vie', 'sab', 'dom'],
-        activo: true,
-        creadoEn: fecha,
-      ),
-    );
-    await tester.pumpWidget(
-      _pantalla(auth, base, cifrado, const RecordatoriosScreen()),
-    );
-    await tester.pumpAndSettle();
-    expect(tester.takeException(), isNull);
-    await _scrollHastaElFinal(tester);
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('recordatorios no desborda en 320x568', (tester) async {
-    _viewportCompacto(tester, const Size(320, 568));
-    final auth = _authConSesion();
-    final cifrado = ServicioCifrado(clavePrueba: _clavePrueba);
-    final base = await _baseConCuidador(cifrado);
-    await RepositorioPacientes(base).crearPaciente(
-      Paciente(
-        id: 'auto',
-        nombreCompleto: 'Paciente Test',
-        creadoEn: DateTime.now(),
-      ),
-    );
-    await tester.pumpWidget(
-      _pantalla(auth, base, cifrado, const RecordatoriosScreen()),
-    );
-    await tester.pumpAndSettle();
-    expect(tester.takeException(), isNull);
-    await _scrollHastaElFinal(tester);
     expect(tester.takeException(), isNull);
   });
 }

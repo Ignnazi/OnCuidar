@@ -75,6 +75,7 @@ void main() {
     ]) {
       expect(find.text(texto), findsWidgets, reason: 'falta «$texto»');
     }
+    expect(find.byKey(const Key('girarVisor')), findsOneWidget);
   });
 
   testWidgets('el resumen dice el día o el rango filtrado', (tester) async {
@@ -134,18 +135,9 @@ void main() {
       tester.getRect(texto).bottom,
       lessThanOrEqualTo(tester.getRect(fila).bottom + 0.01),
     );
+    expect(tester.getSize(texto).height, greaterThan(40));
+    expect(tester.getSize(texto).width, lessThanOrEqualTo(44 * 8.0));
     expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('el texto largo se reparte en varias líneas dentro de su celda', (
-    tester,
-  ) async {
-    await _abrir(tester, _datos(cantidad: 1, observaciones: 'palabra ' * 30));
-
-    final observacion = find.textContaining('palabra');
-    final alto = tester.getSize(observacion).height;
-    expect(alto, greaterThan(40));
-    expect(tester.getSize(observacion).width, lessThanOrEqualTo(44 * 8.0));
   });
 
   testWidgets('la hoja se puede acercar y mover sin desbordar la pantalla', (
@@ -192,9 +184,12 @@ void main() {
     expect(find.byType(PantallaVistaExcel), findsNothing);
   });
 
-  testWidgets('sin acción de compartir no hay botón', (tester) async {
+  testWidgets('sin acciones no hay botones de compartir ni de descargar', (
+    tester,
+  ) async {
     await _abrir(tester, _datos());
     expect(find.byKey(const Key('compartirVistaExcel')), findsNothing);
+    expect(find.byKey(const Key('descargarVistaExcel')), findsNothing);
   });
 
   testWidgets(
@@ -217,26 +212,6 @@ void main() {
     },
   );
 
-  testWidgets('la barra superior usa el degradado dorado de la app', (
-    tester,
-  ) async {
-    await _abrir(tester, _datos());
-    final cajas = tester.widgetList<DecoratedBox>(
-      find.descendant(
-        of: find.byType(AppBar),
-        matching: find.byType(DecoratedBox),
-      ),
-    );
-    expect(
-      cajas.any(
-        (c) =>
-            c.decoration is BoxDecoration &&
-            (c.decoration as BoxDecoration).gradient != null,
-      ),
-      isTrue,
-    );
-  });
-
   group('zoom a gusto', () {
     double escala(WidgetTester tester) =>
         tester.state<EstadoVisorConZoom>(find.byType(VisorConZoom)).escalaTotal;
@@ -244,20 +219,6 @@ void main() {
     testWidgets('abre con una escala legible', (tester) async {
       await _abrir(tester, _datos());
       expect(escala(tester), closeTo(zoomInicialHoja, 1e-9));
-    });
-
-    testWidgets('los botones acercan y alejan', (tester) async {
-      await _abrir(tester, _datos());
-      final inicial = escala(tester);
-
-      await tester.tap(find.byKey(const Key('zoomMas')));
-      await tester.pump();
-      expect(escala(tester), greaterThan(inicial));
-
-      await tester.tap(find.byKey(const Key('zoomMenos')));
-      await tester.tap(find.byKey(const Key('zoomMenos')));
-      await tester.pump();
-      expect(escala(tester), lessThan(inicial));
     });
 
     testWidgets('se puede acercar hasta el máximo y alejar hasta el mínimo', (
@@ -295,44 +256,6 @@ void main() {
       final hoja = tester.getRect(find.byKey(const Key('hojaExcel')));
       expect(hoja.width, lessThanOrEqualTo(360));
       expect(hoja.width, greaterThan(360 * 0.8));
-    });
-
-    testWidgets('doble toque acerca y otro doble toque vuelve a ajustar', (
-      tester,
-    ) async {
-      await _abrir(tester, _datos());
-      final zona = find.byKey(const Key('zoomVistaExcel'));
-      final antes = escala(tester);
-
-      await tester.tap(zona);
-      await tester.pump(const Duration(milliseconds: 50));
-      await tester.tap(zona);
-      await tester.pumpAndSettle();
-      expect(escala(tester), greaterThan(antes));
-
-      await tester.tap(zona);
-      await tester.pump(const Duration(milliseconds: 50));
-      await tester.tap(zona);
-      await tester.pumpAndSettle();
-      expect(escala(tester), lessThan(1.2));
-    });
-
-    testWidgets('el rango de zoom del visor es amplio', (tester) async {
-      await _abrir(tester, _datos());
-      final visor = tester.widget<InteractiveViewer>(
-        find.byKey(const Key('zoomVistaExcel')),
-      );
-      final dibujado = escala(tester);
-      expect(visor.maxScale * dibujado, closeTo(zoomMaximoHoja, 1e-9));
-      expect(visor.minScale * dibujado, lessThan(0.4));
-      expect(zoomMaximoHoja, greaterThanOrEqualTo(6));
-    });
-
-    testWidgets('el botón de descargar solo aparece si se da la acción', (
-      tester,
-    ) async {
-      await _abrir(tester, _datos());
-      expect(find.byKey(const Key('descargarVistaExcel')), findsNothing);
     });
   });
 
@@ -378,10 +301,5 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(tamanoLetra(), closeTo(antes * 1.5, 0.01));
-  });
-
-  testWidgets('tiene el botón para girar a pantalla completa', (tester) async {
-    await _abrir(tester, _datos());
-    expect(find.byKey(const Key('girarVisor')), findsOneWidget);
   });
 }

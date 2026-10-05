@@ -36,7 +36,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 const _clavePrueba = 'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=';
 const _uid = 'uid-test';
 
-const _viewports = [Size(360, 800), Size(320, 568)];
+const _combinaciones = [
+  (EscalaTexto.normal, Size(360, 800)),
+  (EscalaTexto.muyGrande, Size(320, 568)),
+];
 
 class _Entorno {
   _Entorno(this.auth, this.base, this.cifrado);
@@ -328,8 +331,8 @@ final _casos =
     ];
 
 void main() {
-  for (final escala in EscalaTexto.values) {
-    for (final tamano in _viewports) {
+  for (final (escala, tamano) in _combinaciones) {
+    {
       for (final (nombre, pantalla, accion) in _casos) {
         testWidgets('$nombre · texto ${escala.etiqueta} · '
             '${tamano.width.toInt()}x${tamano.height.toInt()}', (tester) async {

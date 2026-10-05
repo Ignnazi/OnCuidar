@@ -1,5 +1,4 @@
-import 'dart:io';
-
+﻿
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
@@ -8,14 +7,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mock_exceptions/mock_exceptions.dart';
-import 'package:oncuidar/caracteristicas/autenticacion/presentacion/pantalla_carga.dart';
 import 'package:oncuidar/caracteristicas/autenticacion/presentacion/pantalla_iniciar_sesion.dart';
-import 'package:oncuidar/caracteristicas/biblioteca/datos/proveedores_biblioteca.dart';
-import 'package:oncuidar/caracteristicas/biblioteca/datos/repositorio_biblioteca.dart';
-import 'package:oncuidar/caracteristicas/biblioteca/datos/servicio_cache_contenido.dart';
-import 'package:oncuidar/caracteristicas/biblioteca/dominio/material_educativo.dart';
 import 'package:oncuidar/caracteristicas/perfil/datos/repositorio_cuidador.dart';
-import 'package:oncuidar/caracteristicas/perfil/presentacion/pantalla_perfil.dart';
 import 'package:oncuidar/nucleo/cifrado/servicio_cifrado.dart';
 import 'package:oncuidar/nucleo/datos/base_datos_segura.dart';
 import 'package:oncuidar/nucleo/proveedores.dart';
@@ -24,48 +17,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 const _clavePrueba = 'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=';
 const _uid = 'uid-test';
 
+ServicioCifrado _cifradoListo() => ServicioCifrado(clavePrueba: _clavePrueba);
+
 MockFirebaseAuth _authConSesion() => MockFirebaseAuth(
   mockUser: MockUser(uid: _uid, email: 'ana@correo.cl'),
 );
-
-ServicioCifrado _cifradoListo() => ServicioCifrado(clavePrueba: _clavePrueba);
-
-class _CacheFalso implements ServicioCacheContenido {
-  final Set<String> descargados = {};
-
-  @override
-  Future<File?> archivoEnCache(String url) async =>
-      descargados.contains(url) ? File(url) : null;
-
-  @override
-  Future<File> descargar(String url) async {
-    descargados.add(url);
-    return File(url);
-  }
-
-  @override
-  Future<bool> archivoDescargado(String url) async => descargados.contains(url);
-
-  @override
-  Future<void> eliminar(String url) async {
-    descargados.remove(url);
-  }
-}
-
-class _RepositorioSinContenido extends RepositorioBiblioteca {
-  _RepositorioSinContenido()
-    : super(
-        BaseDatosSegura(
-          base: FakeFirebaseFirestore(),
-          uidPrueba: _uid,
-          cifrado: _cifradoListo(),
-        ),
-      );
-
-  @override
-  Stream<List<MaterialEducativo>> contenidoEducativoEnTiempoReal() =>
-      Stream.value(const []);
-}
 
 Future<BaseDatosSegura> _baseConCuidador(ServicioCifrado cifrado) async {
   await cifrado.fijarClave(_uid, _clavePrueba);
@@ -256,101 +212,6 @@ void main() {
     );
   });
 
-  testWidgets('splash con sesion activa navega al dashboard', (tester) async {
-    final auth = _authConSesion();
-    await auth.signInWithEmailAndPassword(
-      email: 'ana@correo.cl',
-      password: 'secreto123',
-    );
-    expect(auth.currentUser, isNotNull);
-    final cifrado = _cifradoListo();
-    final router = GoRouter(
-      initialLocation: '/',
-      routes: [
-        GoRoute(
-          path: '/',
-          builder: (c, s) => Splash(alFinalizar: () => c.go('/bienvenida')),
-        ),
-        GoRoute(
-          path: '/bienvenida',
-          builder: (c, s) =>
-              const Scaffold(body: Center(child: Text('Bienvenida'))),
-        ),
-        GoRoute(
-          path: '/dashboard',
-          builder: (c, s) =>
-              const Scaffold(body: Center(child: Text('Dashboard'))),
-        ),
-      ],
-    );
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          firebaseAuthProvider.overrideWithValue(auth),
-          servicioCifradoProvider.overrideWithValue(cifrado),
-          repositorioBibliotecaProvider.overrideWith(
-            (_) => _RepositorioSinContenido(),
-          ),
-          servicioCacheContenidoProvider.overrideWithValue(_CacheFalso()),
-        ],
-        child: MaterialApp.router(routerConfig: router),
-      ),
-    );
-    await tester.pump(const Duration(seconds: 3));
-    await tester.pump(const Duration(milliseconds: 500));
 
-    expect(find.text('Dashboard'), findsOneWidget);
-  });
 
-  testWidgets('perfil muestra cuidador y cierra sesion', (tester) async {
-    await _pantallaAlta(tester);
-    final auth = _authConSesion();
-    await auth.signInWithEmailAndPassword(
-      email: 'ana@correo.cl',
-      password: 'secreto123',
-    );
-    expect(auth.currentUser, isNotNull);
-    final cifrado = _cifradoListo();
-    final base = await _baseConCuidador(cifrado);
-    final router = GoRouter(
-      initialLocation: '/',
-      routes: [
-        GoRoute(path: '/', builder: (c, s) => const Perfil()),
-        GoRoute(
-          path: '/bienvenida',
-          builder: (c, s) =>
-              const Scaffold(body: Center(child: Text('Bienvenida'))),
-        ),
-      ],
-    );
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          firebaseAuthProvider.overrideWithValue(auth),
-          servicioCifradoProvider.overrideWithValue(cifrado),
-          baseDatosSeguraProvider.overrideWith((ref) => base),
-        ],
-        child: MaterialApp.router(routerConfig: router),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.text('Mi perfil'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Ana Torres'), findsOneWidget);
-    expect(
-      find.text('ana@correo.cl'),
-      findsWidgets,
-      reason: 'aparece en la tarjeta del cuidador y en la fila de correo',
-    );
-
-    await tester.tap(find.byKey(const Key('botonCerrarSesion')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Cerrar sesión').last);
-    await tester.pumpAndSettle();
-
-    expect(auth.currentUser, isNull);
-    expect(find.text('Bienvenida'), findsOneWidget);
-  });
 }

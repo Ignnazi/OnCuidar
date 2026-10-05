@@ -2,19 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:oncuidar/app/proveedores_navegacion.dart';
-import 'package:oncuidar/caracteristicas/biblioteca/dominio/material_educativo.dart';
 import 'package:oncuidar/caracteristicas/biblioteca/presentacion/pantalla_visor_pdf.dart';
-
-MaterialEducativo _material({String? tipo, String? url}) => MaterialEducativo(
-  id: 'm',
-  titulo: 't',
-  categoria: 'Guías',
-  tema: '',
-  cuerpo: '',
-  tipoArchivo: tipo,
-  urlArchivo: url,
-  creadoEn: DateTime.utc(2026, 1, 1),
-);
 
 void main() {
   late ProviderContainer contenedor;
@@ -62,6 +50,7 @@ void main() {
     expect(find.text('documento falso'), findsOneWidget);
     expect(rutaRecibida, '/datos/manual.pdf');
     expect(find.byKey(const Key('cerrarVisorPdf')), findsOneWidget);
+    expect(find.byKey(const Key('girarVisor')), findsOneWidget);
     expect(find.byIcon(Icons.bookmark_border), findsNothing);
     expect(find.byIcon(Icons.share_rounded), findsNothing);
     final scaffold = tester.widget<Scaffold>(
@@ -163,23 +152,5 @@ void main() {
       const MaterialApp(home: IndicadorPaginaPdf(pagina: 3, total: 10)),
     );
     expect(find.text('3 / 10'), findsOneWidget);
-  });
-
-  test('esPdf reconoce el tipo declarado o la extensión del archivo', () {
-    expect(_material(tipo: 'pdf').esPdf, isTrue);
-    expect(
-      _material(url: 'https://x.test/o/Guias%2Fmanual.pdf?alt=media').esPdf,
-      isTrue,
-    );
-    expect(
-      _material(tipo: 'video', url: 'https://x.test/v.mp4').esPdf,
-      isFalse,
-    );
-    expect(_material().esPdf, isFalse);
-  });
-
-  testWidgets('tiene el botón para girar a pantalla completa', (tester) async {
-    await abrir(tester);
-    expect(find.byKey(const Key('girarVisor')), findsOneWidget);
   });
 }

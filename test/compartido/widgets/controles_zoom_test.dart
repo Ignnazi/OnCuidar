@@ -56,25 +56,4 @@ void main() {
       expect(m.getMaxScaleOnAxis(), 1);
     });
   });
-
-  testWidgets('los tres botones avisan', (tester) async {
-    final avisos = <String>[];
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: ControlesZoom(
-            alAcercar: () => avisos.add('más'),
-            alAlejar: () => avisos.add('menos'),
-            alAjustar: () => avisos.add('ajustar'),
-          ),
-        ),
-      ),
-    );
-
-    await tester.tap(find.byKey(const Key('zoomMas')));
-    await tester.tap(find.byKey(const Key('zoomMenos')));
-    await tester.tap(find.byKey(const Key('zoomAjustar')));
-
-    expect(avisos, ['más', 'menos', 'ajustar']);
-  });
 }

@@ -153,4 +153,26 @@ void main() {
       expect(titulo.left, lessThan(ancho * 0.25));
     },
   );
+
+  testWidgets('la barra de todos los visores lleva el degradado dorado visible', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: MarcoVisor(titulo: 'Guía', cuerpo: SizedBox()),
+      ),
+    );
+
+    final degradado = find.descendant(
+      of: find.byType(AppBar),
+      matching: find.byWidgetPredicate(
+        (w) =>
+            w is DecoratedBox &&
+            w.decoration is BoxDecoration &&
+            (w.decoration as BoxDecoration).gradient != null,
+      ),
+    );
+    expect(degradado, findsOneWidget);
+    expect(tester.getSize(degradado).height, greaterThan(40));
+  });
 }
