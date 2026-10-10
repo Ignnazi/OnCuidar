@@ -1,0 +1,19 @@
+# Postgres para las pruebas del backend
+services:
+  db_pruebas:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: pruebas
+      POSTGRES_PASSWORD: pruebas
+      POSTGRES_DB: oncuidar_pruebas
+    ports:
+      - "5433:5432"
+    tmpfs:
+      - /var/lib/postgresql/data
+    volumes:
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pruebas -d oncuidar_pruebas"]
+      interval: 3s
+      timeout: 3s
+      retries: 15
