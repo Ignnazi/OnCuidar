@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:oncuidar/caracteristicas/biblioteca/datos/proveedores_biblioteca.dart';
 import 'package:oncuidar/caracteristicas/biblioteca/dominio/material_educativo.dart';
+import 'package:oncuidar/caracteristicas/biblioteca/dominio/temas_biblioteca.dart';
 
 class DescargasContenidoNotifier extends Notifier<Set<String>> {
   @override
@@ -218,3 +219,20 @@ final contenidoDetalleProvider = FutureProvider.autoDispose
           .watch(repositorioBibliotecaProvider)
           .obtenerContenidoEducativo(id);
     });
+
+class TemaSeleccionadoNotifier extends Notifier<String> {
+  @override
+  String build() => temaTodas;
+
+  void seleccionar(String tema) => state = tema;
+
+  void reiniciarSiNoExiste(Iterable<String> temas) {
+    final vigente = temaVigente(state, temas);
+    if (vigente != state) state = vigente;
+  }
+}
+
+final temaSeleccionadoProvider =
+    NotifierProvider.autoDispose<TemaSeleccionadoNotifier, String>(
+      TemaSeleccionadoNotifier.new,
+    );

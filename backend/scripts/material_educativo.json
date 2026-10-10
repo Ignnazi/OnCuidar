@@ -1,30 +1,183 @@
 [
   {
-    "titulo": "Cómo medir la fiebre",
+    "titulo": "Cómo proteger el catéter venoso de tu hijo",
     "categoria": "Videos",
-    "tema": "Fiebre",
-    "cuerpo": "# ¿Cuándo medir?\nMide la temperatura cuando tu hijo se siente caliente, decaído o con escalofríos.\n\n# Pasos\n1. Enciende el termómetro digital.\n2. Colócalo en la axila firme y mantenlo un minuto.\n3. Registra el valor y la hora en tu bitácora.\n\n# Cuándo llamar\nSi la temperatura supera los 38,5 °C o tu hijo luce decaído, contacta de inmediato al equipo.",
-    "urlArchivo": "/archivos/video-medir-fiebre.mp4",
+    "tema": "Catéter",
+    "cuerpo": "Video sobre catéter: cómo proteger el catéter venoso de tu hijo.",
+    "urlArchivo": "/archivos/videos/como-proteger-el-cateter-venoso-de-tu-hijo.mp4",
     "tipoArchivo": "video",
-    "tamanoBytes": 1602980,
-    "urlMiniatura": "/archivos/miniatura-video-fiebre.png"
+    "tamanoBytes": 9741033
+  },
+  {
+    "titulo": "El cáncer infantil",
+    "categoria": "Videos",
+    "tema": "El cáncer",
+    "cuerpo": "Video sobre el cáncer: el cáncer infantil.",
+    "urlArchivo": "/archivos/videos/el-cancer-infantil.mp4",
+    "tipoArchivo": "video",
+    "tamanoBytes": 18520256
+  },
+  {
+    "titulo": "Cómo limpiar los dientes durante la quimioterapia",
+    "categoria": "Videos",
+    "tema": "Mucosas",
+    "cuerpo": "Video sobre mucosas: cómo limpiar los dientes durante la quimioterapia.",
+    "urlArchivo": "/archivos/videos/como-limpiar-los-dientes-durante-la-quimioterapia.mp4",
+    "tipoArchivo": "video",
+    "tamanoBytes": 8273257
+  },
+  {
+    "titulo": "Quimioterapia infantil",
+    "categoria": "Videos",
+    "tema": "Quimioterapia",
+    "cuerpo": "Video sobre quimioterapia: quimioterapia infantil.",
+    "urlArchivo": "/archivos/videos/quimioterapia-infantil.mp4",
+    "tipoArchivo": "video",
+    "tamanoBytes": 21122002
   },
   {
     "titulo": "Manual de Control de Síntomas",
     "categoria": "Guías",
-    "tema": "Cuidados Paliativos",
+    "tema": "Paliativos",
     "cuerpo": "Guía práctica para el manejo de síntomas en cuidados paliativos oncológicos.\n\n# Dolor\nAdministra el analgésico según horario y registra la respuesta.\n\n# Náuseas\nOfrece comidas pequeñas y evita olores fuertes.\n\n# Dificultad respiratoria\nEleva la cabecera y mantén la calma; avisa al equipo.\n\n# Cuidados generales\nCambios de posición cada dos horas y buena hidratación.",
-    "urlArchivo": "/archivos/manual-control-sintomas.pdf",
+    "urlArchivo": "/archivos/guias/manual-control-sintomas.pdf",
     "tipoArchivo": "pdf",
     "tamanoBytes": 861608,
-    "urlMiniatura": "/archivos/miniatura-manual-sintomas.png"
+    "urlMiniatura": "/archivos/guias/miniatura-manual-sintomas.png"
   },
   {
-    "titulo": "Guía de seguimiento",
+    "titulo": "Alimentación durante la quimioterapia infantil",
     "categoria": "Infografías",
-    "tema": "Seguimiento",
-    "cuerpo": "Infografía con los pasos para el seguimiento del tratamiento en casa.",
-    "urlImagen": "/archivos/guia-seguimiento.png",
-    "urlMiniatura": "/archivos/guia-seguimiento.png"
+    "tema": "Alimentación",
+    "cuerpo": "Infografía de alimentación: alimentación durante la quimioterapia infantil.",
+    "urlImagen": "/archivos/infografias/alimentacion-durante-la-quimioterapia-infantil.png",
+    "urlMiniatura": "/archivos/infografias/alimentacion-durante-la-quimioterapia-infantil.png",
+    "tamanoBytes": 2236064
+  },
+  {
+    "titulo": "Guía del catéter venoso central pediátrico",
+    "categoria": "Infografías",
+    "tema": "Catéter",
+    "cuerpo": "Infografía de catéter: guía del catéter venoso central pediátrico.",
+    "urlImagen": "/archivos/infografias/guia-del-cateter-venoso-central-pediatrico.png",
+    "urlMiniatura": "/archivos/infografias/guia-del-cateter-venoso-central-pediatrico.png",
+    "tamanoBytes": 2231793
+  },
+  {
+    "titulo": "Efectos cardiovasculares del tratamiento",
+    "categoria": "Infografías",
+    "tema": "Efectos secundarios",
+    "cuerpo": "Infografía de efectos secundarios: efectos cardiovasculares del tratamiento.",
+    "urlImagen": "/archivos/infografias/efectos-cardiovasculares-del-tratamiento.png",
+    "urlMiniatura": "/archivos/infografias/efectos-cardiovasculares-del-tratamiento.png",
+    "tamanoBytes": 1162600
+  },
+  {
+    "titulo": "Efectos cognitivos del tratamiento",
+    "categoria": "Infografías",
+    "tema": "Efectos secundarios",
+    "cuerpo": "Infografía de efectos secundarios: efectos cognitivos del tratamiento.",
+    "urlImagen": "/archivos/infografias/efectos-cognitivos-del-tratamiento.png",
+    "urlMiniatura": "/archivos/infografias/efectos-cognitivos-del-tratamiento.png",
+    "tamanoBytes": 1200500
+  },
+  {
+    "titulo": "Efectos del tratamiento oncológico infantil",
+    "categoria": "Infografías",
+    "tema": "Efectos secundarios",
+    "cuerpo": "Infografía de efectos secundarios: efectos del tratamiento oncológico infantil.",
+    "urlImagen": "/archivos/infografias/efectos-del-tratamiento-oncologico-infantil.png",
+    "urlMiniatura": "/archivos/infografias/efectos-del-tratamiento-oncologico-infantil.png",
+    "tamanoBytes": 2186900
+  },
+  {
+    "titulo": "Efectos secundarios de la quimioterapia infantil",
+    "categoria": "Infografías",
+    "tema": "Efectos secundarios",
+    "cuerpo": "Infografía de efectos secundarios: efectos secundarios de la quimioterapia infantil.",
+    "urlImagen": "/archivos/infografias/efectos-secundarios-de-la-quimioterapia-infantil.png",
+    "urlMiniatura": "/archivos/infografias/efectos-secundarios-de-la-quimioterapia-infantil.png",
+    "tamanoBytes": 2164345
+  },
+  {
+    "titulo": "Guía infantil sobre quimioterapia",
+    "categoria": "Infografías",
+    "tema": "Efectos secundarios",
+    "cuerpo": "Infografía de efectos secundarios: guía infantil sobre quimioterapia.",
+    "urlImagen": "/archivos/infografias/guia-infantil-sobre-quimioterapia.png",
+    "urlMiniatura": "/archivos/infografias/guia-infantil-sobre-quimioterapia.png",
+    "tamanoBytes": 2334992
+  },
+  {
+    "titulo": "Guía visual del cáncer infantil en Chile",
+    "categoria": "Infografías",
+    "tema": "El cáncer",
+    "cuerpo": "Infografía de el cáncer: guía visual del cáncer infantil en Chile.",
+    "urlImagen": "/archivos/infografias/guia-visual-del-cancer-infantil-en-chile.png",
+    "urlMiniatura": "/archivos/infografias/guia-visual-del-cancer-infantil-en-chile.png",
+    "tamanoBytes": 2483865
+  },
+  {
+    "titulo": "Guía de Higiene para Niños con Cáncer",
+    "categoria": "Infografías",
+    "tema": "Mucosas",
+    "cuerpo": "Infografía de mucosas: guía de Higiene para Niños con Cáncer.",
+    "urlImagen": "/archivos/infografias/guia-de-higiene-para-ninos-con-cancer.png",
+    "urlMiniatura": "/archivos/infografias/guia-de-higiene-para-ninos-con-cancer.png",
+    "tamanoBytes": 2344130
+  },
+  {
+    "titulo": "Guía infantil sobre quimioterapia pediátrica",
+    "categoria": "Infografías",
+    "tema": "Quimioterapia",
+    "cuerpo": "Infografía de quimioterapia: guía infantil sobre quimioterapia pediátrica.",
+    "urlImagen": "/archivos/infografias/guia-infantil-sobre-quimioterapia-pediatrica.png",
+    "urlMiniatura": "/archivos/infografias/guia-infantil-sobre-quimioterapia-pediatrica.png",
+    "tamanoBytes": 2315829
+  },
+  {
+    "titulo": "Ansiedad y bienestar del cuidador pediátrico",
+    "categoria": "Infografías",
+    "tema": "Salud mental",
+    "cuerpo": "Infografía de salud mental: ansiedad y bienestar del cuidador pediátrico.",
+    "urlImagen": "/archivos/infografias/ansiedad-y-bienestar-del-cuidador-pediatrico.png",
+    "urlMiniatura": "/archivos/infografias/ansiedad-y-bienestar-del-cuidador-pediatrico.png",
+    "tamanoBytes": 2168901
+  },
+  {
+    "titulo": "Guía de bienestar para cuidadores oncológicos",
+    "categoria": "Infografías",
+    "tema": "Salud mental",
+    "cuerpo": "Infografía de salud mental: guía de bienestar para cuidadores oncológicos.",
+    "urlImagen": "/archivos/infografias/guia-de-bienestar-para-cuidadores-oncologicos.png",
+    "urlMiniatura": "/archivos/infografias/guia-de-bienestar-para-cuidadores-oncologicos.png",
+    "tamanoBytes": 2189682
+  },
+  {
+    "titulo": "Guía de salud mental en oncología infantil",
+    "categoria": "Infografías",
+    "tema": "Salud mental",
+    "cuerpo": "Infografía de salud mental: guía de salud mental en oncología infantil.",
+    "urlImagen": "/archivos/infografias/guia-de-salud-mental-en-oncologia-infantil.png",
+    "urlMiniatura": "/archivos/infografias/guia-de-salud-mental-en-oncologia-infantil.png",
+    "tamanoBytes": 2303755
+  },
+  {
+    "titulo": "Guía de quimioterapia infantil para familias",
+    "categoria": "Infografías",
+    "tema": "Signos de alarma",
+    "cuerpo": "Infografía de signos de alarma: guía de quimioterapia infantil para familias.",
+    "urlImagen": "/archivos/infografias/guia-de-quimioterapia-infantil-para-familias.png",
+    "urlMiniatura": "/archivos/infografias/guia-de-quimioterapia-infantil-para-familias.png",
+    "tamanoBytes": 2147957
+  },
+  {
+    "titulo": "Guía pediátrica del Complejo Sótero del Río",
+    "categoria": "Infografías",
+    "tema": "Unidad oncológica",
+    "cuerpo": "Infografía de unidad oncológica: guía pediátrica del Complejo Sótero del Río.",
+    "urlImagen": "/archivos/infografias/guia-pediatrica-del-complejo-sotero-del-rio.png",
+    "urlMiniatura": "/archivos/infografias/guia-pediatrica-del-complejo-sotero-del-rio.png",
+    "tamanoBytes": 2181842
   }
 ]
