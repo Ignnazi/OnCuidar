@@ -9,8 +9,7 @@ import 'package:oncuidar/caracteristicas/biblioteca/datos/servicio_cache_conteni
 import 'package:oncuidar/caracteristicas/biblioteca/dominio/material_educativo.dart';
 import 'package:oncuidar/caracteristicas/biblioteca/presentacion/widgets/tarjeta_material.dart';
 
-const _urlMiniatura =
-    'https://firebasestorage.googleapis.com/v0/b/oncuidar-v1.firebasestorage.app/o/miniaturas%2Fprueba.png?alt=media';
+const _urlMiniatura = 'http://localhost:8080/archivos/miniaturas/prueba.jpg';
 
 class _CacheFalso implements ServicioCacheContenido {
   final Set<String> descargados = {};
@@ -48,7 +47,7 @@ MaterialEducativo _material({
   tema: 'Tema de prueba',
   cuerpo: 'Cuerpo de prueba.',
   urlArchivo: esDescargado || categoria == 'Videos' || categoria == 'Guías'
-      ? 'https://firebasestorage.googleapis.com/v0/b/oncuidar-v1.firebasestorage.app/o/prueba?alt=media'
+      ? 'http://localhost:8080/archivos/prueba.pdf'
       : null,
   tipoArchivo: esDescargado && categoria == 'Guías' ? 'pdf' : null,
   tamanoBytes: esDescargado ? 1500000 : null,

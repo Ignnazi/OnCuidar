@@ -123,7 +123,7 @@ void main() {
     expect(
       find.textContaining('Hola, María'),
       findsOneWidget,
-      reason: 'el nombre del cuidador viene del documento de Firestore',
+      reason: 'el nombre del cuidador viene de su perfil guardado',
     );
   });
 

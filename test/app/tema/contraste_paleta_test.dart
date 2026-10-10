@@ -86,6 +86,21 @@ void main() {
     },
   );
 
+  group('Acentos de tema: texto legible sobre su fondo y sobre la tarjeta', () {
+    for (final (nombre, c) in [
+      ('claro', coloresClaros),
+      ('oscuro', coloresOscuros),
+    ]) {
+      for (var i = 0; i < c.acentosTema.length; i++) {
+        test('modo $nombre, acento $i', () {
+          final a = c.acentosTema[i];
+          expect(contraste(a.texto, a.fondo), greaterThanOrEqualTo(4.5));
+          expect(contraste(a.texto, c.tarjeta), greaterThanOrEqualTo(4.5));
+        });
+      }
+    }
+  });
+
   group('Insignia con número', () {
     for (final (nombre, c) in [
       ('claro', coloresClaros),

@@ -4,6 +4,7 @@ import 'package:oncuidar/app/tema/paleta.dart';
 import 'package:oncuidar/caracteristicas/biblioteca/dominio/categorias.dart';
 import 'package:oncuidar/caracteristicas/biblioteca/dominio/material_educativo.dart';
 import 'package:oncuidar/caracteristicas/biblioteca/presentacion/pantalla_visor_imagen.dart';
+import 'package:oncuidar/caracteristicas/biblioteca/presentacion/widgets/etiqueta_tema.dart';
 import 'package:oncuidar/caracteristicas/biblioteca/presentacion/widgets/imagen_cacheada.dart';
 
 /// Color e ícono de cada tipo de material.
@@ -81,6 +82,12 @@ class TarjetaMaterial extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          if (material.tema.isNotEmpty)
+            Container(
+              key: const Key('franjaTema'),
+              height: 3,
+              color: acentoDelTema(material.tema).acento,
+            ),
           GestureDetector(
             key: const Key('miniaturaTarjetaMaterial'),
             onTap: alTocar,
@@ -150,8 +157,35 @@ class TarjetaMaterial extends StatelessWidget {
                 ),
               ),
             ),
+          if (material.tema.isNotEmpty)
+            Positioned(
+              top: 8,
+              left: 8,
+              right: 8,
+              child: Align(
+                alignment: Alignment.topRight,
+                child: _etiquetaSobreImagen(),
+              ),
+            ),
         ],
       ),
+    );
+  }
+
+  Widget _etiquetaSobreImagen() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Paleta.tarjeta,
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.18),
+            blurRadius: 4,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      child: EtiquetaTema(tema: material.tema),
     );
   }
 
@@ -195,18 +229,6 @@ class TarjetaMaterial extends StatelessWidget {
             height: 1.2,
           ),
         ),
-        if (material.tema.isNotEmpty) ...[
-          const SizedBox(height: 2),
-          Text(
-            material.tema,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.nunito(
-              fontSize: 13,
-              color: Paleta.textoSecundario,
-            ),
-          ),
-        ],
       ],
     );
   }

@@ -10,6 +10,7 @@ import 'package:oncuidar/caracteristicas/biblioteca/dominio/parseo_contenido.dar
 import 'package:oncuidar/caracteristicas/biblioteca/presentacion/acciones_material.dart';
 import 'package:oncuidar/caracteristicas/biblioteca/presentacion/pantalla_visor_imagen.dart';
 import 'package:oncuidar/caracteristicas/biblioteca/presentacion/proveedores_biblioteca.dart';
+import 'package:oncuidar/caracteristicas/biblioteca/presentacion/widgets/etiqueta_tema.dart';
 import 'package:oncuidar/caracteristicas/biblioteca/presentacion/widgets/imagen_cacheada.dart';
 import 'package:oncuidar/compartido/widgets/buscador.dart';
 import 'package:oncuidar/compartido/widgets/encabezado_gradiente.dart';
@@ -162,15 +163,7 @@ class _PantallaDetalleMaterialState
               ),
               if (material.tema.isNotEmpty) ...[
                 const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    material.tema,
-                    style: GoogleFonts.nunito(
-                      fontSize: 13,
-                      color: Paleta.textoSecundario,
-                    ),
-                  ),
-                ),
+                Flexible(child: EtiquetaTema(tema: material.tema)),
               ],
             ],
           ),
