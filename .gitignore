@@ -63,3 +63,9 @@ functions/node_modules/
 
 # Dependencias de la prueba de reglas de Firestore
 test/reglas_firestore/node_modules/
+
+# Backend
+.env
+node_modules/
+coverage/
+!.env.ejemplo
