@@ -12,7 +12,8 @@ CREATE TABLE IF NOT EXISTS usuarios (
   pendiente_correo text,
   pendiente_correo_tipo text,
   pendiente_correo_solicitado_en timestamptz,
-  respaldo_pendiente_servidor boolean DEFAULT false
+  respaldo_pendiente_servidor boolean DEFAULT false,
+  correo_verificado boolean DEFAULT false
 );
 CREATE INDEX IF NOT EXISTS idx_usuarios_respaldo_hash ON usuarios (correo_respaldo_hash);
 
@@ -106,3 +107,16 @@ CREATE TABLE IF NOT EXISTS tokens_restablecer (
   expira_en timestamptz NOT NULL,
   usado boolean DEFAULT false
 );
+
+-- Tokens de los enlaces de correo
+CREATE TABLE IF NOT EXISTS tokens_correo (
+  token_hash text PRIMARY KEY,
+  usuario_id uuid NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+  tipo text NOT NULL,
+  correo_nuevo text,
+  respaldo_hash text,
+  creado_en timestamptz DEFAULT now(),
+  expira_en timestamptz NOT NULL,
+  usado boolean DEFAULT false
+);
+CREATE INDEX IF NOT EXISTS idx_tokens_correo_usuario ON tokens_correo (usuario_id, tipo);

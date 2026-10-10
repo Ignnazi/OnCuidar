@@ -1,17 +1,37 @@
-# oncuidar
+# OnCuidar
 
-A new Flutter project.
+Aplicación móvil para cuidadores de niños, niñas y adolescentes con cáncer. Permite registrar síntomas y signos vitales, programar recordatorios y consultar material educativo, incluso sin conexión.
 
-## Getting Started
+La app está hecha en Flutter y el backend en Node.js con PostgreSQL, levantado con Docker.
 
-This project is a starting point for a Flutter application.
+## Cómo usarla
 
-A few resources to get you started if this is your first Flutter project:
+Primero se copia .env.ejemplo como .env y se cambian las claves. Luego se levanta el servidor y se corre la app:
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+```
+docker compose up -d --build
+flutter pub get
+flutter run
+```
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Para probarla en un teléfono hay que indicar la IP del PC:
+
+```
+flutter run --dart-define=API_URL=http://IP-DEL-PC:8080/api
+```
+
+Y para generar el APK:
+
+```
+flutter build apk --release --dart-define=API_URL=http://SERVIDOR:PUERTO/api
+```
+
+Los videos de la biblioteca no están en el repositorio por su peso, se copian a mano en backend/archivos/videos.
+
+## Pruebas
+
+```
+flutter test
+docker compose -f docker-compose.pruebas.yml up -d
+cd backend && npm install && npm test
+```

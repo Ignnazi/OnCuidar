@@ -15,6 +15,10 @@ class TarjetaPerfilCuidador extends StatelessWidget {
     required this.correoPrincipal,
     this.correoRespaldo,
     this.respaldoPendiente = false,
+    this.respaldoVerificado = false,
+    this.correoVerificado = false,
+    this.pendienteCorreo,
+    this.onReenviarVerificacion,
     required this.onEditarDatos,
     required this.onEditarCorreoPrincipal,
     required this.onEditarCorreoRespaldo,
@@ -27,6 +31,10 @@ class TarjetaPerfilCuidador extends StatelessWidget {
   final String correoPrincipal;
   final String? correoRespaldo;
   final bool respaldoPendiente;
+  final bool respaldoVerificado;
+  final bool correoVerificado;
+  final String? pendienteCorreo;
+  final VoidCallback? onReenviarVerificacion;
   final VoidCallback onEditarDatos;
   final VoidCallback onEditarCorreoPrincipal;
   final VoidCallback onEditarCorreoRespaldo;
@@ -49,6 +57,10 @@ class TarjetaPerfilCuidador extends StatelessWidget {
                   correoPrincipal: correoPrincipal,
                   correoRespaldo: correoRespaldo,
                   respaldoPendiente: respaldoPendiente,
+                  respaldoVerificado: respaldoVerificado,
+                  correoVerificado: correoVerificado,
+                  pendienteCorreo: pendienteCorreo,
+                  onReenviarVerificacion: onReenviarVerificacion,
                   onEditarPrincipal: onEditarCorreoPrincipal,
                   onEditarRespaldo: onEditarCorreoRespaldo,
                 ),
@@ -148,6 +160,10 @@ class _TarjetaAutenticacion extends StatelessWidget {
     required this.correoPrincipal,
     this.correoRespaldo,
     this.respaldoPendiente = false,
+    this.respaldoVerificado = false,
+    this.correoVerificado = false,
+    this.pendienteCorreo,
+    this.onReenviarVerificacion,
     required this.onEditarPrincipal,
     required this.onEditarRespaldo,
   });
@@ -155,6 +171,10 @@ class _TarjetaAutenticacion extends StatelessWidget {
   final String correoPrincipal;
   final String? correoRespaldo;
   final bool respaldoPendiente;
+  final bool respaldoVerificado;
+  final bool correoVerificado;
+  final String? pendienteCorreo;
+  final VoidCallback? onReenviarVerificacion;
   final VoidCallback onEditarPrincipal;
   final VoidCallback onEditarRespaldo;
 
@@ -179,6 +199,43 @@ class _TarjetaAutenticacion extends StatelessWidget {
                       : correoPrincipal,
                   valorAusente: correoPrincipal.isEmpty,
                 ),
+                if (pendienteCorreo != null && pendienteCorreo!.isNotEmpty)
+                  _AvisoPendiente(
+                    key: const Key('pendientePrincipal'),
+                    texto: 'Pendiente de confirmar: $pendienteCorreo',
+                  )
+                else if (correoVerificado)
+                  const _AvisoPendiente(
+                    key: Key('correoVerificado'),
+                    texto: 'Verificado',
+                    icono: Icons.verified_outlined,
+                    exito: true,
+                  )
+                else if (correoPrincipal.isNotEmpty)
+                  _AvisoPendiente(
+                    key: const Key('correoSinVerificar'),
+                    texto: 'Correo sin verificar',
+                    accion: onReenviarVerificacion == null
+                        ? null
+                        : TextButton(
+                            onPressed: onReenviarVerificacion,
+                            style: TextButton.styleFrom(
+                              minimumSize: Size.zero,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 2,
+                              ),
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                            child: Text(
+                              'Reenviar enlace',
+                              style: GoogleFonts.nunito(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                  ),
                 const SizedBox(height: 10),
                 FilaDato(
                   recortar: true,
@@ -193,6 +250,13 @@ class _TarjetaAutenticacion extends StatelessWidget {
                   _AvisoPendiente(
                     key: const Key('pendienteRespaldo'),
                     texto: 'Pendiente de confirmar: $correoRespaldo',
+                  )
+                else if (respaldoVerificado && respaldoConfigurado)
+                  const _AvisoPendiente(
+                    key: Key('respaldoConfirmado'),
+                    texto: 'Confirmado',
+                    icono: Icons.verified_outlined,
+                    exito: true,
                   ),
               ],
             ),
@@ -257,19 +321,29 @@ class _TarjetaAutenticacion extends StatelessWidget {
 }
 
 class _AvisoPendiente extends StatelessWidget {
-  const _AvisoPendiente({super.key, required this.texto});
+  const _AvisoPendiente({
+    super.key,
+    required this.texto,
+    this.icono = Icons.schedule_rounded,
+    this.exito = false,
+    this.accion,
+  });
 
   final String texto;
+  final IconData icono;
+  final bool exito;
+  final Widget? accion;
 
   @override
   Widget build(BuildContext context) {
+    final color = exito ? Paleta.actual.verdeExito : Paleta.doradoOscuro;
     return Padding(
       padding: const EdgeInsets.only(left: 44, top: 4),
       child: Row(
         children: [
-          Icon(Icons.schedule_rounded, size: 14, color: Paleta.doradoOscuro),
+          Icon(icono, size: 14, color: color),
           const SizedBox(width: 4),
-          Expanded(
+          Flexible(
             child: Text(
               texto,
               maxLines: 2,
@@ -277,10 +351,11 @@ class _AvisoPendiente extends StatelessWidget {
               style: GoogleFonts.nunito(
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
-                color: Paleta.doradoOscuro,
+                color: color,
               ),
             ),
           ),
+          ?accion,
         ],
       ),
     );

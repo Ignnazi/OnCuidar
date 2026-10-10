@@ -150,16 +150,17 @@ class _DialogoCorreosState extends State<_DialogoCorreos> {
     }
     setState(() => _cargando = true);
     String? errorCorreo;
-    var respaldoConfirmado = true;
-    var cambiadoPrincipal = false;
+    var pidioPrincipal = false;
+    var pidioRespaldo = false;
 
     try {
       if (_hayCambioRespaldo) {
         try {
-          respaldoConfirmado = await widget.repositorio.cambiarCorreoRespaldo(
+          await widget.repositorio.cambiarCorreoRespaldo(
             contrasena: _contrasenaController.text,
             nuevoCorreo: _respaldoController.text.trim(),
           );
+          pidioRespaldo = true;
         } on ExcepcionSesion catch (e) {
           errorCorreo ??= _mensajeErrorCambioCorreo(e);
         } catch (_) {
@@ -167,12 +168,12 @@ class _DialogoCorreosState extends State<_DialogoCorreos> {
         }
       }
       if (_hayCambioPrincipal) {
-        cambiadoPrincipal = true;
         try {
           await widget.repositorio.cambiarCorreoPrincipal(
             contrasena: _contrasenaController.text,
             nuevoCorreo: _principalController.text.trim(),
           );
+          pidioPrincipal = true;
         } on ExcepcionSesion catch (e) {
           errorCorreo ??= _mensajeErrorCambioCorreo(e);
         } catch (_) {
@@ -191,25 +192,23 @@ class _DialogoCorreosState extends State<_DialogoCorreos> {
       messenger.showSnackBar(
         SnackBar(content: Text(errorCorreo), backgroundColor: Paleta.error),
       );
-    } else if (cambiadoPrincipal) {
-      messenger.showSnackBar(
-        SnackBar(
-          content: const Text('Correo principal actualizado'),
-          backgroundColor: Paleta.doradoPrincipal,
-        ),
-      );
     } else {
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text(
-            respaldoConfirmado
-                ? 'Correo de respaldo actualizado'
-                : 'Correo de respaldo guardado '
-                      '(pendiente de confirmar en el servidor)',
+      final texto = pidioPrincipal
+          ? 'Te enviamos un enlace a ${_principalController.text.trim()}. '
+                'El cambio se aplica cuando lo confirmes.'
+          : pidioRespaldo
+          ? 'Te enviamos un enlace a ${_respaldoController.text.trim()}. '
+                'El respaldo se activa cuando lo confirmes.'
+          : '';
+      if (texto.isNotEmpty) {
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(texto),
+            backgroundColor: Paleta.doradoPrincipal,
+            duration: const Duration(seconds: 6),
           ),
-          backgroundColor: Paleta.doradoPrincipal,
-        ),
-      );
+        );
+      }
     }
   }
 
@@ -249,8 +248,8 @@ class _DialogoCorreosState extends State<_DialogoCorreos> {
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  'Será el correo con el que inicies sesión '
-                  'desde ahora.',
+                  'Te enviaremos un enlace a este correo. Será tu correo de '
+                  'acceso cuando lo confirmes.',
                   style: GoogleFonts.nunito(
                     fontSize: 12,
                     height: 1.4,
@@ -271,8 +270,8 @@ class _DialogoCorreosState extends State<_DialogoCorreos> {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'Sirve para recuperar tu cuenta si pierdes el '
-                  'acceso al correo principal.',
+                  'Sirve para recuperar tu cuenta si pierdes el acceso al '
+                  'correo principal. Te enviaremos un enlace para confirmarlo.',
                   style: GoogleFonts.nunito(
                     fontSize: 12,
                     height: 1.4,

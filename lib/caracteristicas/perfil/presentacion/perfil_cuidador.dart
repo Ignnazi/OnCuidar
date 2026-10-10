@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:oncuidar/caracteristicas/perfil/datos/proveedores_perfil.dart';
-import 'package:oncuidar/caracteristicas/perfil/datos/repositorio_cuidador.dart';
 import 'package:oncuidar/caracteristicas/perfil/presentacion/proveedores_perfil.dart';
 import 'package:oncuidar/caracteristicas/perfil/presentacion/widgets/dialogo_correos.dart';
 import 'package:oncuidar/caracteristicas/perfil/presentacion/widgets/dialogo_editar_cuidador.dart';
@@ -12,6 +11,7 @@ import 'package:oncuidar/caracteristicas/perfil/presentacion/widgets/pie_version
 import 'package:oncuidar/caracteristicas/perfil/presentacion/widgets/tarjeta_configuracion.dart';
 import 'package:oncuidar/caracteristicas/perfil/presentacion/widgets/tarjeta_perfil_cuidador.dart';
 import 'package:oncuidar/nucleo/proveedores.dart';
+import 'package:oncuidar/nucleo/sesion/servicio_sesion.dart';
 
 class PerfilCuidador extends ConsumerStatefulWidget {
   const PerfilCuidador({super.key});
@@ -25,10 +25,21 @@ class _PerfilCuidadorState extends ConsumerState<PerfilCuidador> {
   bool _cargando = true;
   bool _error = false;
 
+  Timer? _temporizador;
+
   @override
   void initState() {
     super.initState();
     _cargar();
+    _temporizador = Timer.periodic(const Duration(seconds: 10), (_) {
+      if (mounted && !_cargando) unawaited(_cargar());
+    });
+  }
+
+  @override
+  void dispose() {
+    _temporizador?.cancel();
+    super.dispose();
   }
 
   Future<void> _cargar() async {
@@ -40,12 +51,9 @@ class _PerfilCuidadorState extends ConsumerState<PerfilCuidador> {
     }
     try {
       final repositorio = ref.read(repositorioCuidadorProvider);
-      var datos = await repositorio.obtenerCuidador().timeout(
+      final datos = await repositorio.obtenerCuidador().timeout(
         const Duration(seconds: 5),
       );
-      if (datos['respaldoPendienteServidor'] == true) {
-        datos = await _reintentarRespaldo(repositorio, datos);
-      }
       if (!mounted) return;
       setState(() => _cuidador = datos);
     } catch (_) {
@@ -56,30 +64,20 @@ class _PerfilCuidadorState extends ConsumerState<PerfilCuidador> {
     }
   }
 
-  Future<Map<String, dynamic>> _reintentarRespaldo(
-    RepositorioCuidador repositorio,
-    Map<String, dynamic> datos,
-  ) async {
-    var confirmado = false;
+  Future<void> _reenviarVerificacion() async {
+    final mensajero = ScaffoldMessenger.of(context);
+    String texto;
     try {
-      confirmado = await repositorio.reintentarRegistroRespaldo().timeout(
-        const Duration(seconds: 8),
-      );
-    } catch (_) {}
-    if (confirmado) {
-      return {...datos, 'respaldoPendienteServidor': false};
+      await ref.read(repositorioCuidadorProvider).reenviarVerificacion();
+      texto = 'Te enviamos un enlace para verificar tu correo.';
+    } on ExcepcionSesion catch (e) {
+      texto = e.codigo == CodigoErrorSesion.demasiadosIntentos
+          ? 'Espera un minuto antes de pedir otro enlace.'
+          : 'No se pudo enviar el enlace. Intenta de nuevo.';
+    } catch (_) {
+      texto = 'No se pudo enviar el enlace. Intenta de nuevo.';
     }
-    if (mounted) {
-      ScaffoldMessenger.maybeOf(context)?.showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Tu correo de respaldo aún no se registra en el servidor. '
-            'Lo reintentaremos al volver a abrir tu perfil.',
-          ),
-        ),
-      );
-    }
-    return datos;
+    mensajero.showSnackBar(SnackBar(content: Text(texto)));
   }
 
   @override
@@ -125,7 +123,11 @@ class _PerfilCuidadorState extends ConsumerState<PerfilCuidador> {
       correoRespaldo: (correoRespaldo != null && correoRespaldo.isNotEmpty)
           ? correoRespaldo
           : null,
-      respaldoPendiente: _cuidador?['respaldoPendienteServidor'] == true,
+      respaldoPendiente: _cuidador?['respaldoPendiente'] == true,
+      respaldoVerificado: _cuidador?['correoRespaldoVerificado'] == true,
+      correoVerificado: _cuidador?['correoVerificado'] == true,
+      pendienteCorreo: _cuidador?['pendienteCorreo'] as String?,
+      onReenviarVerificacion: _reenviarVerificacion,
       onEditarDatos: _dialogoEditarCuidador,
       onEditarCorreoPrincipal: () => _dialogoCorreos(editarPrincipal: true),
       onEditarCorreoRespaldo: () => _dialogoCorreos(editarRespaldo: true),

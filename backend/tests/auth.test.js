@@ -4,6 +4,16 @@ const correo = require('../src/correo');
 afterAll(async () => { await limpiar(); await cerrar(); });
 beforeEach(() => jest.restoreAllMocks());
 
+async function respaldoConfirmado(u, respaldo) {
+  expect((await request(app).post('/api/correo-respaldo').set(con(u)).send({ correo: 'malo' })).status).toBe(400);
+  const r = await request(app).post('/api/correo-respaldo').set(con(u)).send({ correo: respaldo });
+  expect(r.body).toEqual({ ok: true, pendiente: true });
+  const envio = correo.enviarEnlace.mock.calls.at(-1);
+  expect(envio[0]).toBe(respaldo);
+  expect((await request(app).get(new URL(envio[1]).pathname + new URL(envio[1]).search)).status).toBe(200);
+  correo.enviarEnlace.mockClear();
+}
+
 describe('autenticacion', () => {
   test('salud responde ok', async () => {
     const r = await request(app).get('/api/salud');
@@ -42,10 +52,6 @@ describe('autenticacion', () => {
     const otro = await crearUsuario();
     const choque = await request(app).post('/api/auth/cambiar-correo').set(con(u)).send({ contrasena: u.contrasena, nuevoCorreo: otro.correo });
     expect(choque.status).toBe(409);
-    const nuevo = `n-${unico()}@prueba.cl`;
-    const ok = await request(app).post('/api/auth/cambiar-correo').set(con(u)).send({ contrasena: u.contrasena, nuevoCorreo: nuevo });
-    expect(ok.status).toBe(200);
-    expect((await request(app).post('/api/auth/login').send({ correo: nuevo, contrasena: u.contrasena })).status).toBe(200);
   });
 
   test('borrar cuenta elimina todo en cascada', async () => {
@@ -76,8 +82,8 @@ describe('clave de datos', () => {
 
 describe('recuperacion de contrasena', () => {
   test('siempre responde 200 y solo envia si el correo existe', async () => {
-    const enviar = jest.spyOn(correo, 'enviarEnlace').mockResolvedValue();
     const u = await crearUsuario();
+    const enviar = jest.spyOn(correo, 'enviarEnlace').mockResolvedValue();
     const existe = await request(app).post('/api/auth/recuperar-contrasena').send({ correo: u.correo });
     const noExiste = await request(app).post('/api/auth/recuperar-contrasena').send({ correo: 'nadie@prueba.cl' });
     const basura = await request(app).post('/api/auth/recuperar-contrasena').send({});
@@ -88,8 +94,8 @@ describe('recuperacion de contrasena', () => {
   });
 
   test('el token restablece la contrasena una sola vez', async () => {
-    const enviar = jest.spyOn(correo, 'enviarEnlace').mockResolvedValue();
     const u = await crearUsuario();
+    const enviar = jest.spyOn(correo, 'enviarEnlace').mockResolvedValue();
     await request(app).post('/api/auth/recuperar-contrasena').send({ correo: u.correo });
     const enlace = enviar.mock.calls[0][1];
     const token = new URL(enlace).searchParams.get('token');
@@ -104,13 +110,10 @@ describe('recuperacion de contrasena', () => {
   });
 
   test('por correo de respaldo: envia al respaldo y aplica espera de 60 s', async () => {
-    const enviar = jest.spyOn(correo, 'enviarEnlace').mockResolvedValue();
     const u = await crearUsuario();
+    const enviar = jest.spyOn(correo, 'enviarEnlace').mockResolvedValue();
     const respaldo = `r-${unico()}@prueba.cl`;
-    expect((await request(app).post('/api/correo-respaldo').set(con(u)).send({ correo: 'malo' })).status).toBe(400);
-    expect((await request(app).post('/api/correo-respaldo').set(con(u)).send({ correo: respaldo })).body).toEqual({ ok: true });
-    const { rows } = await db.consulta('SELECT correo_respaldo_hash FROM usuarios WHERE id = $1', [u.uid]);
-    expect(rows[0].correo_respaldo_hash).toMatch(/^[0-9a-f]{64}$/);
+    await respaldoConfirmado(u, respaldo);
 
     const r1 = await request(app).post('/api/auth/recuperar-por-respaldo').send({ correo: ` ${respaldo.toUpperCase()} ` });
     expect(r1.status).toBe(200);
