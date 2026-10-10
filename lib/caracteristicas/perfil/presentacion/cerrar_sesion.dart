@@ -32,7 +32,7 @@ Future<void> cerrarSesionConfirmando(
     // Si falla, se sigue igual.
   }
   try {
-    await ref.read(firebaseAuthProvider).signOut();
+    await ref.read(servicioSesionProvider).cerrarSesion();
   } catch (_) {
     // Si falla, se sigue igual.
   }

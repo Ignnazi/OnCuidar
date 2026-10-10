@@ -1,38 +1,36 @@
 import 'dart:convert';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:oncuidar/caracteristicas/recordatorios/dominio/recordatorio.dart';
 import 'package:oncuidar/nucleo/datos/base_datos_segura.dart';
+import 'package:oncuidar/nucleo/datos/rutas_api.dart';
 import 'package:oncuidar/nucleo/notificaciones/servicio_notificaciones.dart';
 import 'package:oncuidar/nucleo/sincronizacion/cola_escrituras.dart';
+import 'package:uuid/uuid.dart';
 
 class RepositorioRecordatorios {
   RepositorioRecordatorios(this.bd);
 
   final BaseDatosSegura bd;
 
-  CollectionReference _recordatorios(String idPaciente) => bd.docUsuario
-      .collection('pacientes')
-      .doc(idPaciente)
-      .collection('recordatorios');
+  String _rutaLista(String idPaciente) =>
+      '${RutasApi.recordatorios(idPaciente)}?limite=100';
 
   Stream<List<Recordatorio>> recordatoriosEnTiempoReal(String idPaciente) {
     if (!bd.tieneIdentidad()) return Stream.value(const []);
-    return _recordatorios(idPaciente)
-        .orderBy('creadoEn', descending: true)
-        .limit(100)
-        .snapshots()
-        .asyncMap(
-          (snap) => Future.wait(
-            snap.docs.map(
-              (d) => _descifrarRecordatorio(
-                d.id,
-                d.data() as Map<String, dynamic>,
-              ),
+    return bd.flujo<List<Recordatorio>>(
+      _rutaLista(idPaciente),
+      convertir: (json) async {
+        final lista = await Future.wait([
+          for (final e in json as List)
+            _descifrarRecordatorio(
+              (e as Map)['id'] as String,
+              e.cast<String, dynamic>(),
             ),
-          ),
-        );
+        ]);
+        return lista..sort((a, b) => b.creadoEn.compareTo(a.creadoEn));
+      },
+    );
   }
 
   Future<String> agregarRecordatorio(String idPaciente, Recordatorio r) async {
@@ -45,10 +43,14 @@ class RepositorioRecordatorios {
     final datos = <String, dynamic>{
       'pacienteId': r.pacienteId,
       'activo': r.activo,
-      'creadoEn': r.creadoEn.toIso8601String(),
-      'version_encriptacion': 3,
+      'creadoEn': r.creadoEn.toUtc().toIso8601String(),
+      'versionEncriptacion': 3,
     };
-    datos['datos_cifrados'] = await _cifrarPayloadRecordatorio(r);
+    bd.ponerCifrado(
+      datos,
+      'datos_cifrados',
+      await _cifrarPayloadRecordatorio(r),
+    );
     await bd.reemplazarPorCifrado(
       datos,
       plano: r.titulo,
@@ -61,14 +63,14 @@ class RepositorioRecordatorios {
         cifrado: 'descripcion_cifrada',
       );
     }
-    final ref = _recordatorios(idPaciente).doc();
+    final id = const Uuid().v4();
     await bd.escribir(
-      ref,
+      RutasApi.recordatorio(idPaciente, id),
       datos,
       operacion: OperacionPendiente.crear,
       idPaciente: idPaciente,
     );
-    return ref.id;
+    return id;
   }
 
   Future<void> actualizarRecordatorio(
@@ -101,15 +103,11 @@ class RepositorioRecordatorios {
       );
     }
     if (descripcion != null) {
-      if (descripcion.isEmpty) {
-        datos['descripcion_cifrada'] = FieldValue.delete();
-      } else {
-        await bd.reemplazarPorCifrado(
-          datos,
-          plano: descripcion,
-          cifrado: 'descripcion_cifrada',
-        );
-      }
+      await bd.reemplazarPorCifrado(
+        datos,
+        plano: descripcion,
+        cifrado: 'descripcion_cifrada',
+      );
     }
     final tocaPayload =
         tipo != null ||
@@ -138,21 +136,17 @@ class RepositorioRecordatorios {
       }
       if (asignadoA != null) sensibles['asignadoA'] = asignadoA;
       sensibles.remove('completadoEn');
-      datos['datos_cifrados'] = await bd.cifrado.cifrar(
-        bd.uid,
-        jsonEncode(sensibles),
+      bd.ponerCifrado(
+        datos,
+        'datos_cifrados',
+        await bd.cifrado.cifrar(bd.uid, jsonEncode(sensibles)),
       );
-      datos['tipo'] = FieldValue.delete();
-      datos['fechaHora'] = FieldValue.delete();
-      datos['diasRepeticion'] = FieldValue.delete();
-      datos['recurrencia'] = FieldValue.delete();
-      datos['completadoEn'] = FieldValue.delete();
     }
     if (activo != null) datos['activo'] = activo;
     if (datos.isEmpty) return;
     datos['pacienteId'] = idPaciente;
     await bd.escribir(
-      _recordatorios(idPaciente).doc(idRecordatorio),
+      RutasApi.recordatorio(idPaciente, idRecordatorio),
       datos,
       operacion: OperacionPendiente.fusionar,
       idPaciente: idPaciente,
@@ -164,7 +158,10 @@ class RepositorioRecordatorios {
     String idPaciente,
     String idRecordatorio,
   ) async {
-    await bd.borrar(_recordatorios(idPaciente).doc(idRecordatorio), idPaciente);
+    await bd.borrar(
+      RutasApi.recordatorio(idPaciente, idRecordatorio),
+      idPaciente,
+    );
   }
 
   Future<Recordatorio> _descifrarRecordatorio(
@@ -209,24 +206,16 @@ class RepositorioRecordatorios {
     Map<String, dynamic> datos, {
     bool estricto = false,
   }) async {
-    final cifrado = datos['datos_cifrados'] as String?;
-    if (cifrado != null && cifrado.isNotEmpty) {
-      try {
-        final texto = await bd.cifrado.descifrar(bd.uid, cifrado);
-        return jsonDecode(texto) as Map<String, dynamic>;
-      } catch (e, pila) {
-        if (estricto) rethrow;
-        debugPrint('No se pudo descifrar datos_cifrados: $e\n$pila');
-        return <String, dynamic>{};
-      }
+    final cifrado = bd.textoCifrado(datos, 'datos_cifrados');
+    if (cifrado == null || cifrado.isEmpty) return <String, dynamic>{};
+    try {
+      final texto = await bd.cifrado.descifrar(bd.uid, cifrado);
+      return jsonDecode(texto) as Map<String, dynamic>;
+    } catch (e, pila) {
+      if (estricto) rethrow;
+      debugPrint('No se pudo descifrar datos_cifrados: $e\n$pila');
+      return <String, dynamic>{};
     }
-    return <String, dynamic>{
-      if (datos['tipo'] != null) 'tipo': datos['tipo'],
-      if (datos['fechaHora'] != null) 'fechaHora': datos['fechaHora'],
-      if (datos['diasRepeticion'] != null)
-        'diasRepeticion': datos['diasRepeticion'],
-      if (datos['recurrencia'] != null) 'recurrencia': datos['recurrencia'],
-    };
   }
 
   Future<Map<String, dynamic>> _datosSensiblesActuales(
@@ -235,15 +224,16 @@ class RepositorioRecordatorios {
   ) async {
     final local = await _payloadEncolado(idPaciente, idRecordatorio);
     if (local != null) return local;
-    final snap = await _recordatorios(idPaciente).doc(idRecordatorio).get();
-    final datos = snap.data();
-    if (datos == null) return <String, dynamic>{};
-    return _datosSensiblesRecordatorio(
-      datos is Map<String, dynamic>
-          ? datos
-          : Map<String, dynamic>.from(datos as Map),
-      estricto: true,
-    );
+    final lista = await bd.leerConCache(_rutaLista(idPaciente)) as List;
+    for (final e in lista) {
+      if (e is Map && e['id'] == idRecordatorio) {
+        return _datosSensiblesRecordatorio(
+          e.cast<String, dynamic>(),
+          estricto: true,
+        );
+      }
+    }
+    return <String, dynamic>{};
   }
 
   Future<Map<String, dynamic>?> _payloadEncolado(
@@ -252,15 +242,15 @@ class RepositorioRecordatorios {
   ) async {
     final cola = bd.cola;
     if (cola == null) return null;
-    final ruta = _recordatorios(idPaciente).doc(idRecordatorio).path;
+    final ruta = RutasApi.recordatorio(idPaciente, idRecordatorio);
     final pendientes = await cola.pendientes(bd.uid);
     final propias = <EscrituraPendiente>[
       for (final e in pendientes)
         if (e.ruta == ruta) e,
     ]..sort((a, b) => a.encoladoEn.compareTo(b.encoladoEn));
     for (final e in propias.reversed) {
-      final cifrado = e.datos['datos_cifrados'];
-      if (cifrado is! String || cifrado.isEmpty) continue;
+      final cifrado = bd.textoCifrado(e.datos, 'datos_cifrados');
+      if (cifrado == null || cifrado.isEmpty) continue;
       final texto = await bd.cifrado.descifrar(bd.uid, cifrado);
       return jsonDecode(texto) as Map<String, dynamic>;
     }
@@ -272,9 +262,11 @@ class RepositorioRecordatorios {
     ServicioNotificaciones notif,
   ) async {
     try {
-      final snap = await _recordatorios(idPaciente).get();
-      for (final doc in snap.docs) {
-        await notif.cancelar(ServicioNotificaciones.idSeguro(doc.id));
+      final lista = await bd.leerConCache(_rutaLista(idPaciente)) as List;
+      for (final e in lista) {
+        await notif.cancelar(
+          ServicioNotificaciones.idSeguro((e as Map)['id'] as String),
+        );
       }
     } catch (_) {
       // Si falla, se sigue igual.

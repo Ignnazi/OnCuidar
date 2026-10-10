@@ -1,3 +1,4 @@
+const path = require('path');
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -19,6 +20,17 @@ api.use(require('./rutas/pacientes'));
 api.use(require('./rutas/conversaciones'));
 api.use(require('./rutas/biblioteca'));
 app.use('/api', api);
+
+app.use('/archivos', (_req, res, next) => {
+  res.set('Cross-Origin-Resource-Policy', 'cross-origin');
+  next();
+}, express.static(path.join(__dirname, '..', 'archivos'), {
+  index: false,
+  dotfiles: 'ignore',
+  redirect: false,
+  maxAge: '7d',
+  immutable: false,
+}));
 
 app.use((_req, res) => res.status(404).json({ error: 'Ruta no encontrada' }));
 

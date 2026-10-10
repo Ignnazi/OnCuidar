@@ -1,9 +1,12 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Acceso a la API propia -->
+    <uses-permission android:name="android.permission.INTERNET" />
     <!-- Notificaciones y recordatorios -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <application
+        android:usesCleartextTraffic="true"
         android:label="OnCuidar"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">

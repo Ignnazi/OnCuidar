@@ -1,35 +1,57 @@
 import 'dart:async';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:oncuidar/nucleo/almacen/almacen_secreto.dart';
+import 'package:oncuidar/nucleo/almacen/almacen_secreto_seguro.dart';
 import 'package:oncuidar/nucleo/cifrado/servicio_cifrado.dart';
 import 'package:oncuidar/nucleo/conectividad/servicio_conectividad.dart';
 import 'package:oncuidar/nucleo/datos/base_datos_segura.dart';
 import 'package:oncuidar/nucleo/notificaciones/servicio_notificaciones.dart';
+import 'package:oncuidar/nucleo/red/cliente_api.dart';
+import 'package:oncuidar/nucleo/red/config_api.dart';
+import 'package:oncuidar/nucleo/sesion/servicio_sesion.dart';
 import 'package:oncuidar/nucleo/sincronizacion/cola_escrituras.dart';
 import 'package:oncuidar/nucleo/sincronizacion/orquestador_sincronizacion.dart';
 
+final almacenSecretoProvider = Provider<AlmacenSecreto>((ref) {
+  return const AlmacenSecretoSeguro();
+});
+
+final Provider<ClienteApi> clienteApiProvider = Provider<ClienteApi>((ref) {
+  final api = ClienteApi(
+    urlBase: ConfigApi.urlBase,
+    obtenerToken: () => ref.read(servicioSesionProvider).token,
+  );
+  ref.onDispose(api.cerrar);
+  return api;
+});
+
+final Provider<ServicioSesion> servicioSesionProvider =
+    Provider<ServicioSesion>((ref) {
+      final sesion = ServicioSesion(
+        api: ref.watch(clienteApiProvider),
+        almacen: ref.watch(almacenSecretoProvider),
+      );
+      unawaited(sesion.inicializar());
+      ref.onDispose(sesion.dispose);
+      return sesion;
+    });
+
 final servicioCifradoProvider = Provider<ServicioCifrado>((ref) {
-  return ServicioCifrado();
+  return ServicioCifrado(
+    api: ref.watch(clienteApiProvider),
+    almacen: ref.watch(almacenSecretoProvider),
+  );
 });
 
-final firebaseAuthProvider = Provider<FirebaseAuth>((ref) {
-  return FirebaseAuth.instance;
-});
-
-final estadoAutenticacionProvider = StreamProvider<User?>((ref) {
-  return ref.watch(firebaseAuthProvider).authStateChanges();
+final estadoAutenticacionProvider = StreamProvider<SesionUsuario?>((ref) {
+  return ref.watch(servicioSesionProvider).cambios;
 });
 
 final uidSesionProvider = Provider<String?>((ref) {
   final auth = ref.watch(estadoAutenticacionProvider);
   if (auth.hasValue) return auth.value?.uid;
-  try {
-    return ref.read(firebaseAuthProvider).currentUser?.uid;
-  } catch (_) {
-    return null;
-  }
+  return ref.read(servicioSesionProvider).actual?.uid;
 });
 
 class BloqueoCifradoNotifier extends Notifier<bool> {
@@ -59,8 +81,8 @@ final colaEscriturasProvider = Provider<ColaEscrituras>((ref) {
 
 final baseDatosSeguraProvider = Provider<BaseDatosSegura>((ref) {
   return BaseDatosSegura(
-    base: FirebaseFirestore.instance,
-    auth: ref.watch(firebaseAuthProvider),
+    api: ref.watch(clienteApiProvider),
+    sesion: ref.watch(servicioSesionProvider),
     cifrado: ref.watch(servicioCifradoProvider),
     cola: ref.watch(colaEscriturasProvider),
     conectividad: ref.watch(servicioConectividadProvider),
@@ -89,7 +111,7 @@ final orquestadorSincronizacionProvider = Provider<OrquestadorSincronizacion>((
     cola: ref.watch(colaEscriturasProvider),
     base: ref.watch(baseDatosSeguraProvider),
     conectividad: ref.watch(servicioConectividadProvider),
-    uidActual: () => ref.read(firebaseAuthProvider).currentUser?.uid,
+    uidActual: () => ref.read(servicioSesionProvider).actual?.uid,
   )..iniciar();
   ref.onDispose(orquestador.dispose);
   return orquestador;

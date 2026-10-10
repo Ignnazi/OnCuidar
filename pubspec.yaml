@@ -13,12 +13,6 @@ dependencies:
   go_router: ^17.3.0
   google_fonts: ^6.2.0
 
-  # Firebase
-  firebase_core: 4.13.0
-  firebase_auth: 6.5.7
-  cloud_firestore: 6.8.0
-  cloud_functions: 6.3.6
-
   # Estado
   flutter_riverpod: ^3.3.2
   shared_preferences: ^2.3.0
@@ -45,14 +39,12 @@ dependencies:
   flutter_timezone: ^5.1.0
   pdfx: ^2.11.0
   flutter_file_dialog: ^3.3.3
+  http: ^1.6.0
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
   flutter_launcher_icons: ^0.14.3
-  fake_cloud_firestore: ^4.2.0
-  firebase_auth_mocks: ^0.15.2
-  mock_exceptions: ^0.8.2
   archive: ^3.6.1
   file: ^7.0.1
 

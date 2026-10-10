@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:oncuidar/app/tema/paleta.dart';
@@ -9,6 +8,7 @@ import 'package:oncuidar/compartido/widgets/boton_principal.dart';
 import 'package:oncuidar/compartido/widgets/campos_formulario.dart';
 import 'package:oncuidar/compartido/widgets/hoja_dialogo.dart';
 import 'package:oncuidar/compartido/widgets/titulo_seccion.dart';
+import 'package:oncuidar/nucleo/sesion/servicio_sesion.dart';
 import 'package:oncuidar/nucleo/utilidades/validacion_correo.dart';
 
 Future<void> mostrarDialogoCorreos(
@@ -152,7 +152,6 @@ class _DialogoCorreosState extends State<_DialogoCorreos> {
     String? errorCorreo;
     var respaldoConfirmado = true;
     var cambiadoPrincipal = false;
-    String? principalEnviado;
 
     try {
       if (_hayCambioRespaldo) {
@@ -161,7 +160,7 @@ class _DialogoCorreosState extends State<_DialogoCorreos> {
             contrasena: _contrasenaController.text,
             nuevoCorreo: _respaldoController.text.trim(),
           );
-        } on FirebaseAuthException catch (e) {
+        } on ExcepcionSesion catch (e) {
           errorCorreo ??= _mensajeErrorCambioCorreo(e);
         } catch (_) {
           errorCorreo ??= 'El correo de respaldo no se pudo actualizar.';
@@ -169,13 +168,12 @@ class _DialogoCorreosState extends State<_DialogoCorreos> {
       }
       if (_hayCambioPrincipal) {
         cambiadoPrincipal = true;
-        principalEnviado = _principalController.text.trim();
         try {
           await widget.repositorio.cambiarCorreoPrincipal(
             contrasena: _contrasenaController.text,
-            nuevoCorreo: principalEnviado,
+            nuevoCorreo: _principalController.text.trim(),
           );
-        } on FirebaseAuthException catch (e) {
+        } on ExcepcionSesion catch (e) {
           errorCorreo ??= _mensajeErrorCambioCorreo(e);
         } catch (_) {
           errorCorreo ??= 'El correo principal no se pudo actualizar.';
@@ -196,10 +194,7 @@ class _DialogoCorreosState extends State<_DialogoCorreos> {
     } else if (cambiadoPrincipal) {
       messenger.showSnackBar(
         SnackBar(
-          content: Text(
-            'Te enviamos un correo a $principalEnviado. '
-            'Confírmalo para completar el cambio.',
-          ),
+          content: const Text('Correo principal actualizado'),
           backgroundColor: Paleta.doradoPrincipal,
         ),
       );
@@ -254,8 +249,8 @@ class _DialogoCorreosState extends State<_DialogoCorreos> {
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  'Al cambiarlo te enviaremos un enlace de '
-                  'verificación al nuevo correo.',
+                  'Será el correo con el que inicies sesión '
+                  'desde ahora.',
                   style: GoogleFonts.nunito(
                     fontSize: 12,
                     height: 1.4,
@@ -352,21 +347,18 @@ class _DialogoCorreosState extends State<_DialogoCorreos> {
   }
 }
 
-String _mensajeErrorCambioCorreo(FirebaseAuthException e) {
-  switch (e.code) {
-    case 'wrong-password':
-    case 'invalid-credential':
+String _mensajeErrorCambioCorreo(ExcepcionSesion e) {
+  switch (e.codigo) {
+    case CodigoErrorSesion.credencialesInvalidas:
       return 'Contraseña incorrecta. Intenta de nuevo.';
-    case 'invalid-email':
+    case CodigoErrorSesion.correoInvalido:
       return 'El correo electrónico no es válido.';
-    case 'email-already-in-use':
-    case 'credential-already-in-use':
+    case CodigoErrorSesion.correoEnUso:
       return 'Ya existe una cuenta con ese correo electrónico.';
-    case 'requires-recent-login':
-      return 'Por seguridad, inicia sesión de nuevo e intenta otra vez.';
-    case 'too-many-requests':
+    case CodigoErrorSesion.demasiadosIntentos:
       return 'Demasiados intentos. Espera unos minutos e intenta de nuevo.';
-    case 'network-request-failed':
+    case CodigoErrorSesion.sinRed:
+    case CodigoErrorSesion.tiempoAgotado:
       return 'Sin conexión. Verifica tu internet e intenta de nuevo.';
     default:
       return 'No se pudo actualizar. Intenta de nuevo.';

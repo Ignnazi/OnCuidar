@@ -1,8 +1,8 @@
 import 'dart:async';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:oncuidar/nucleo/conectividad/servicio_conectividad.dart';
 import 'package:oncuidar/nucleo/datos/base_datos_segura.dart';
+import 'package:oncuidar/nucleo/red/cliente_api.dart';
 import 'package:oncuidar/nucleo/sincronizacion/cola_escrituras.dart';
 
 class OrquestadorSincronizacion {
@@ -23,13 +23,6 @@ class OrquestadorSincronizacion {
   final Duration retardoBase;
   final Duration retardoMaximo;
   final int maxIntentosPorEscritura;
-
-  static const _codigosPermanentes = {
-    'permission-denied',
-    'invalid-argument',
-    'not-found',
-    'already-exists',
-  };
 
   StreamSubscription<bool>? _suscripcionRed;
   StreamSubscription<void>? _suscripcionEncolados;
@@ -60,9 +53,7 @@ class OrquestadorSincronizacion {
 
   bool _esPermanente(Object error) {
     if (error is ArgumentError) return true;
-    if (error is FirebaseException) {
-      return _codigosPermanentes.contains(error.code);
-    }
+    if (error is ExcepcionApi) return error.esPermanente;
     return false;
   }
 

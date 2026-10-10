@@ -1,8 +1,5 @@
 import 'dart:async';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:cloud_functions/cloud_functions.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:oncuidar/app/enrutador/destino_aviso.dart';
@@ -12,17 +9,30 @@ import 'package:oncuidar/app/tema/paleta.dart';
 import 'package:oncuidar/app/tema/repintar.dart';
 import 'package:oncuidar/app/tema/tema.dart';
 import 'package:oncuidar/caracteristicas/configuracion/presentacion/proveedores_configuracion.dart';
-import 'package:oncuidar/firebase_options.dart';
+import 'package:oncuidar/nucleo/almacen/almacen_secreto_seguro.dart';
 import 'package:oncuidar/nucleo/proveedores.dart';
+import 'package:oncuidar/nucleo/red/cliente_api.dart';
+import 'package:oncuidar/nucleo/red/config_api.dart';
+import 'package:oncuidar/nucleo/sesion/servicio_sesion.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: FirebaseOpciones.actual);
-  FirebaseFirestore.instance.settings = const Settings(
-    persistenceEnabled: true,
-    cacheSizeBytes: 52428800,
+  late final ServicioSesion sesion;
+  final api = ClienteApi(
+    urlBase: ConfigApi.urlBase,
+    obtenerToken: () => sesion.token,
   );
-  runApp(const ProviderScope(child: OncuidarApp()));
+  sesion = ServicioSesion(api: api, almacen: const AlmacenSecretoSeguro());
+  await sesion.inicializar();
+  runApp(
+    ProviderScope(
+      overrides: [
+        clienteApiProvider.overrideWithValue(api),
+        servicioSesionProvider.overrideWithValue(sesion),
+      ],
+      child: const OncuidarApp(),
+    ),
+  );
 }
 
 class OncuidarApp extends ConsumerStatefulWidget {
@@ -40,12 +50,20 @@ class _OncuidarAppState extends ConsumerState<OncuidarApp>
     WidgetsBinding.instance.addObserver(this);
     _escucharAvisos();
     var sesionPrevia = false;
-    ref.read(firebaseAuthProvider).authStateChanges().listen((usuario) {
+    ref.read(servicioSesionProvider).cambios.listen((usuario) {
       if (usuario == null) {
         if (!sesionPrevia) return;
         EstadoArranque.reiniciar();
         ref.read(servicioCifradoProvider).bloquear();
         ref.read(bloqueoCifradoProvider.notifier).fijarDesbloqueado(false);
+        const publicas = {
+          '/',
+          '/bienvenida',
+          '/iniciar-sesion',
+          '/crear-cuenta',
+          '/recuperar-acceso',
+        };
+        if (!publicas.contains(router.state.uri.path)) router.go('/bienvenida');
       } else {
         sesionPrevia = true;
         unawaited(ref.read(orquestadorSincronizacionProvider).drenar());
@@ -82,7 +100,7 @@ class _OncuidarAppState extends ConsumerState<OncuidarApp>
     avisos.alTocar = (payload) => abrirDesdeNotificacion(
       payload,
       router.go,
-      haySesion: ref.read(firebaseAuthProvider).currentUser != null,
+      haySesion: ref.read(servicioSesionProvider).actual != null,
     );
     unawaited(
       avisos
@@ -149,7 +167,7 @@ class _GateClaveState extends ConsumerState<_GateClave> {
       _error = null;
     });
     try {
-      final uid = ref.read(firebaseAuthProvider).currentUser!.uid;
+      final uid = ref.read(servicioSesionProvider).actual!.uid;
       await ref.read(servicioCifradoProvider).asegurarClave(uid);
       ref.read(bloqueoCifradoProvider.notifier).fijarDesbloqueado(true);
     } catch (e, pila) {
@@ -164,24 +182,20 @@ class _GateClaveState extends ConsumerState<_GateClave> {
   }
 
   String _mensajeRestauracion(Object e) {
-    if (e is FirebaseFunctionsException) {
-      switch (e.code) {
-        case 'unavailable':
-        case 'deadline-exceeded':
-          return 'No pudimos conectar con el servidor seguro.\n'
-              'Revisa tu conexión a internet y vuelve a intentarlo.';
-        case 'unauthenticated':
-          return 'Tu sesión expiró. Inicia sesión nuevamente.';
-        case 'failed-precondition':
-          return 'El servidor tiene una configuración pendiente.\n'
-              'Inténtalo de nuevo; si persiste, avísanos.';
-        case 'internal':
-          return 'Hubo un error interno al restaurar tus datos.\n'
-              'Reintenta; si persiste, avísanos con el código del error.';
-        default:
-          return 'No se pudieron restaurar tus datos.\n'
-              '(${e.code})';
+    if (e is ExcepcionApi) {
+      if (e.esDeRed) {
+        return 'No pudimos conectar con el servidor seguro.\n'
+            'Revisa tu conexión a internet y vuelve a intentarlo.';
       }
+      if (e.codigoHttp == 401) {
+        return 'Tu sesión expiró. Inicia sesión nuevamente.';
+      }
+      if (e.codigoHttp >= 500) {
+        return 'Hubo un error interno al restaurar tus datos.\n'
+            'Reintenta; si persiste, avísanos con el código del error.';
+      }
+      return 'No se pudieron restaurar tus datos.\n'
+          '(${e.codigoHttp})';
     }
     if (e is FormatException) {
       return 'Tus datos locales están dañados.\n'
@@ -219,7 +233,8 @@ class _GateClaveState extends ConsumerState<_GateClave> {
                       label: const Text('Reintentar'),
                     ),
                     TextButton(
-                      onPressed: () => ref.read(firebaseAuthProvider).signOut(),
+                      onPressed: () =>
+                          ref.read(servicioSesionProvider).cerrarSesion(),
                       child: const Text('Salir'),
                     ),
                   ],

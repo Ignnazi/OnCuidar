@@ -1,6 +1,8 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:oncuidar/caracteristicas/biblioteca/dominio/material_educativo.dart';
 import 'package:oncuidar/nucleo/datos/base_datos_segura.dart';
+import 'package:oncuidar/nucleo/datos/rutas_api.dart';
+import 'package:oncuidar/nucleo/red/cliente_api.dart';
+import 'package:oncuidar/nucleo/sincronizacion/cola_escrituras.dart';
 
 /// Catálogo educativo y favoritos del cuidador.
 class RepositorioBiblioteca {
@@ -8,33 +10,36 @@ class RepositorioBiblioteca {
 
   final BaseDatosSegura bd;
 
-  CollectionReference _contenidoEducativo() =>
-      bd.firestore.collection('materialEducativo');
-
   Stream<List<MaterialEducativo>> contenidoEducativoEnTiempoReal() {
-    return _contenidoEducativo().snapshots().map(
-      (snap) => [
-        for (final doc in snap.docs)
-          MaterialEducativo.fromMap(doc.id, doc.data() as Map<String, dynamic>),
+    return bd.flujo<List<MaterialEducativo>>(
+      RutasApi.biblioteca,
+      convertir: (json) async => [
+        for (final e in json as List)
+          MaterialEducativo.fromMap(
+            (e as Map)['id'] as String,
+            e.cast<String, dynamic>(),
+          ),
       ],
     );
   }
 
   Future<MaterialEducativo?> obtenerContenidoEducativo(String id) async {
-    final doc = await _contenidoEducativo().doc(id).get();
-    if (!doc.exists) return null;
-    return MaterialEducativo.fromMap(
-      doc.id,
-      doc.data() as Map<String, dynamic>,
-    );
+    try {
+      final json = await bd.leer(RutasApi.materialBiblioteca(id));
+      return MaterialEducativo.fromMap(id, (json as Map).cast());
+    } on ExcepcionApi catch (e) {
+      if (e.codigoHttp == 404) return null;
+      rethrow;
+    }
   }
 
   Stream<List<String>> idsFavoritosEnTiempoReal() {
     if (!bd.tieneIdentidad()) return Stream.value(const []);
-    return bd.docUsuario.snapshots().map((snap) {
-      final datos = snap.data() as Map<String, dynamic>?;
-      return List<String>.from(datos?['idsFavoritos'] ?? const []);
-    });
+    return bd.flujo<List<String>>(
+      RutasApi.favoritos,
+      vacio: <String, dynamic>{'ids': <dynamic>[]},
+      convertir: (json) async => _idsDe(json),
+    );
   }
 
   Future<void> alternarFavorito(String materialId) async {
@@ -43,32 +48,25 @@ class RepositorioBiblioteca {
   }
 
   Future<void> fijarFavorito(String materialId, {required bool favorito}) {
-    final cambio = favorito
-        ? FieldValue.arrayUnion([materialId])
-        : FieldValue.arrayRemove([materialId]);
-    return bd.sinEsperarSinRed(
-      () =>
-          bd.docUsuario.set({'idsFavoritos': cambio}, SetOptions(merge: true)),
+    return bd.escribir(
+      RutasApi.favorito(materialId),
+      const {},
+      operacion: favorito
+          ? OperacionPendiente.guardar
+          : OperacionPendiente.borrar,
     );
   }
 
   Future<List<String>> _idsFavoritosGuardados() async {
     try {
-      final doc = await bd.docUsuario.get(
-        const GetOptions(source: Source.cache),
-      );
-      return _idsDe(doc);
+      return _idsDe(await bd.leerConCache(RutasApi.favoritos));
     } catch (_) {
-      try {
-        return _idsDe(await bd.docUsuario.get());
-      } catch (_) {
-        return const [];
-      }
+      return const [];
     }
   }
 
-  List<String> _idsDe(DocumentSnapshot doc) {
-    final datos = doc.data() as Map<String, dynamic>?;
-    return List<String>.from(datos?['idsFavoritos'] ?? const []);
+  List<String> _idsDe(dynamic json) {
+    final ids = json is Map ? json['ids'] : null;
+    return ids is List ? [for (final id in ids) id.toString()] : const [];
   }
 }

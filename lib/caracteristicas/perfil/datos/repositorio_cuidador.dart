@@ -1,78 +1,80 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:cloud_functions/cloud_functions.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:oncuidar/nucleo/datos/base_datos_segura.dart';
+import 'package:oncuidar/nucleo/datos/rutas_api.dart';
+import 'package:oncuidar/nucleo/sesion/servicio_sesion.dart';
+import 'package:oncuidar/nucleo/sincronizacion/cola_escrituras.dart';
 
 class RepositorioCuidador {
   RepositorioCuidador(this.bd);
 
   final BaseDatosSegura bd;
 
+  ServicioSesion get _sesion =>
+      bd.sesion ?? (throw StateError('No user authenticated'));
+
   Future<void> crearCuidador(Map<String, dynamic> datos) async {
-    final plano = <String, dynamic>{};
-    if (datos['correo'] != null) plano['correo'] = datos['correo'];
+    final cuerpo = <String, dynamic>{};
     final correoRespaldo = datos['correo_respaldo'] as String?;
     if (correoRespaldo != null && correoRespaldo.isNotEmpty) {
-      plano['correo_respaldo_cifrado'] = await bd.cifrado.cifrar(
-        bd.uid,
-        correoRespaldo.trim().toLowerCase(),
+      bd.ponerCifrado(
+        cuerpo,
+        'correo_respaldo_cifrado',
+        await bd.cifrado.cifrar(bd.uid, correoRespaldo.trim().toLowerCase()),
       );
     }
-    if (datos['creadoEn'] != null) plano['creadoEn'] = datos['creadoEn'];
     await bd.reemplazarPorCifrado(
-      plano,
+      cuerpo,
       plano: datos['nombre'] as String?,
       cifrado: 'nombre_cifrado',
     );
     await bd.reemplazarPorCifrado(
-      plano,
+      cuerpo,
       plano: datos['telefono'] as String?,
       cifrado: 'telefono_cifrado',
     );
     await bd.reemplazarPorCifrado(
-      plano,
+      cuerpo,
       plano: datos['relacion'] as String?,
       cifrado: 'relacion_cifrada',
     );
     await bd.reemplazarPorCifrado(
-      plano,
+      cuerpo,
       plano: datos['direccion'] as String?,
       cifrado: 'direccion_cifrada',
     );
-    plano['version_encriptacion'] = 2;
-    await bd.docUsuario.set(plano, SetOptions(merge: true));
-  }
-
-  Future<void> limpiarRegistro(String uid) async {
-    try {
-      await bd.firestore.collection('usuarios').doc(uid).delete();
-    } catch (_) {}
+    cuerpo['versionEncriptacion'] = 2;
+    await bd.escribir(
+      RutasApi.cuidador,
+      cuerpo,
+      operacion: OperacionPendiente.guardar,
+    );
   }
 
   Future<Map<String, dynamic>> obtenerCuidador() async {
-    final doc = await bd.docUsuario.get();
-    return _mapearCuidador((doc.data() as Map<String, dynamic>?) ?? {});
+    final json = await bd.leerConCache(RutasApi.cuidador);
+    return _mapearCuidador((json as Map).cast<String, dynamic>());
   }
 
   Stream<Map<String, dynamic>?> cuidadorEnTiempoReal() {
     if (!bd.tieneIdentidad()) return Stream.value(null);
-    return bd.docUsuario.snapshots().asyncMap((doc) async {
-      if (!doc.exists) return null;
-      try {
-        return await _mapearCuidador(
-          (doc.data() as Map<String, dynamic>?) ?? {},
-        );
-      } catch (_) {
-        return null;
-      }
-    });
+    return bd.flujo<Map<String, dynamic>?>(
+      RutasApi.cuidador,
+      vacio: <String, dynamic>{},
+      convertir: (json) async {
+        final datos = (json as Map).cast<String, dynamic>();
+        if (datos.isEmpty) return null;
+        try {
+          return await _mapearCuidador(datos);
+        } catch (_) {
+          return null;
+        }
+      },
+    );
   }
 
   Future<Map<String, dynamic>> _mapearCuidador(
     Map<String, dynamic> datos,
   ) async {
-    final correoPendiente = datos['pendiente_correo'] as String?;
     return {
       'correo': datos['correo'] as String?,
       'nombre': await bd.descifrarCampo(datos, 'nombre_cifrado'),
@@ -83,14 +85,7 @@ class RepositorioCuidador {
         datos,
         'correo_respaldo_cifrado',
       ),
-      'respaldoPendienteServidor': datos['respaldo_pendiente_servidor'] == true,
-      'pendienteCorreo': (correoPendiente == null || correoPendiente.isEmpty)
-          ? null
-          : {
-              'correo': correoPendiente,
-              'tipo':
-                  (datos['pendiente_correo_tipo'] as String?) ?? 'principal',
-            },
+      'respaldoPendienteServidor': datos['respaldoPendienteServidor'] == true,
     };
   }
 
@@ -100,104 +95,76 @@ class RepositorioCuidador {
     String? relacion,
     String? direccion,
   }) async {
-    final plano = <String, dynamic>{};
+    final cuerpo = <String, dynamic>{};
     if (nombre != null) {
       await bd.reemplazarPorCifrado(
-        plano,
+        cuerpo,
         plano: nombre,
         cifrado: 'nombre_cifrado',
       );
     }
     if (telefono != null) {
       await bd.reemplazarPorCifrado(
-        plano,
+        cuerpo,
         plano: telefono,
         cifrado: 'telefono_cifrado',
       );
     }
     if (relacion != null) {
       await bd.reemplazarPorCifrado(
-        plano,
+        cuerpo,
         plano: relacion,
         cifrado: 'relacion_cifrada',
       );
     }
     if (direccion != null) {
       await bd.reemplazarPorCifrado(
-        plano,
+        cuerpo,
         plano: direccion,
         cifrado: 'direccion_cifrada',
       );
     }
-    if (plano.isEmpty) return;
-    await bd.sinEsperarSinRed(
-      () => bd.docUsuario.set(plano, SetOptions(merge: true)),
+    if (cuerpo.isEmpty) return;
+    await bd.escribir(
+      RutasApi.cuidador,
+      cuerpo,
+      operacion: OperacionPendiente.guardar,
     );
-  }
-
-  Future<void> _reautenticar(String contrasena) async {
-    final usuario = _usuarioAutenticado;
-    final email = usuario.email;
-    if (email == null || email.isEmpty) {
-      throw FirebaseAuthException(code: 'requires-recent-login');
-    }
-    final credencial = EmailAuthProvider.credential(
-      email: email,
-      password: contrasena,
-    );
-    await usuario
-        .reauthenticateWithCredential(credencial)
-        .timeout(const Duration(seconds: 5));
-  }
-
-  User get _usuarioAutenticado {
-    final auth = bd.auth ?? FirebaseAuth.instance;
-    final usuario = auth.currentUser;
-    if (usuario == null) throw StateError('No user authenticated');
-    return usuario;
   }
 
   Future<void> cambiarCorreoPrincipal({
     required String contrasena,
     required String nuevoCorreo,
   }) async {
-    await _reautenticar(contrasena);
-    final normalizado = nuevoCorreo.trim().toLowerCase();
-    await _usuarioAutenticado
-        .verifyBeforeUpdateEmail(normalizado)
-        .timeout(const Duration(seconds: 5));
-    await bd.docUsuario.set({
-      'pendiente_correo': normalizado,
-      'pendiente_correo_tipo': 'principal',
-      'pendiente_correo_solicitado_en': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
+    await _sesion.cambiarCorreo(contrasena, nuevoCorreo);
+    bd.notificarCambio();
   }
 
   Future<bool> cambiarCorreoRespaldo({
     required String contrasena,
     required String nuevoCorreo,
   }) async {
-    await _reautenticar(contrasena);
+    await _sesion.verificarContrasena(contrasena);
     final normalizado = nuevoCorreo.trim().toLowerCase();
-    await bd.docUsuario.set({
-      'correo_respaldo_cifrado': await bd.cifrado.cifrar(bd.uid, normalizado),
-      'respaldo_pendiente_servidor': true,
-    }, SetOptions(merge: true));
+    final cuerpo = <String, dynamic>{'respaldoPendienteServidor': true};
+    bd.ponerCifrado(
+      cuerpo,
+      'correo_respaldo_cifrado',
+      await bd.cifrado.cifrar(bd.uid, normalizado),
+    );
+    await bd.escribir(
+      RutasApi.cuidador,
+      cuerpo,
+      operacion: OperacionPendiente.guardar,
+    );
     return _registrarRespaldoEnServidor(normalizado);
   }
 
   @visibleForTesting
-  Future<void> Function(String correo) registrarCorreoRespaldoServidor =
-      (correo) => FirebaseFunctions.instanceFor(region: 'southamerica-west1')
-          .httpsCallable('registrarCorreoRespaldo')
-          .call({'correo': correo})
-          .timeout(
-            const Duration(seconds: 5),
-            onTimeout: () => throw FirebaseFunctionsException(
-              code: 'unavailable',
-              message: 'Sin conexión',
-            ),
-          );
+  late Future<void> Function(String correo) registrarCorreoRespaldoServidor =
+      (correo) => bd.api.post('/correo-respaldo', {
+        'correo': correo,
+      }, const Duration(seconds: 5));
 
   Future<bool> _registrarRespaldoEnServidor(String correo) async {
     try {
@@ -206,32 +173,18 @@ class RepositorioCuidador {
       debugPrint('Registro del correo de respaldo pendiente: $e');
       return false;
     }
-    await bd.docUsuario.set({
-      'respaldo_pendiente_servidor': FieldValue.delete(),
-    }, SetOptions(merge: true));
+    await bd.escribir(RutasApi.cuidador, {
+      'respaldoPendienteServidor': false,
+    }, operacion: OperacionPendiente.guardar);
     return true;
   }
 
   Future<bool> reintentarRegistroRespaldo() async {
-    final datos =
-        ((await bd.docUsuario.get()).data() as Map<String, dynamic>?) ?? {};
-    if (datos['respaldo_pendiente_servidor'] != true) return true;
+    final datos = ((await bd.leer(RutasApi.cuidador)) as Map)
+        .cast<String, dynamic>();
+    if (datos['respaldoPendienteServidor'] != true) return true;
     final correo = await bd.descifrarCampo(datos, 'correo_respaldo_cifrado');
     if (correo == null || correo.isEmpty) return false;
     return _registrarRespaldoEnServidor(correo);
-  }
-
-  Future<void> limpiarCambioCorreoPendiente() async {
-    await bd.docUsuario.set({
-      'pendiente_correo': FieldValue.delete(),
-      'pendiente_correo_tipo': FieldValue.delete(),
-      'pendiente_correo_solicitado_en': FieldValue.delete(),
-    }, SetOptions(merge: true));
-  }
-
-  Future<void> sincronizarCorreoPrincipal(String email) async {
-    await bd.docUsuario.set({
-      'correo': email.trim().toLowerCase(),
-    }, SetOptions(merge: true));
   }
 }

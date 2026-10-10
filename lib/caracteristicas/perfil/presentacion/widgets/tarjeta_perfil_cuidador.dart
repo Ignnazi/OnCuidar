@@ -14,7 +14,6 @@ class TarjetaPerfilCuidador extends StatelessWidget {
     required this.telefono,
     required this.correoPrincipal,
     this.correoRespaldo,
-    this.correoPrincipalPendiente,
     this.respaldoPendiente = false,
     required this.onEditarDatos,
     required this.onEditarCorreoPrincipal,
@@ -27,7 +26,6 @@ class TarjetaPerfilCuidador extends StatelessWidget {
   final String telefono;
   final String correoPrincipal;
   final String? correoRespaldo;
-  final String? correoPrincipalPendiente;
   final bool respaldoPendiente;
   final VoidCallback onEditarDatos;
   final VoidCallback onEditarCorreoPrincipal;
@@ -50,7 +48,6 @@ class TarjetaPerfilCuidador extends StatelessWidget {
                 child: _TarjetaAutenticacion(
                   correoPrincipal: correoPrincipal,
                   correoRespaldo: correoRespaldo,
-                  correoPrincipalPendiente: correoPrincipalPendiente,
                   respaldoPendiente: respaldoPendiente,
                   onEditarPrincipal: onEditarCorreoPrincipal,
                   onEditarRespaldo: onEditarCorreoRespaldo,
@@ -150,7 +147,6 @@ class _TarjetaAutenticacion extends StatelessWidget {
   const _TarjetaAutenticacion({
     required this.correoPrincipal,
     this.correoRespaldo,
-    this.correoPrincipalPendiente,
     this.respaldoPendiente = false,
     required this.onEditarPrincipal,
     required this.onEditarRespaldo,
@@ -158,7 +154,6 @@ class _TarjetaAutenticacion extends StatelessWidget {
 
   final String correoPrincipal;
   final String? correoRespaldo;
-  final String? correoPrincipalPendiente;
   final bool respaldoPendiente;
   final VoidCallback onEditarPrincipal;
   final VoidCallback onEditarRespaldo;
@@ -184,12 +179,6 @@ class _TarjetaAutenticacion extends StatelessWidget {
                       : correoPrincipal,
                   valorAusente: correoPrincipal.isEmpty,
                 ),
-                if (correoPrincipalPendiente != null &&
-                    correoPrincipalPendiente!.isNotEmpty)
-                  _AvisoPendiente(
-                    key: const Key('pendientePrincipal'),
-                    texto: 'Pendiente de confirmar: $correoPrincipalPendiente',
-                  ),
                 const SizedBox(height: 10),
                 FilaDato(
                   recortar: true,

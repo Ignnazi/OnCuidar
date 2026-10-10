@@ -1,7 +1,8 @@
 import 'dart:convert';
-import 'package:cloud_functions/cloud_functions.dart';
+
 import 'package:cryptography/cryptography.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:oncuidar/nucleo/almacen/almacen_secreto.dart';
+import 'package:oncuidar/nucleo/red/cliente_api.dart';
 
 class ClaveNoDisponibleSinConexion implements Exception {
   const ClaveNoDisponibleSinConexion();
@@ -15,10 +16,15 @@ class ClaveNoDisponibleSinConexion implements Exception {
 }
 
 class ServicioCifrado {
-  ServicioCifrado({this._clavePrueba});
+  ServicioCifrado({
+    required this._api,
+    required this._almacen,
+    this._clavePrueba,
+  });
 
+  final ClienteApi _api;
+  final AlmacenSecreto _almacen;
   final String? _clavePrueba;
-  final _almacen = const FlutterSecureStorage();
   final AesGcm _cifrador = AesGcm.with256bits();
   SecretKey? _claveActiva;
   String? _uidActivo;
@@ -31,7 +37,7 @@ class ServicioCifrado {
 
     String? valor;
     try {
-      valor = await _almacen.read(key: 'oncuidar.data-key.$uid');
+      valor = await _almacen.leer('oncuidar.data-key.$uid');
     } catch (_) {
       return false;
     }
@@ -50,20 +56,18 @@ class ServicioCifrado {
     final local = await restaurarClave(uid);
     if (local) return;
     try {
-      await _almacen.delete(key: 'oncuidar.data-key.$uid');
+      await _almacen.borrar('oncuidar.data-key.$uid');
     } catch (_) {}
-    final resultado =
-        await FirebaseFunctions.instanceFor(region: 'southamerica-west1')
-            .httpsCallable('obtenerClaveDatos')
-            .call()
-            .timeout(
-              const Duration(seconds: 5),
-              onTimeout: () => throw FirebaseFunctionsException(
-                code: 'unavailable',
-                message: 'Sin conexión',
-              ),
-            );
-    await fijarClave(uid, (resultado.data as Map)['claveDatos'] as String);
+    final resultado = await _api.post(
+      '/clave-datos',
+      const {},
+      const Duration(seconds: 5),
+    );
+    final clave = resultado is Map ? resultado['claveDatos'] : null;
+    if (clave is! String) {
+      throw const FormatException('Clave de datos invalida.');
+    }
+    await fijarClave(uid, clave);
   }
 
   Future<void> fijarClave(String uid, String codificada) async {
@@ -74,7 +78,7 @@ class ServicioCifrado {
     _claveActiva = SecretKey(bytes);
     _uidActivo = uid;
     if (_clavePrueba == null) {
-      await _almacen.write(key: 'oncuidar.data-key.$uid', value: codificada);
+      await _almacen.escribir('oncuidar.data-key.$uid', codificada);
     }
   }
 

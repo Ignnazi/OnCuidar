@@ -43,13 +43,6 @@ class _PerfilCuidadorState extends ConsumerState<PerfilCuidador> {
       var datos = await repositorio.obtenerCuidador().timeout(
         const Duration(seconds: 5),
       );
-      final pendiente = datos['pendienteCorreo'] as Map?;
-      if (pendiente != null && pendiente['tipo'] == 'principal') {
-        await _confirmarCambioCorreoConfirmado(repositorio, datos);
-        datos = await repositorio.obtenerCuidador().timeout(
-          const Duration(seconds: 5),
-        );
-      }
       if (datos['respaldoPendienteServidor'] == true) {
         datos = await _reintentarRespaldo(repositorio, datos);
       }
@@ -60,26 +53,6 @@ class _PerfilCuidadorState extends ConsumerState<PerfilCuidador> {
       if (_cuidador == null) setState(() => _error = true);
     } finally {
       if (mounted) setState(() => _cargando = false);
-    }
-  }
-
-  Future<void> _confirmarCambioCorreoConfirmado(
-    RepositorioCuidador repositorio,
-    Map<String, dynamic> datos,
-  ) async {
-    final pendiente = datos['pendienteCorreo'] as Map?;
-    if (pendiente == null) return;
-    if (pendiente['tipo'] != 'principal') return;
-    final correoPendiente = (pendiente['correo'] as String?)?.toLowerCase();
-    final correoAuth = ref
-        .read(firebaseAuthProvider)
-        .currentUser
-        ?.email
-        ?.toLowerCase();
-    if (correoPendiente == null || correoPendiente.isEmpty) return;
-    if (correoAuth == correoPendiente) {
-      await repositorio.sincronizarCorreoPrincipal(correoPendiente);
-      await repositorio.limpiarCambioCorreoPendiente();
     }
   }
 
@@ -138,11 +111,10 @@ class _PerfilCuidadorState extends ConsumerState<PerfilCuidador> {
     final telefono = (_cuidador?['telefono'] as String?)?.trim();
     final relacion = (_cuidador?['relacion'] as String?)?.trim();
     final direccion = (_cuidador?['direccion'] as String?)?.trim();
-    final emailAuth =
-        ref.read(firebaseAuthProvider).currentUser?.email?.trim() ?? '';
+    final correoSesion =
+        ref.read(servicioSesionProvider).actual?.correo.trim() ?? '';
     final correoPrincipal =
-        (_cuidador?['correo'] as String?)?.trim() ?? emailAuth;
-    final pendiente = _cuidador?['pendienteCorreo'] as Map?;
+        (_cuidador?['correo'] as String?)?.trim() ?? correoSesion;
 
     return TarjetaPerfilCuidador(
       nombre: nombre,
@@ -152,9 +124,6 @@ class _PerfilCuidadorState extends ConsumerState<PerfilCuidador> {
       correoPrincipal: correoPrincipal,
       correoRespaldo: (correoRespaldo != null && correoRespaldo.isNotEmpty)
           ? correoRespaldo
-          : null,
-      correoPrincipalPendiente: pendiente?['tipo'] == 'principal'
-          ? pendiente!['correo'] as String?
           : null,
       respaldoPendiente: _cuidador?['respaldoPendienteServidor'] == true,
       onEditarDatos: _dialogoEditarCuidador,

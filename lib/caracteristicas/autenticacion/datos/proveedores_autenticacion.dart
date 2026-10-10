@@ -6,7 +6,8 @@ import 'package:oncuidar/nucleo/proveedores.dart';
 
 final servicioRegistroProvider = Provider<ServicioRegistro>((ref) {
   return ServicioRegistro(
-    auth: ref.watch(firebaseAuthProvider),
+    sesion: ref.watch(servicioSesionProvider),
+    api: ref.watch(clienteApiProvider),
     cifrado: ref.watch(servicioCifradoProvider),
     repositorioPacientes: ref.watch(repositorioPacientesProvider),
     repositorioCuidador: ref.watch(repositorioCuidadorProvider),

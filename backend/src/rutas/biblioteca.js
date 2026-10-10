@@ -2,10 +2,13 @@ const express = require('express');
 const db = require('../db');
 const { requiereToken } = require('../auth');
 const { iso } = require('../upsert');
+const config = require('../config');
 const { ErrorHttp, validarId } = require('../validacion');
 
 const router = express.Router();
 router.use(['/biblioteca', '/favoritos'], requiereToken);
+
+const absoluta = (u) => (typeof u === 'string' && u.startsWith('/') ? `${config.urlPublica}${u}` : u);
 
 const aJson = (m) => ({
   id: m.id,
@@ -13,9 +16,9 @@ const aJson = (m) => ({
   categoria: m.categoria,
   tema: m.tema,
   cuerpo: m.cuerpo,
-  urlImagen: m.url_imagen,
-  urlArchivo: m.url_archivo,
-  urlMiniatura: m.url_miniatura,
+  urlImagen: absoluta(m.url_imagen),
+  urlArchivo: absoluta(m.url_archivo),
+  urlMiniatura: absoluta(m.url_miniatura),
   tipoArchivo: m.tipo_archivo,
   tamanoBytes: m.tamano_bytes === null ? null : Number(m.tamano_bytes),
   creadoEn: iso(m.creado_en),

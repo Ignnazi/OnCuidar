@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -40,7 +39,8 @@ class EscrituraPendiente {
   final OperacionPendiente operacion;
 
   final Map<String, dynamic> datos;
-  final String pacienteId;
+
+  final String? pacienteId;
   final int encoladoEn;
   final int intentos;
 
@@ -79,7 +79,7 @@ class EscrituraPendiente {
       ruta: mapa['ruta'] as String,
       operacion: OperacionPendiente.values.byName(mapa['operacion'] as String),
       datos: Map<String, dynamic>.from(mapa['datos'] as Map),
-      pacienteId: mapa['paciente_id'] as String,
+      pacienteId: mapa['paciente_id'] as String?,
       encoladoEn: mapa['encoladoEn'] as int,
       intentos: (mapa['intentos'] as int?) ?? 0,
     );
@@ -87,37 +87,14 @@ class EscrituraPendiente {
 }
 
 class CodecPayload {
-  static const _marcaFecha = '__fecha';
-  static const marcaBorrar = '__borrar';
-
   static dynamic codificar(dynamic valor) {
-    if (valor is DateTime) {
-      return {_marcaFecha: valor.toUtc().toIso8601String()};
-    }
-    if (valor is Timestamp) {
-      return {_marcaFecha: valor.toDate().toUtc().toIso8601String()};
-    }
-    if (valor is FieldValue) return {marcaBorrar: true};
+    if (valor is DateTime) return valor.toUtc().toIso8601String();
     if (valor is Map) {
       return {
         for (final e in valor.entries) e.key.toString(): codificar(e.value),
       };
     }
     if (valor is Iterable) return [for (final e in valor) codificar(e)];
-    return valor;
-  }
-
-  static dynamic decodificar(dynamic valor) {
-    if (valor is Map) {
-      if (valor.containsKey(_marcaFecha)) {
-        return DateTime.parse(valor[_marcaFecha] as String);
-      }
-      if (valor.containsKey(marcaBorrar)) return FieldValue.delete();
-      return {
-        for (final e in valor.entries) e.key.toString(): decodificar(e.value),
-      };
-    }
-    if (valor is List) return [for (final e in valor) decodificar(e)];
     return valor;
   }
 }
@@ -205,10 +182,7 @@ class ColaEscrituras {
   Future<void> encolar(String uid, EscrituraPendiente escritura) async {
     final prohibidos = {
       for (final e in escritura.datos.entries)
-        if (camposClinicosEnClaro.contains(e.key) &&
-            !(e.value is Map &&
-                (e.value as Map).containsKey(CodecPayload.marcaBorrar)))
-          e.key,
+        if (camposClinicosEnClaro.contains(e.key) && e.value != null) e.key,
     };
     if (prohibidos.isNotEmpty) {
       throw ArgumentError('Campos clínicos sin cifrar en la cola: $prohibidos');

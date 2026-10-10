@@ -1,46 +1,126 @@
 import 'dart:async';
+import 'dart:convert';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:oncuidar/nucleo/cifrado/servicio_cifrado.dart';
 import 'package:oncuidar/nucleo/conectividad/servicio_conectividad.dart';
+import 'package:oncuidar/nucleo/datos/flujo_recurso.dart';
+import 'package:oncuidar/nucleo/red/cliente_api.dart';
+import 'package:oncuidar/nucleo/sesion/servicio_sesion.dart';
 import 'package:oncuidar/nucleo/sincronizacion/cola_escrituras.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class BaseDatosSegura {
   BaseDatosSegura({
-    FirebaseFirestore? base,
-    this.auth,
+    required this.api,
+    this.sesion,
     this._uidPrueba,
     required this.cifrado,
     this.cola,
     this.conectividad,
     this.limiteEscritura = const Duration(seconds: 8),
-  }) : firestore = base ?? FirebaseFirestore.instance;
+    this.intervaloConsulta = const Duration(seconds: 10),
+  });
 
-  final FirebaseFirestore firestore;
-  final FirebaseAuth? auth;
+  final ClienteApi api;
+  final ServicioSesion? sesion;
   final String? _uidPrueba;
   final ServicioCifrado cifrado;
   final ColaEscrituras? cola;
   final ServicioConectividad? conectividad;
   final Duration limiteEscritura;
+  final Duration intervaloConsulta;
+
+  final _cambios = StreamController<void>.broadcast();
+
+  Stream<void> get cambios => _cambios.stream;
+
+  void notificarCambio() {
+    if (!_cambios.isClosed) _cambios.add(null);
+  }
 
   String get uid {
     if (_uidPrueba != null) return _uidPrueba;
-    final auth = this.auth ?? (throw StateError('No auth configured'));
-    final usuario = auth.currentUser;
-    if (usuario == null) throw StateError('No user authenticated');
-    return usuario.uid;
+    final actual = sesion?.actual;
+    if (actual == null) throw StateError('No user authenticated');
+    return actual.uid;
   }
 
-  DocumentReference get docUsuario => firestore.collection('usuarios').doc(uid);
+  bool tieneIdentidad() => _uidPrueba != null || sesion?.actual != null;
 
-  bool tieneIdentidad() {
-    if (_uidPrueba != null) return true;
-    final auth = this.auth;
-    if (auth == null) return false;
-    return auth.currentUser != null;
+  Future<dynamic> leer(String ruta) => api.get(ruta);
+
+  String _prefijoCache(String uid) => 'oncuidar.flujo.$uid.';
+
+  Stream<T> flujo<T>(
+    String ruta, {
+    required Future<T> Function(dynamic json) convertir,
+    dynamic vacio = const <dynamic>[],
+  }) {
+    if (!tieneIdentidad()) {
+      return Stream.fromFuture(convertir(vacio));
+    }
+    final dueno = uid;
+    final claveCache = '${_prefijoCache(dueno)}$ruta';
+    return FlujoRecurso<T>(
+      consultar: () => api.get(ruta),
+      leerCache: () async {
+        final prefs = await SharedPreferences.getInstance();
+        final texto = prefs.getString(claveCache);
+        return texto == null ? null : jsonDecode(texto);
+      },
+      guardarCache: (json) async {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString(claveCache, jsonEncode(json));
+      },
+      aplicarPendientes: (json) => _aplicarPendientes(dueno, ruta, json),
+      cambios: cambios,
+      convertir: convertir,
+      vacio: vacio,
+      intervalo: intervaloConsulta,
+    ).stream;
+  }
+
+  Future<dynamic> _aplicarPendientes(
+    String dueno,
+    String ruta,
+    dynamic json,
+  ) async {
+    final cola = this.cola;
+    if (cola == null) return json;
+    final pendientes = [...await cola.pendientes(dueno)]
+      ..sort((a, b) => a.encoladoEn.compareTo(b.encoladoEn));
+    var resultado = json;
+    for (final e in pendientes) {
+      resultado = aplicarEscrituraAJson(
+        resultado,
+        ruta,
+        e.ruta,
+        e.datos,
+        e.operacion,
+      );
+    }
+    return resultado;
+  }
+
+  Future<dynamic> leerConCache(String ruta) async {
+    final dueno = uid;
+    final clave = '${_prefijoCache(dueno)}$ruta';
+    dynamic json;
+    try {
+      json = await api.get(ruta);
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString(clave, jsonEncode(json));
+      } catch (_) {}
+    } on ExcepcionApi catch (e) {
+      if (!e.esDeRed) rethrow;
+      final prefs = await SharedPreferences.getInstance();
+      final texto = prefs.getString(clave);
+      if (texto == null) rethrow;
+      json = jsonDecode(texto);
+    }
+    return _aplicarPendientes(dueno, ruta, json);
   }
 
   bool get _conCola => cola != null && conectividad != null;
@@ -54,23 +134,14 @@ class BaseDatosSegura {
   }
 
   Future<void> aplicar(
-    DocumentReference ref,
+    String ruta,
     Map<String, dynamic> datos,
     OperacionPendiente operacion,
   ) async {
-    switch (operacion) {
-      case OperacionPendiente.crear:
-        await ref.set(datos);
-      case OperacionPendiente.guardar:
-        await ref.set(datos, SetOptions(merge: true));
-      case OperacionPendiente.borrar:
-        await ref.delete();
-      case OperacionPendiente.fusionar:
-        try {
-          await ref.update(datos);
-        } on FirebaseException catch (e) {
-          if (e.code != 'not-found') rethrow;
-        }
+    if (operacion == OperacionPendiente.borrar) {
+      await api.delete(ruta);
+    } else {
+      await api.put(ruta, datos);
     }
   }
 
@@ -82,26 +153,49 @@ class BaseDatosSegura {
     unawaited(pendiente.catchError((_) {}));
   }
 
-  void reflejarEnCache(
-    DocumentReference ref,
+  Future<void> reflejarEnCache(
+    String ruta,
     Map<String, dynamic> datos,
     OperacionPendiente operacion,
-  ) {
-    unawaited(aplicar(ref, datos, operacion).catchError((_) {}));
+  ) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final prefijo = _prefijoCache(uid);
+      final cuerpo = Map<String, dynamic>.from(
+        CodecPayload.codificar(datos) as Map,
+      );
+      for (final clave in prefs.getKeys()) {
+        if (!clave.startsWith(prefijo)) continue;
+        final texto = prefs.getString(clave);
+        if (texto == null) continue;
+        final nuevo = aplicarEscrituraAJson(
+          jsonDecode(texto),
+          clave.substring(prefijo.length),
+          ruta,
+          cuerpo,
+          operacion,
+        );
+        final nuevoTexto = jsonEncode(nuevo);
+        if (nuevoTexto != texto) await prefs.setString(clave, nuevoTexto);
+      }
+    } catch (e) {
+      debugPrint('No se pudo reflejar el cambio en la caché: $e');
+    }
+    notificarCambio();
   }
 
   Future<void> encolar(
-    DocumentReference ref,
+    String ruta,
     Map<String, dynamic> datos,
     OperacionPendiente operacion,
-    String idPaciente,
+    String? idPaciente,
   ) {
     final ahora = DateTime.now();
     return cola!.encolar(
       uid,
       EscrituraPendiente(
-        id: '${ahora.microsecondsSinceEpoch}_${ref.id}',
-        ruta: ref.path,
+        id: '${ahora.microsecondsSinceEpoch}_${ruta.split('/').last}',
+        ruta: ruta,
         operacion: operacion,
         datos: Map<String, dynamic>.from(CodecPayload.codificar(datos) as Map),
         pacienteId: idPaciente,
@@ -111,71 +205,70 @@ class BaseDatosSegura {
   }
 
   Future<void> escribir(
-    DocumentReference ref,
+    String ruta,
     Map<String, dynamic> datos, {
     required OperacionPendiente operacion,
-    required String idPaciente,
+    String? idPaciente,
   }) async {
     if (!_conCola) {
-      await aplicar(ref, datos, operacion);
+      await aplicar(ruta, datos, operacion);
+      notificarCambio();
       return;
     }
     if (!await conectividad!.estaEnLinea() ||
-        await cola!.hayPendientesPara(uid, ref.path)) {
-      await encolar(ref, datos, operacion, idPaciente);
-      reflejarEnCache(ref, datos, operacion);
+        await cola!.hayPendientesPara(uid, ruta)) {
+      await encolar(ruta, datos, operacion, idPaciente);
+      await reflejarEnCache(ruta, datos, operacion);
       return;
     }
     try {
-      await aplicar(ref, datos, operacion).timeout(limiteEscritura);
+      await aplicar(ruta, datos, operacion).timeout(limiteEscritura);
+      notificarCambio();
     } on TimeoutException {
-      await encolar(ref, datos, operacion, idPaciente);
-    } on FirebaseException catch (e) {
-      if (e.code != 'unavailable' && e.code != 'deadline-exceeded') rethrow;
-      await encolar(ref, datos, operacion, idPaciente);
+      await encolar(ruta, datos, operacion, idPaciente);
+      await reflejarEnCache(ruta, datos, operacion);
+    } on ExcepcionApi catch (e) {
+      if (!e.esDeRed) rethrow;
+      await encolar(ruta, datos, operacion, idPaciente);
+      await reflejarEnCache(ruta, datos, operacion);
     }
   }
 
-  Future<void> borrar(DocumentReference ref, String idPaciente) => escribir(
-    ref,
+  Future<void> borrar(String ruta, String? idPaciente) => escribir(
+    ruta,
     const {},
     operacion: OperacionPendiente.borrar,
     idPaciente: idPaciente,
   );
 
   Future<void> aplicarEscrituraPendiente(EscrituraPendiente escritura) async {
-    final prefijo = 'usuarios/$uid/pacientes/${escritura.pacienteId}/';
-    if (!escritura.ruta.startsWith(prefijo)) {
-      throw ArgumentError(
-        'La escritura pendiente no corresponde al paciente indicado',
-      );
-    }
-    final ref = firestore.doc(escritura.ruta);
-    final datos = Map<String, dynamic>.from(
-      CodecPayload.decodificar(escritura.datos) as Map,
-    );
-    await aplicar(ref, datos, escritura.operacion).timeout(limiteEscritura);
-  }
-
-  Future<void> borrarColeccionEnLotes(CollectionReference coleccion) async {
-    while (true) {
-      final snap = await coleccion.limit(400).get();
-      if (snap.docs.isEmpty) return;
-      final lote = firestore.batch();
-      for (final doc in snap.docs) {
-        lote.delete(doc.reference);
+    final pid = escritura.pacienteId;
+    if (pid != null) {
+      final raiz = '/pacientes/$pid';
+      if (escritura.ruta != raiz && !escritura.ruta.startsWith('$raiz/')) {
+        throw ArgumentError(
+          'La escritura pendiente no corresponde al paciente indicado',
+        );
       }
-      await confirmarBorrado(lote.commit());
-      if (snap.docs.length < 400) return;
     }
+    try {
+      await aplicar(
+        escritura.ruta,
+        escritura.datos,
+        escritura.operacion,
+      ).timeout(limiteEscritura);
+    } on ExcepcionApi catch (e) {
+      final yaBorrado =
+          escritura.operacion == OperacionPendiente.borrar &&
+          e.codigoHttp == 404;
+      if (!yaBorrado) rethrow;
+    }
+    notificarCambio();
   }
 
-  Future<void> confirmarBorrado(Future<void> operacion) async {
-    try {
-      await operacion.timeout(limiteEscritura);
-    } on TimeoutException {
-      // Si falla, se sigue igual.
-    }
+  void ponerCifrado(Map<String, dynamic> data, String clave, String? valor) {
+    final cifrados = (data['cifrados'] ??= <String, dynamic>{}) as Map;
+    cifrados[clave] = valor;
   }
 
   Future<void> reemplazarPorCifrado(
@@ -184,17 +277,24 @@ class BaseDatosSegura {
     required String cifrado,
   }) async {
     if (plano == null || plano.isEmpty) {
-      data[cifrado] = FieldValue.delete();
+      ponerCifrado(data, cifrado, null);
     } else {
-      data[cifrado] = await this.cifrado.cifrar(uid, plano);
+      ponerCifrado(data, cifrado, await this.cifrado.cifrar(uid, plano));
     }
+  }
+
+  String? textoCifrado(Map<String, dynamic> datos, String clave) {
+    final cifrados = datos['cifrados'];
+    if (cifrados is! Map) return null;
+    final valor = cifrados[clave];
+    return valor is String ? valor : null;
   }
 
   Future<String?> descifrarCampo(
     Map<String, dynamic> datos,
     String campo,
   ) async {
-    final cifrado = datos[campo] as String?;
+    final cifrado = textoCifrado(datos, campo);
     if (cifrado == null || cifrado.isEmpty) return null;
     try {
       return await this.cifrado.descifrar(uid, cifrado);
@@ -206,8 +306,9 @@ class BaseDatosSegura {
 
   DateTime fechaTolerante(Object? valor) {
     if (valor is DateTime) return valor;
-    if (valor is Timestamp) return valor.toDate();
-    if (valor is String) return DateTime.tryParse(valor) ?? DateTime.now();
+    if (valor is String) {
+      return DateTime.tryParse(valor)?.toLocal() ?? DateTime.now();
+    }
     return DateTime.now();
   }
 }

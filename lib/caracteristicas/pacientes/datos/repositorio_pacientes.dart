@@ -1,6 +1,8 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:oncuidar/caracteristicas/pacientes/dominio/paciente.dart';
 import 'package:oncuidar/nucleo/datos/base_datos_segura.dart';
+import 'package:oncuidar/nucleo/datos/rutas_api.dart';
+import 'package:oncuidar/nucleo/sincronizacion/cola_escrituras.dart';
+import 'package:uuid/uuid.dart';
 
 class RepositorioPacientes {
   RepositorioPacientes(this.bd);
@@ -8,10 +10,15 @@ class RepositorioPacientes {
   final BaseDatosSegura bd;
 
   Future<String> crearPaciente(Paciente paciente) async {
-    final ref = bd.docUsuario.collection('pacientes').doc();
+    final id = const Uuid().v4();
     final datos = await _cifrarPaciente(paciente);
-    await bd.sinEsperarSinRed(() => ref.set(datos, SetOptions(merge: true)));
-    return ref.id;
+    await bd.escribir(
+      RutasApi.paciente(id),
+      datos,
+      operacion: OperacionPendiente.guardar,
+      idPaciente: id,
+    );
+    return id;
   }
 
   Future<void> actualizarPaciente(
@@ -81,75 +88,65 @@ class RepositorioPacientes {
       clave: 'contacto_emergencia_telefono_cifrado',
     );
     if (datos['maximo_registros_dia'] is int) {
-      plano['maximo_registros_dia'] = datos['maximo_registros_dia'];
+      plano['maximoRegistrosDia'] = datos['maximo_registros_dia'];
     }
     if (plano.isEmpty) return;
-    await bd.docUsuario
-        .collection('pacientes')
-        .doc(idPaciente)
-        .set(plano, SetOptions(merge: true));
-  }
-
-  Future<void> archivarPaciente(String idPaciente) async {
-    await bd.sinEsperarSinRed(
-      () => bd.docUsuario.collection('pacientes').doc(idPaciente).set({
-        'archivado': true,
-      }, SetOptions(merge: true)),
+    await bd.escribir(
+      RutasApi.paciente(idPaciente),
+      plano,
+      operacion: OperacionPendiente.fusionar,
+      idPaciente: idPaciente,
     );
   }
+
+  Future<void> archivarPaciente(String idPaciente) => bd.escribir(
+    RutasApi.paciente(idPaciente),
+    {'archivado': true},
+    operacion: OperacionPendiente.fusionar,
+    idPaciente: idPaciente,
+  );
 
   /// Restaura un paciente archivado.
-  Future<void> desarchivarPaciente(String idPaciente) async {
-    await bd.sinEsperarSinRed(
-      () => bd.docUsuario.collection('pacientes').doc(idPaciente).set({
-        'archivado': false,
-      }, SetOptions(merge: true)),
-    );
-  }
+  Future<void> desarchivarPaciente(String idPaciente) => bd.escribir(
+    RutasApi.paciente(idPaciente),
+    {'archivado': false},
+    operacion: OperacionPendiente.fusionar,
+    idPaciente: idPaciente,
+  );
 
   Future<void> eliminarPaciente(String idPaciente) async {
     final cola = bd.cola;
     if (cola != null) await cola.quitarDePaciente(bd.uid, idPaciente);
-    final docPaciente = bd.docUsuario.collection('pacientes').doc(idPaciente);
-    for (final sub in subcoleccionesPaciente) {
-      await bd.borrarColeccionEnLotes(docPaciente.collection(sub));
-    }
-    await bd.confirmarBorrado(docPaciente.delete());
+    await bd.borrar(RutasApi.paciente(idPaciente), idPaciente);
   }
 
-  static const subcoleccionesPaciente = ['registrosClinicos', 'recordatorios'];
+  Stream<List<Paciente>> pacientesArchivadosEnTiempoReal() =>
+      _pacientes(archivados: true);
 
-  Stream<List<Paciente>> pacientesArchivadosEnTiempoReal() {
-    return bd.docUsuario
-        .collection('pacientes')
-        .snapshots()
-        .asyncMap(
-          (snap) => Future.wait(
-            snap.docs
-                .where((d) => d.data()['archivado'] == true)
-                .map((d) => _descifrarPaciente(d.id, d.data())),
-          ),
-        );
-  }
+  Stream<List<Paciente>> pacientesEnTiempoReal() =>
+      _pacientes(archivados: false);
 
-  Stream<List<Paciente>> pacientesEnTiempoReal() {
-    return bd.docUsuario
-        .collection('pacientes')
-        .snapshots()
-        .asyncMap(
-          (snap) => Future.wait(
-            snap.docs
-                .where((d) => d.data()['archivado'] != true)
-                .map((d) => _descifrarPaciente(d.id, d.data())),
-          ),
+  Stream<List<Paciente>> _pacientes({required bool archivados}) {
+    return bd.flujo<List<Paciente>>(
+      RutasApi.pacientes,
+      convertir: (json) async {
+        final items = [
+          for (final e in json as List)
+            if (((e as Map)['archivado'] == true) == archivados)
+              e.cast<String, dynamic>(),
+        ];
+        return Future.wait(
+          items.map((d) => _descifrarPaciente(d['id'] as String, d)),
         );
+      },
+    );
   }
 
   Future<Map<String, dynamic>> _cifrarPaciente(Paciente p) async {
     final data = <String, dynamic>{
-      'notificaciones_activas': true,
-      'maximo_registros_dia': 3,
-      'creadoEn': FieldValue.serverTimestamp(),
+      'notificacionesActivas': true,
+      'maximoRegistrosDia': 3,
+      'creadoEn': DateTime.now().toUtc().toIso8601String(),
     };
     await bd.reemplazarPorCifrado(
       data,
@@ -197,7 +194,7 @@ class RepositorioPacientes {
       plano: p.contactoEmergenciaTelefono,
       cifrado: 'contacto_emergencia_telefono_cifrado',
     );
-    data['version_encriptacion'] = 2;
+    data['versionEncriptacion'] = 2;
     return data;
   }
 
@@ -237,8 +234,8 @@ class RepositorioPacientes {
         datos,
         'contacto_emergencia_telefono_cifrado',
       ),
-      creadoEn: (datos['creadoEn'] as Timestamp?)?.toDate() ?? DateTime.now(),
-      maximoRegistrosDia: (datos['maximo_registros_dia'] as num?)?.toInt() ?? 3,
+      creadoEn: bd.fechaTolerante(datos['creadoEn']),
+      maximoRegistrosDia: (datos['maximoRegistrosDia'] as num?)?.toInt() ?? 3,
     );
   }
 }

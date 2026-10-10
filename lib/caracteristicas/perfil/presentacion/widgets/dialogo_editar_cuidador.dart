@@ -1,12 +1,12 @@
 import 'dart:async';
 
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:oncuidar/app/tema/paleta.dart';
 import 'package:oncuidar/compartido/widgets/boton_principal.dart';
 import 'package:oncuidar/compartido/widgets/campos_formulario.dart';
 import 'package:oncuidar/compartido/widgets/hoja_dialogo.dart';
 import 'package:oncuidar/compartido/widgets/titulo_seccion.dart';
+import 'package:oncuidar/nucleo/red/cliente_api.dart';
 
 Future<void> mostrarDialogoEditarCuidador(
   BuildContext context, {
@@ -225,7 +225,7 @@ class _DialogoEditarCuidadorState extends State<_DialogoEditarCuidador> {
 }
 
 String _mensajeErrorGuardado(Object e) {
-  if (e is FirebaseException && e.code == 'network-request-failed') {
+  if (e is ExcepcionApi && e.esDeRed) {
     return 'Sin conexión. Verifica tu internet e intenta de nuevo.';
   }
   return 'No se pudieron guardar los datos.';
