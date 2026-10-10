@@ -1,11 +1,15 @@
 const nodemailer = require('nodemailer');
 const config = require('./config');
+const plantillas = require('./plantillas');
 
 let transporte;
 
-async function enviarEnlace(destino, enlace) {
+const PLANTILLAS = plantillas.CORREOS;
+
+async function enviarEnlace(destino, enlace, tipo = 'restablecer') {
+  const { asunto, html, texto } = plantillas.armarCorreo(tipo, enlace);
   if (!config.smtp.host) {
-    console.log(`[correo] Enlace de restablecimiento para ${destino}: ${enlace}`);
+    if (process.env.NODE_ENV !== 'test') console.log(`[correo] ${asunto} para ${destino}: ${enlace}`);
     return;
   }
   transporte ??= nodemailer.createTransport({
@@ -17,9 +21,17 @@ async function enviarEnlace(destino, enlace) {
   await transporte.sendMail({
     from: config.smtp.remitente,
     to: destino,
-    subject: 'Restablecer tu contraseña de OnCuidar',
-    text: `Para restablecer tu contraseña abre este enlace (vence en 1 hora):\n${enlace}\n\nSi no lo solicitaste, ignora este mensaje.`,
+    subject: asunto,
+    text: texto,
+    html,
+    attachments: [{
+      filename: 'logo-oncuidar.png',
+      content: plantillas.LOGO_PNG,
+      contentType: 'image/png',
+      cid: plantillas.CID_LOGO,
+      contentDisposition: 'inline',
+    }],
   });
 }
 
-module.exports = { enviarEnlace };
+module.exports = { enviarEnlace, PLANTILLAS };

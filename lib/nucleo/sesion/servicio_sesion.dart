@@ -184,17 +184,21 @@ class ServicioSesion {
     () => _api.post('/auth/verificar-contrasena', {'contrasena': contrasena}),
   );
 
-  Future<void> cambiarCorreo(String contrasena, String nuevoCorreo) async {
-    final normalizado = nuevoCorreo.trim().toLowerCase();
-    await _traducir(
-      () => _api.post('/auth/cambiar-correo', {
-        'contrasena': contrasena,
-        'nuevoCorreo': normalizado,
-      }),
-    );
-    final sesion = _actual;
-    if (sesion != null) await _fijar(sesion.conCorreo(normalizado));
-  }
+  Future<void> cambiarCorreo(String contrasena, String nuevoCorreo) =>
+      _traducir(
+        () => _api.post('/auth/cambiar-correo', {
+          'contrasena': contrasena,
+          'nuevoCorreo': nuevoCorreo.trim().toLowerCase(),
+        }),
+      );
+
+  Future<void> pedirCorreoRespaldo(String correo) => _traducir(
+    () =>
+        _api.post('/correo-respaldo', {'correo': correo.trim().toLowerCase()}),
+  );
+
+  Future<void> reenviarVerificacion() =>
+      _traducir(() => _api.post('/auth/reenviar-verificacion', {}));
 
   Future<void> eliminarCuenta() async {
     await _traducir(() => _api.delete('/cuenta'));

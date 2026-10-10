@@ -4,6 +4,7 @@ const bcrypt = require('bcryptjs');
 const db = require('../db');
 const config = require('../config');
 const correo = require('../correo');
+const plantillas = require('../plantillas');
 const sellado = require('../sellado');
 const { firmarToken, requiereToken, limitarIntentos } = require('../auth');
 const { ErrorHttp, cuerpoObjeto, correoValido, normalizarCorreo } = require('../validacion');
@@ -34,6 +35,25 @@ async function enviarRestablecimiento(usuarioId, destino) {
   await correo.enviarEnlace(destino, `${config.urlPublica}/api/auth/restablecer?token=${token}`);
 }
 
+async function crearTokenCorreo(cliente, usuarioId, tipo, { correoNuevo = null, respaldoHash = null } = {}) {
+  await cliente.query('UPDATE tokens_correo SET usado = true WHERE usuario_id = $1 AND tipo = $2 AND usado = false', [usuarioId, tipo]);
+  const token = crypto.randomBytes(32).toString('hex');
+  await cliente.query(
+    `INSERT INTO tokens_correo (token_hash, usuario_id, tipo, correo_nuevo, respaldo_hash, expira_en)
+     VALUES ($1, $2, $3, $4, $5, now() + interval '1 hour')`,
+    [sha256(token), usuarioId, tipo, correoNuevo, respaldoHash],
+  );
+  return token;
+}
+
+const enlaceConfirmacion = (token) => `${config.urlPublica}/api/auth/confirmar-correo?token=${token}`;
+
+const enviarConfirmacion = (destino, token, tipo) => correo.enviarEnlace(destino, enlaceConfirmacion(token), tipo);
+
+function enviarSinEsperar(destino, token, tipo) {
+  enviarConfirmacion(destino, token, tipo).catch((e) => console.error(`[correo ${tipo}]`, e.message));
+}
+
 router.use('/auth', limitarIntentos());
 
 router.post('/auth/registro', async (req, res) => {
@@ -46,7 +66,15 @@ router.post('/auth/registro', async (req, res) => {
       'INSERT INTO usuarios (correo, contrasena_hash) VALUES ($1, $2) RETURNING id',
       [normalizarCorreo(c), hash],
     );
-    res.status(201).json({ token: firmarToken(rows[0].id), uid: rows[0].id });
+    const uid = rows[0].id;
+    const normalizado = normalizarCorreo(c);
+    try {
+      const token = await db.transaccion((cl) => crearTokenCorreo(cl, uid, 'verificacion', { correoNuevo: normalizado }));
+      enviarSinEsperar(normalizado, token, 'verificar');
+    } catch (e) {
+      console.error('[verificacion de registro]', e.message);
+    }
+    res.status(201).json({ token: firmarToken(uid), uid });
   } catch (e) {
     if (e.code === '23505') throw new ErrorHttp(409, 'Ya existe una cuenta con ese correo');
     throw e;
@@ -73,13 +101,28 @@ router.post('/auth/cambiar-correo', requiereToken, async (req, res) => {
   const { contrasena, nuevoCorreo } = cuerpoObjeto(req);
   if (!correoValido(nuevoCorreo)) throw new ErrorHttp(400, 'Correo inválido');
   if (!(await verificarContrasena(req.uid, contrasena))) throw new ErrorHttp(401, 'Contraseña incorrecta');
-  try {
-    await db.consulta('UPDATE usuarios SET correo = $1 WHERE id = $2', [normalizarCorreo(nuevoCorreo), req.uid]);
-  } catch (e) {
-    if (e.code === '23505') throw new ErrorHttp(409, 'Ya existe una cuenta con ese correo');
-    throw e;
+  const nuevo = normalizarCorreo(nuevoCorreo);
+  const { rows } = await db.consulta('SELECT id FROM usuarios WHERE correo = $1', [nuevo]);
+  if (rows[0]) {
+    if (rows[0].id === req.uid) throw new ErrorHttp(400, 'Ese ya es tu correo principal');
+    throw new ErrorHttp(409, 'Ya existe una cuenta con ese correo');
   }
-  res.json({ ok: true });
+  const token = await db.transaccion(async (cl) => {
+    const t = await crearTokenCorreo(cl, req.uid, 'cambio', { correoNuevo: nuevo });
+    await cl.query(
+      `UPDATE usuarios SET pendiente_correo = $1, pendiente_correo_tipo = 'principal',
+       pendiente_correo_solicitado_en = now() WHERE id = $2`,
+      [nuevo, req.uid],
+    );
+    return t;
+  });
+  try {
+    await enviarConfirmacion(nuevo, token, 'cambio');
+  } catch (e) {
+    console.error('[cambiar-correo]', e.message);
+    throw new ErrorHttp(502, 'No se pudo enviar el correo de confirmación, intenta de nuevo');
+  }
+  res.json({ ok: true, pendiente: true });
 });
 
 router.delete('/cuenta', requiereToken, async (req, res) => {
@@ -116,32 +159,81 @@ router.post('/auth/restablecer-contrasena', async (req, res) => {
   res.json({ ok: true });
 });
 
-const PAGINA_RESTABLECER = (token) => `<!doctype html>
-<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Restablecer contraseña - OnCuidar</title>
-<style>body{font-family:sans-serif;max-width:380px;margin:3rem auto;padding:0 1rem}input,button{width:100%;padding:.7rem;margin:.4rem 0;font-size:1rem}#msg{margin-top:1rem}</style></head>
-<body><h1>Nueva contraseña</h1>
-<form id="f"><input id="c1" type="password" minlength="6" placeholder="Nueva contraseña" required>
-<input id="c2" type="password" minlength="6" placeholder="Repite la contraseña" required>
-<button type="submit">Guardar contraseña</button></form><p id="msg"></p>
-<script>
-document.getElementById('f').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const msg = document.getElementById('msg');
-  const c1 = document.getElementById('c1').value;
-  if (c1 !== document.getElementById('c2').value) { msg.textContent = 'Las contraseñas no coinciden'; return; }
-  const r = await fetch('/api/auth/restablecer-contrasena', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: '${token}', contrasena: c1 }) });
-  const d = await r.json();
-  msg.textContent = r.ok ? 'Listo. Ya puedes iniciar sesión en la app.' : d.error;
-});
-</script></body></html>`;
-
 router.get('/auth/restablecer', (req, res) => {
   const token = String(req.query.token ?? '');
-  if (!/^[a-f0-9]{64}$/.test(token)) return res.status(400).type('text').send('Enlace inválido');
-  res.set('Content-Security-Policy',
-    "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'self'");
-  res.type('html').send(PAGINA_RESTABLECER(token));
+  const nonce = crypto.randomBytes(16).toString('base64');
+  res.set('Cache-Control', 'no-store');
+  res.set('Referrer-Policy', 'no-referrer');
+  res.set('Content-Security-Policy', plantillas.cspPagina(nonce, { conScript: /^[a-f0-9]{64}$/.test(token) }));
+  if (!/^[a-f0-9]{64}$/.test(token)) return res.status(400).type('html').send(plantillas.paginaConfirmacion(false, nonce, plantillas.PASOS_CONTRASENA));
+  res.type('html').send(plantillas.paginaRestablecer(token, nonce));
+});
+
+router.post('/auth/reenviar-verificacion', requiereToken, async (req, res) => {
+  const { rows } = await db.consulta('SELECT correo, correo_verificado FROM usuarios WHERE id = $1', [req.uid]);
+  if (!rows[0]) throw new ErrorHttp(404, 'Cuidador no encontrado');
+  if (rows[0].correo_verificado) return res.json({ ok: true, verificado: true });
+  const reciente = await db.consulta(
+    `SELECT 1 FROM tokens_correo WHERE usuario_id = $1 AND tipo = 'verificacion'
+     AND creado_en > now() - make_interval(secs => $2)`,
+    [req.uid, config.esperaRecuperacionSeg],
+  );
+  if (reciente.rows[0]) throw new ErrorHttp(429, 'Espera un minuto antes de pedir otro enlace');
+  const token = await db.transaccion((cl) => crearTokenCorreo(cl, req.uid, 'verificacion', { correoNuevo: rows[0].correo }));
+  try {
+    await enviarConfirmacion(rows[0].correo, token, 'verificar');
+  } catch (e) {
+    console.error('[reenviar-verificacion]', e.message);
+    throw new ErrorHttp(502, 'No se pudo enviar el correo, intenta de nuevo');
+  }
+  res.json({ ok: true });
+});
+
+async function aplicarTokenCorreo(token) {
+  return db.transaccion(async (cl) => {
+    const { rows } = await cl.query(
+      `UPDATE tokens_correo SET usado = true
+       WHERE token_hash = $1 AND usado = false AND expira_en > now() RETURNING *`,
+      [sha256(token)],
+    );
+    const t = rows[0];
+    if (!t) return false;
+    let r;
+    if (t.tipo === 'cambio') {
+      r = await cl.query(
+        `UPDATE usuarios SET correo = $1, correo_verificado = true, pendiente_correo = NULL,
+         pendiente_correo_tipo = NULL, pendiente_correo_solicitado_en = NULL
+         WHERE id = $2 AND pendiente_correo = $1`,
+        [t.correo_nuevo, t.usuario_id],
+      );
+    } else if (t.tipo === 'respaldo') {
+      r = await cl.query(
+        'UPDATE usuarios SET correo_respaldo_hash = $1, respaldo_pendiente_servidor = false WHERE id = $2 AND respaldo_pendiente_servidor = true',
+        [t.respaldo_hash, t.usuario_id],
+      );
+    } else {
+      r = await cl.query('UPDATE usuarios SET correo_verificado = true WHERE id = $1 AND correo = $2', [t.usuario_id, t.correo_nuevo]);
+    }
+    return r.rowCount === 1;
+  });
+}
+
+router.get('/auth/confirmar-correo', async (req, res) => {
+  const token = String(req.query.token ?? '');
+  const nonce = crypto.randomBytes(16).toString('base64');
+  res.set('Cache-Control', 'no-store');
+  res.set('Referrer-Policy', 'no-referrer');
+  res.set('Content-Security-Policy', plantillas.cspPagina(nonce));
+  let ok = false;
+  if (/^[a-f0-9]{64}$/.test(token)) {
+    try {
+      ok = await aplicarTokenCorreo(token);
+    } catch (e) {
+      if (e.code !== '23505') throw e;
+    }
+  }
+  if (ok) return res.type('html').send(plantillas.paginaConfirmacion(true, nonce));
+  res.status(400).type('html').send(plantillas.paginaConfirmacion(false, nonce));
 });
 
 router.post('/clave-datos', requiereToken, async (req, res) => {
@@ -159,8 +251,18 @@ const hashRespaldo = (c) => crypto.createHmac('sha256', config.hmacCorreo).updat
 router.post('/correo-respaldo', requiereToken, async (req, res) => {
   const { correo: c } = cuerpoObjeto(req);
   if (!correoValido(c)) throw new ErrorHttp(400, 'Correo inválido');
-  await db.consulta('UPDATE usuarios SET correo_respaldo_hash = $1 WHERE id = $2', [hashRespaldo(c), req.uid]);
-  res.json({ ok: true });
+  const token = await db.transaccion(async (cl) => {
+    const t = await crearTokenCorreo(cl, req.uid, 'respaldo', { respaldoHash: hashRespaldo(c) });
+    await cl.query('UPDATE usuarios SET respaldo_pendiente_servidor = true WHERE id = $1', [req.uid]);
+    return t;
+  });
+  try {
+    await enviarConfirmacion(c.trim(), token, 'respaldo');
+  } catch (e) {
+    console.error('[correo-respaldo]', e.message);
+    throw new ErrorHttp(502, 'No se pudo enviar el correo de confirmación, intenta de nuevo');
+  }
+  res.json({ ok: true, pendiente: true });
 });
 
 router.post('/auth/recuperar-por-respaldo', async (req, res) => {

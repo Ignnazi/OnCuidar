@@ -134,17 +134,18 @@ describe('cuidador y conversaciones', () => {
   test('GET y PUT con merge y null que borra', async () => {
     const r0 = await get(a, 'cuidador');
     expect(r0.body.correo).toBe(a.correo);
-    expect(r0.body.respaldoPendienteServidor).toBe(false);
+    expect(r0.body).toMatchObject({
+      respaldoPendiente: false, correoVerificado: false, correoRespaldoVerificado: false, pendienteCorreo: null,
+    });
     const r1 = await put(a, 'cuidador', {
       cifrados: { nombre_cifrado: 'N', telefono_cifrado: 'T' }, pendienteCorreo: 'x@y.cl',
-      pendienteCorreoTipo: 'cambio', pendienteCorreoSolicitadoEn: '2026-03-01T00:00:00Z', respaldoPendienteServidor: true,
+      pendienteCorreoTipo: 'cambio', respaldoPendienteServidor: true,
     });
     expect(r1.body.cifrados).toEqual({ nombre_cifrado: 'N', telefono_cifrado: 'T' });
-    expect(r1.body.pendienteCorreoSolicitadoEn).toBe('2026-03-01T00:00:00.000Z');
-    const r2 = await put(a, 'cuidador', { cifrados: { telefono_cifrado: null }, pendienteCorreo: null, pendienteCorreoTipo: null });
+    expect(r1.body.pendienteCorreo).toBeNull();
+    expect(r1.body.respaldoPendiente).toBe(false);
+    const r2 = await put(a, 'cuidador', { cifrados: { telefono_cifrado: null } });
     expect(r2.body.cifrados).toEqual({ nombre_cifrado: 'N' });
-    expect(r2.body.pendienteCorreo).toBeNull();
-    expect(r2.body.respaldoPendienteServidor).toBe(true);
   });
 
   test('conversaciones ordenadas por ultima actividad', async () => {

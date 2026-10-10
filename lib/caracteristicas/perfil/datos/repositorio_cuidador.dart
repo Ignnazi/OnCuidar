@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:oncuidar/nucleo/datos/base_datos_segura.dart';
 import 'package:oncuidar/nucleo/datos/rutas_api.dart';
 import 'package:oncuidar/nucleo/sesion/servicio_sesion.dart';
@@ -85,7 +84,10 @@ class RepositorioCuidador {
         datos,
         'correo_respaldo_cifrado',
       ),
-      'respaldoPendienteServidor': datos['respaldoPendienteServidor'] == true,
+      'respaldoPendiente': datos['respaldoPendiente'] == true,
+      'correoVerificado': datos['correoVerificado'] == true,
+      'correoRespaldoVerificado': datos['correoRespaldoVerificado'] == true,
+      'pendienteCorreo': datos['pendienteCorreo'] as String?,
     };
   }
 
@@ -140,13 +142,14 @@ class RepositorioCuidador {
     bd.notificarCambio();
   }
 
-  Future<bool> cambiarCorreoRespaldo({
+  Future<void> cambiarCorreoRespaldo({
     required String contrasena,
     required String nuevoCorreo,
   }) async {
     await _sesion.verificarContrasena(contrasena);
     final normalizado = nuevoCorreo.trim().toLowerCase();
-    final cuerpo = <String, dynamic>{'respaldoPendienteServidor': true};
+    await _sesion.pedirCorreoRespaldo(normalizado);
+    final cuerpo = <String, dynamic>{};
     bd.ponerCifrado(
       cuerpo,
       'correo_respaldo_cifrado',
@@ -157,34 +160,8 @@ class RepositorioCuidador {
       cuerpo,
       operacion: OperacionPendiente.guardar,
     );
-    return _registrarRespaldoEnServidor(normalizado);
+    bd.notificarCambio();
   }
 
-  @visibleForTesting
-  late Future<void> Function(String correo) registrarCorreoRespaldoServidor =
-      (correo) => bd.api.post('/correo-respaldo', {
-        'correo': correo,
-      }, const Duration(seconds: 5));
-
-  Future<bool> _registrarRespaldoEnServidor(String correo) async {
-    try {
-      await registrarCorreoRespaldoServidor(correo);
-    } catch (e) {
-      debugPrint('Registro del correo de respaldo pendiente: $e');
-      return false;
-    }
-    await bd.escribir(RutasApi.cuidador, {
-      'respaldoPendienteServidor': false,
-    }, operacion: OperacionPendiente.guardar);
-    return true;
-  }
-
-  Future<bool> reintentarRegistroRespaldo() async {
-    final datos = ((await bd.leer(RutasApi.cuidador)) as Map)
-        .cast<String, dynamic>();
-    if (datos['respaldoPendienteServidor'] != true) return true;
-    final correo = await bd.descifrarCampo(datos, 'correo_respaldo_cifrado');
-    if (correo == null || correo.isEmpty) return false;
-    return _registrarRespaldoEnServidor(correo);
-  }
+  Future<void> reenviarVerificacion() => _sesion.reenviarVerificacion();
 }

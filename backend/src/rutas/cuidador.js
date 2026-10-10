@@ -2,10 +2,7 @@ const express = require('express');
 const db = require('../db');
 const { requiereToken } = require('../auth');
 const { iso } = require('../upsert');
-const {
-  ErrorHttp, cuerpoObjeto, rechazarEnClaro, leerCifrados, fechaOpcional, booleanoOpcional,
-  enteroOpcional, textoOpcional,
-} = require('../validacion');
+const { ErrorHttp, cuerpoObjeto, rechazarEnClaro, leerCifrados, enteroOpcional } = require('../validacion');
 
 const router = express.Router();
 router.use('/cuidador', requiereToken);
@@ -19,7 +16,10 @@ const aJson = (u) => ({
   pendienteCorreo: u.pendiente_correo,
   pendienteCorreoTipo: u.pendiente_correo_tipo,
   pendienteCorreoSolicitadoEn: iso(u.pendiente_correo_solicitado_en),
+  respaldoPendiente: u.respaldo_pendiente_servidor === true,
   respaldoPendienteServidor: u.respaldo_pendiente_servidor,
+  correoVerificado: u.correo_verificado === true,
+  correoRespaldoVerificado: u.correo_respaldo_hash != null,
 });
 
 router.get('/cuidador', async (req, res) => {
@@ -32,14 +32,8 @@ router.put('/cuidador', async (req, res) => {
   const cuerpo = cuerpoObjeto(req);
   rechazarEnClaro(cuerpo, 'usuario');
   const { poner, borrar } = leerCifrados(cuerpo);
-  const nulo = { nuloPermitido: true };
   const campos = {
     version_encriptacion: enteroOpcional(cuerpo.versionEncriptacion, 'versionEncriptacion'),
-    pendiente_correo: textoOpcional(cuerpo.pendienteCorreo, 'pendienteCorreo', nulo),
-    pendiente_correo_tipo: textoOpcional(cuerpo.pendienteCorreoTipo, 'pendienteCorreoTipo', nulo),
-    pendiente_correo_solicitado_en: fechaOpcional(cuerpo.pendienteCorreoSolicitadoEn, 'pendienteCorreoSolicitadoEn',
-      { nulaPermitida: true }),
-    respaldo_pendiente_servidor: booleanoOpcional(cuerpo.respaldoPendienteServidor, 'respaldoPendienteServidor'),
   };
   const sets = [];
   const params = [req.uid];
