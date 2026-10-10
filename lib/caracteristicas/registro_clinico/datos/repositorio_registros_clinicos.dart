@@ -1,9 +1,9 @@
 import 'dart:convert';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:oncuidar/caracteristicas/registro_clinico/dominio/registro_clinico.dart';
 import 'package:oncuidar/nucleo/datos/base_datos_segura.dart';
+import 'package:oncuidar/nucleo/datos/rutas_api.dart';
 import 'package:oncuidar/nucleo/sincronizacion/cola_escrituras.dart';
 
 class RepositorioRegistrosClinicos {
@@ -11,10 +11,7 @@ class RepositorioRegistrosClinicos {
 
   final BaseDatosSegura bd;
 
-  CollectionReference _registrosClinicos(String idPaciente) => bd.docUsuario
-      .collection('pacientes')
-      .doc(idPaciente)
-      .collection('registrosClinicos');
+  static const _tamanoPagina = 50;
 
   Future<void> guardarRegistroClinico(
     String idPaciente,
@@ -28,25 +25,32 @@ class RepositorioRegistrosClinicos {
     await bd.verificarEscrituraDisponible();
     final signos = registro.signosVitales;
     final datos = <String, dynamic>{
-      'id': registro.id,
-      'paciente_id': registro.pacienteId,
-      'fecha': registro.fecha,
-      'creadoEn': registro.creadoEn,
+      'pacienteId': registro.pacienteId,
+      'fecha': registro.fecha.toUtc().toIso8601String(),
+      'creadoEn': registro.creadoEn.toUtc().toIso8601String(),
       'tipoRegistro': registro.tipoRegistro,
       'nivelAlerta': registro.nivelAlerta.name,
-      if (signos != null)
-        'signos_vitales_cifrado': await bd.cifrado.cifrar(
-          bd.uid,
-          jsonEncode({
-            'temperatura': signos.temperatura,
-            'frecuenciaCardiaca': signos.frecuenciaCardiaca,
-            'saturacionOxigeno': signos.saturacionOxigeno,
-            'frecuenciaRespiratoria': signos.frecuenciaRespiratoria,
-          }),
-        )
-      else
-        'signos_vitales_cifrado': FieldValue.delete(),
-      'sintomas_cifrado': await bd.cifrado.cifrar(
+      'versionEncriptacion': 3,
+    };
+    bd.ponerCifrado(
+      datos,
+      'signos_vitales_cifrado',
+      signos == null
+          ? null
+          : await bd.cifrado.cifrar(
+              bd.uid,
+              jsonEncode({
+                'temperatura': signos.temperatura,
+                'frecuenciaCardiaca': signos.frecuenciaCardiaca,
+                'saturacionOxigeno': signos.saturacionOxigeno,
+                'frecuenciaRespiratoria': signos.frecuenciaRespiratoria,
+              }),
+            ),
+    );
+    bd.ponerCifrado(
+      datos,
+      'sintomas_cifrado',
+      await bd.cifrado.cifrar(
         bd.uid,
         jsonEncode([
           for (final sintoma in registro.sintomas)
@@ -58,7 +62,7 @@ class RepositorioRegistrosClinicos {
             },
         ]),
       ),
-    };
+    );
     await bd.reemplazarPorCifrado(
       datos,
       plano: registro.observaciones,
@@ -69,9 +73,8 @@ class RepositorioRegistrosClinicos {
       plano: registro.mensajeAlerta,
       cifrado: 'mensaje_alerta_cifrado',
     );
-    datos['version_encriptacion'] = 3;
     await bd.escribir(
-      _registrosClinicos(idPaciente).doc(registro.id),
+      RutasApi.registro(idPaciente, registro.id),
       datos,
       operacion: OperacionPendiente.guardar,
       idPaciente: idPaciente,
@@ -83,27 +86,20 @@ class RepositorioRegistrosClinicos {
     String idPaciente,
     String idRegistro,
   ) async {
-    await bd.borrar(_registrosClinicos(idPaciente).doc(idRegistro), idPaciente);
+    await bd.borrar(RutasApi.registro(idPaciente, idRegistro), idPaciente);
   }
 
   Stream<List<RegistroClinico>> registrosClinicosEnTiempoReal(
     String idPaciente,
   ) {
     if (!bd.tieneIdentidad()) return Stream.value(const []);
-    return _registrosClinicos(idPaciente)
-        .orderBy('creadoEn', descending: true)
-        .limit(50)
-        .snapshots()
-        .asyncMap(
-          (snap) => Future.wait(
-            snap.docs.map(
-              (d) => _descifrarRegistroClinico(
-                d.id,
-                d.data() as Map<String, dynamic>,
-              ),
-            ),
-          ),
-        );
+    return bd.flujo<List<RegistroClinico>>(
+      '${RutasApi.registros(idPaciente)}?limite=$_tamanoPagina',
+      convertir: (json) async {
+        final lista = await _descifrarLista(json as List, idPaciente);
+        return lista..sort((a, b) => b.creadoEn.compareTo(a.creadoEn));
+      },
+    );
   }
 
   Future<List<RegistroClinico>> cargarMasRegistrosClinicos(
@@ -111,21 +107,14 @@ class RepositorioRegistrosClinicos {
     DateTime ultimoCreadoEn,
   ) async {
     if (!bd.tieneIdentidad()) return const [];
-    final snap = await _registrosClinicos(idPaciente)
-        .orderBy('creadoEn', descending: true)
-        .startAfter([Timestamp.fromDate(ultimoCreadoEn)])
-        .limit(50)
-        .get();
-    final lista = <RegistroClinico>[];
-    for (final doc in snap.docs) {
-      lista.add(
-        await _descifrarRegistroClinico(
-          doc.id,
-          doc.data() as Map<String, dynamic>,
-        ),
-      );
-    }
-    return lista;
+    final antes = Uri.encodeQueryComponent(
+      ultimoCreadoEn.toUtc().toIso8601String(),
+    );
+    final json = await bd.leer(
+      '${RutasApi.registros(idPaciente)}?limite=$_tamanoPagina'
+      '&antesDeCreadoEn=$antes',
+    );
+    return _descifrarLista(json as List, idPaciente);
   }
 
   Future<List<RegistroClinico>> registrosClinicosEnRango(
@@ -134,22 +123,29 @@ class RepositorioRegistrosClinicos {
     DateTime? hasta,
   }) async {
     if (!bd.tieneIdentidad()) return const [];
-    Query consulta = _registrosClinicos(idPaciente);
-    if (desde != null) {
-      consulta = consulta.where(
-        'fecha',
-        isGreaterThanOrEqualTo: Timestamp.fromDate(desde),
-      );
-    }
-    if (hasta != null) {
-      consulta = consulta.where('fecha', isLessThan: Timestamp.fromDate(hasta));
-    }
-    final snap = await consulta.orderBy('fecha').get();
+    final params = [
+      if (desde != null)
+        'desde=${Uri.encodeQueryComponent(desde.toUtc().toIso8601String())}',
+      if (hasta != null)
+        'hasta=${Uri.encodeQueryComponent(hasta.toUtc().toIso8601String())}',
+    ];
+    if (params.isEmpty) params.add('desde=1970-01-01T00:00:00.000Z');
+    final json = await bd.leer(
+      '${RutasApi.registros(idPaciente)}?${params.join('&')}&limite=5000',
+    );
+    return _descifrarLista(json as List, idPaciente);
+  }
+
+  Future<List<RegistroClinico>> _descifrarLista(
+    List json,
+    String idPaciente,
+  ) async {
     final lista = <RegistroClinico>[];
-    for (final doc in snap.docs) {
+    for (final e in json) {
+      final datos = (e as Map).cast<String, dynamic>();
       final registro = await _descifrarRegistroClinico(
-        doc.id,
-        doc.data() as Map<String, dynamic>,
+        datos['id'] as String,
+        datos,
       );
       if (registro.pacienteId.isEmpty || registro.pacienteId == idPaciente) {
         lista.add(registro);
@@ -161,73 +157,44 @@ class RepositorioRegistrosClinicos {
   Future<SignosVitales?> _descifrarSignosVitales(
     Map<String, dynamic> datos,
   ) async {
-    final cifrado = datos['signos_vitales_cifrado'] as String?;
-    if (cifrado != null && cifrado.isNotEmpty) {
-      try {
-        final texto = await bd.cifrado.descifrar(bd.uid, cifrado);
-        final mapa = jsonDecode(texto) as Map<String, dynamic>;
-        return SignosVitales(
-          temperatura: (mapa['temperatura'] as num?)?.toDouble(),
-          frecuenciaCardiaca: (mapa['frecuenciaCardiaca'] as num?)?.toInt(),
-          saturacionOxigeno: (mapa['saturacionOxigeno'] as num?)?.toInt(),
-          frecuenciaRespiratoria: (mapa['frecuenciaRespiratoria'] as num?)
-              ?.toInt(),
-        );
-      } catch (e, pila) {
-        debugPrint('No se pudo descifrar signos_vitales_cifrado: $e\n$pila');
-      }
-    }
-    final signosMapa = datos['signosVitales'];
-    if (signosMapa is Map<String, dynamic>) {
+    final cifrado = bd.textoCifrado(datos, 'signos_vitales_cifrado');
+    if (cifrado == null || cifrado.isEmpty) return null;
+    try {
+      final texto = await bd.cifrado.descifrar(bd.uid, cifrado);
+      final mapa = jsonDecode(texto) as Map<String, dynamic>;
       return SignosVitales(
-        temperatura: (signosMapa['temperatura'] as num?)?.toDouble(),
-        frecuenciaCardiaca: signosMapa['frecuenciaCardiaca'] as int?,
-        saturacionOxigeno: signosMapa['saturacionOxigeno'] as int?,
-        frecuenciaRespiratoria: signosMapa['frecuenciaRespiratoria'] as int?,
+        temperatura: (mapa['temperatura'] as num?)?.toDouble(),
+        frecuenciaCardiaca: (mapa['frecuenciaCardiaca'] as num?)?.toInt(),
+        saturacionOxigeno: (mapa['saturacionOxigeno'] as num?)?.toInt(),
+        frecuenciaRespiratoria: (mapa['frecuenciaRespiratoria'] as num?)
+            ?.toInt(),
       );
+    } catch (e, pila) {
+      debugPrint('No se pudo descifrar signos_vitales_cifrado: $e\n$pila');
+      return null;
     }
-    return null;
   }
 
   Future<List<EntradaSintoma>> _descifrarSintomas(
     Map<String, dynamic> datos,
   ) async {
-    final cifrado = datos['sintomas_cifrado'] as String?;
-    if (cifrado != null && cifrado.isNotEmpty) {
-      try {
-        final texto = await bd.cifrado.descifrar(bd.uid, cifrado);
-        final lista = jsonDecode(texto) as List<dynamic>;
-        return [
-          for (final item in lista)
-            EntradaSintoma(
-              nombre: (item['nombre'] as String?) ?? '',
-              intensidad: (item['intensidad'] as num?)?.toInt() ?? 0,
-              notas: item['notas'] as String?,
-            ),
-        ];
-      } catch (e, pila) {
-        debugPrint('No se pudo descifrar sintomas_cifrado: $e\n$pila');
-      }
-    }
-    final sintomasRaw = datos['sintomas'];
-    if (sintomasRaw is List) {
-      final sintomas = <EntradaSintoma>[];
-      for (final item in sintomasRaw.cast<Map<String, dynamic>>()) {
-        final notesCifradas = item['notas_cifrado'] as String?;
-        final notas = (notesCifradas != null && notesCifradas.isNotEmpty)
-            ? await bd.descifrarCampo(item, 'notas_cifrado')
-            : item['notas'] as String?;
-        sintomas.add(
+    final cifrado = bd.textoCifrado(datos, 'sintomas_cifrado');
+    if (cifrado == null || cifrado.isEmpty) return const [];
+    try {
+      final texto = await bd.cifrado.descifrar(bd.uid, cifrado);
+      final lista = jsonDecode(texto) as List<dynamic>;
+      return [
+        for (final item in lista)
           EntradaSintoma(
             nombre: (item['nombre'] as String?) ?? '',
             intensidad: (item['intensidad'] as num?)?.toInt() ?? 0,
-            notas: notas,
+            notas: item['notas'] as String?,
           ),
-        );
-      }
-      return sintomas;
+      ];
+    } catch (e, pila) {
+      debugPrint('No se pudo descifrar sintomas_cifrado: $e\n$pila');
+      return const [];
     }
-    return const [];
   }
 
   Future<RegistroClinico> _descifrarRegistroClinico(
@@ -236,12 +203,10 @@ class RepositorioRegistrosClinicos {
   ) async {
     final signos = await _descifrarSignosVitales(datos);
     final sintomas = await _descifrarSintomas(datos);
-
-    final contenidoCifrado = datos['contenido_registro_cifrado'] as String?;
-    final observaciones =
-        (contenidoCifrado != null && contenidoCifrado.isNotEmpty)
-        ? await bd.descifrarCampo(datos, 'contenido_registro_cifrado')
-        : datos['observaciones'] as String?;
+    final observaciones = await bd.descifrarCampo(
+      datos,
+      'contenido_registro_cifrado',
+    );
 
     final nivelRaw = datos['nivelAlerta'] as String?;
     final nivel = NivelAlerta.values.firstWhere(
@@ -251,7 +216,7 @@ class RepositorioRegistrosClinicos {
 
     return RegistroClinico(
       id: id,
-      pacienteId: (datos['paciente_id'] as String?) ?? '',
+      pacienteId: (datos['pacienteId'] as String?) ?? '',
       fecha: bd.fechaTolerante(datos['fecha']),
       creadoEn: bd.fechaTolerante(datos['creadoEn']),
       tipoRegistro: (datos['tipoRegistro'] as String?) ?? 'programado',

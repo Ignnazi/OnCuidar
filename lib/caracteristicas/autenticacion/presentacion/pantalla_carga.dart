@@ -72,7 +72,7 @@ class _SplashState extends ConsumerState<Splash>
   }
 
   void _sincronizarBibliotecaEnParalelo() {
-    final usuario = ref.read(firebaseAuthProvider).currentUser;
+    final usuario = ref.read(servicioSesionProvider).actual;
     if (usuario == null) return;
     ref
         .read(sincronizacionBibliotecaProvider.notifier)
@@ -80,7 +80,7 @@ class _SplashState extends ConsumerState<Splash>
   }
 
   Future<void> _asegurarClaveEnParalelo() async {
-    final usuario = ref.read(firebaseAuthProvider).currentUser;
+    final usuario = ref.read(servicioSesionProvider).actual;
     if (usuario == null) return;
     _haySesion = true;
     try {

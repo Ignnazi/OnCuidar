@@ -1,5 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 class Recordatorio {
   const Recordatorio({
     required this.id,
@@ -82,7 +80,6 @@ class Recordatorio {
 
   static DateTime _parsearFecha(dynamic valor) {
     if (valor is DateTime) return valor;
-    if (valor is Timestamp) return valor.toDate();
     return DateTime.tryParse(valor?.toString() ?? '') ?? DateTime.now();
   }
 }

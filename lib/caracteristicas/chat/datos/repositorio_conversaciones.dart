@@ -1,57 +1,58 @@
 import 'dart:convert';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:oncuidar/caracteristicas/chat/dominio/conversacion.dart';
 import 'package:oncuidar/nucleo/datos/base_datos_segura.dart';
+import 'package:oncuidar/nucleo/datos/rutas_api.dart';
+import 'package:oncuidar/nucleo/sincronizacion/cola_escrituras.dart';
+import 'package:uuid/uuid.dart';
 
 class RepositorioConversaciones {
   RepositorioConversaciones(this.bd);
 
   final BaseDatosSegura bd;
 
-  CollectionReference _conversaciones() =>
-      bd.docUsuario.collection('conversaciones');
-
   Stream<List<Conversacion>> conversacionesEnTiempoReal() {
     if (!bd.tieneIdentidad()) return Stream.value(const []);
-    return _conversaciones()
-        .orderBy('ultimaActividad', descending: true)
-        .limit(50)
-        .snapshots()
-        .asyncMap(
-          (snap) => Future.wait(
-            snap.docs.map(
-              (d) => _descifrarConversacion(
-                d.id,
-                d.data() as Map<String, dynamic>,
-              ),
+    return bd.flujo<List<Conversacion>>(
+      '${RutasApi.conversaciones}?limite=50',
+      convertir: (json) async {
+        final lista = await Future.wait([
+          for (final e in json as List)
+            _descifrarConversacion(
+              (e as Map)['id'] as String,
+              e.cast<String, dynamic>(),
             ),
-          ),
-        );
+        ]);
+        return lista
+          ..sort((a, b) => b.ultimaActividad.compareTo(a.ultimaActividad));
+      },
+    );
   }
 
   Future<String> crearConversacion({
     required String titulo,
     required List<MensajeConversacion> mensajes,
   }) async {
+    final ahora = DateTime.now().toUtc().toIso8601String();
     final datos = <String, dynamic>{
-      'mensajes_cifrado': await bd.cifrado.cifrar(
-        bd.uid,
-        jsonEncode([for (final mensaje in mensajes) mensaje.aMapa()]),
-      ),
-      'ultimaActividad': DateTime.now(),
-      'creadoEn': DateTime.now(),
-      'version_encriptacion': 3,
+      'ultimaActividad': ahora,
+      'creadoEn': ahora,
+      'versionEncriptacion': 3,
     };
+    bd.ponerCifrado(datos, 'mensajes_cifrado', await _cifrarMensajes(mensajes));
     await bd.reemplazarPorCifrado(
       datos,
       plano: titulo,
       cifrado: 'titulo_cifrado',
     );
-    final ref = _conversaciones().doc();
-    await bd.sinEsperarSinRed(() => ref.set(datos));
-    return ref.id;
+    final id = const Uuid().v4();
+    await bd.escribir(
+      RutasApi.conversacion(id),
+      datos,
+      operacion: OperacionPendiente.crear,
+    );
+    return id;
   }
 
   Future<void> actualizarConversacion(
@@ -60,12 +61,9 @@ class RepositorioConversaciones {
     required List<MensajeConversacion> mensajes,
   }) async {
     final datos = <String, dynamic>{
-      'mensajes_cifrado': await bd.cifrado.cifrar(
-        bd.uid,
-        jsonEncode([for (final mensaje in mensajes) mensaje.aMapa()]),
-      ),
-      'ultimaActividad': DateTime.now(),
+      'ultimaActividad': DateTime.now().toUtc().toIso8601String(),
     };
+    bd.ponerCifrado(datos, 'mensajes_cifrado', await _cifrarMensajes(mensajes));
     if (titulo != null) {
       await bd.reemplazarPorCifrado(
         datos,
@@ -73,8 +71,10 @@ class RepositorioConversaciones {
         cifrado: 'titulo_cifrado',
       );
     }
-    await bd.sinEsperarSinRed(
-      () => _conversaciones().doc(id).set(datos, SetOptions(merge: true)),
+    await bd.escribir(
+      RutasApi.conversacion(id),
+      datos,
+      operacion: OperacionPendiente.guardar,
     );
   }
 
@@ -85,14 +85,22 @@ class RepositorioConversaciones {
       plano: titulo,
       cifrado: 'titulo_cifrado',
     );
-    await bd.sinEsperarSinRed(
-      () => _conversaciones().doc(id).set(datos, SetOptions(merge: true)),
+    await bd.escribir(
+      RutasApi.conversacion(id),
+      datos,
+      operacion: OperacionPendiente.fusionar,
     );
   }
 
   /// Elimina definitivamente una conversación.
-  Future<void> eliminarConversacion(String id) async {
-    await bd.sinEsperarSinRed(() => _conversaciones().doc(id).delete());
+  Future<void> eliminarConversacion(String id) =>
+      bd.borrar(RutasApi.conversacion(id), null);
+
+  Future<String> _cifrarMensajes(List<MensajeConversacion> mensajes) {
+    return bd.cifrado.cifrar(
+      bd.uid,
+      jsonEncode([for (final mensaje in mensajes) mensaje.aMapa()]),
+    );
   }
 
   Future<Conversacion> _descifrarConversacion(
@@ -111,26 +119,18 @@ class RepositorioConversaciones {
   Future<List<MensajeConversacion>> _descifrarMensajesConversacion(
     Map<String, dynamic> datos,
   ) async {
-    final cifrado = datos['mensajes_cifrado'] as String?;
-    if (cifrado != null && cifrado.isNotEmpty) {
-      try {
-        final texto = await bd.cifrado.descifrar(bd.uid, cifrado);
-        final lista = jsonDecode(texto) as List<dynamic>;
-        return [
-          for (final item in lista.cast<Map<String, dynamic>>())
-            MensajeConversacion.desdeMapa(item),
-        ];
-      } catch (e, pila) {
-        debugPrint('No se pudo descifrar mensajes_cifrado: $e\n$pila');
-      }
-    }
-    final mensajesRaw = datos['mensajes'];
-    if (mensajesRaw is List) {
+    final cifrado = bd.textoCifrado(datos, 'mensajes_cifrado');
+    if (cifrado == null || cifrado.isEmpty) return const [];
+    try {
+      final texto = await bd.cifrado.descifrar(bd.uid, cifrado);
+      final lista = jsonDecode(texto) as List<dynamic>;
       return [
-        for (final item in mensajesRaw.cast<Map<String, dynamic>>())
+        for (final item in lista.cast<Map<String, dynamic>>())
           MensajeConversacion.desdeMapa(item),
       ];
+    } catch (e, pila) {
+      debugPrint('No se pudo descifrar mensajes_cifrado: $e\n$pila');
+      return const [];
     }
-    return const [];
   }
 }

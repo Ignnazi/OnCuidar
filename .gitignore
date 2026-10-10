@@ -55,17 +55,11 @@ ios/Flutter/ephemeral/
 .env.*
 *.env
 
-# Firebase Functions
-functions/node_modules/
-
-# Firebase local (emuladores, caches de hosting)
-.firebase/
-
-# Dependencias de la prueba de reglas de Firestore
-test/reglas_firestore/node_modules/
-
 # Backend
 .env
 node_modules/
 coverage/
 !.env.ejemplo
+
+# Ajustes locales de desarrollo
+docker-compose.override.yml

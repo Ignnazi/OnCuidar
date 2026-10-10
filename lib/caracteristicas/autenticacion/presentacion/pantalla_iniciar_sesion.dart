@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -14,6 +13,7 @@ import 'package:oncuidar/caracteristicas/pacientes/dominio/ciclo_de_vida_pacient
 import 'package:oncuidar/compartido/widgets/campos_formulario.dart';
 import 'package:oncuidar/compartido/widgets/encabezado_gradiente.dart';
 import 'package:oncuidar/nucleo/proveedores.dart';
+import 'package:oncuidar/nucleo/sesion/servicio_sesion.dart';
 import 'package:oncuidar/nucleo/utilidades/validacion_correo.dart';
 
 class IniciarSesion extends ConsumerStatefulWidget {
@@ -42,14 +42,11 @@ class _IniciarSesionState extends ConsumerState<IniciarSesion> {
     setState(() => _cargando = true);
 
     try {
-      final auth = ref.read(firebaseAuthProvider);
-      final credential = await auth.signInWithEmailAndPassword(
-        email: _correoController.text.trim(),
-        password: _contrasenaController.text,
-      );
-      final uid = credential.user!.uid;
+      final sesion = await ref
+          .read(servicioSesionProvider)
+          .iniciarSesion(_correoController.text, _contrasenaController.text);
 
-      await ref.read(servicioCifradoProvider).asegurarClave(uid);
+      await ref.read(servicioCifradoProvider).asegurarClave(sesion.uid);
       ref.read(bloqueoCifradoProvider.notifier).fijarDesbloqueado(true);
       unawaited(
         ref
@@ -72,31 +69,19 @@ class _IniciarSesionState extends ConsumerState<IniciarSesion> {
         );
         context.go(EstadoArranque.consumirDestino());
       }
-    } on FirebaseAuthException catch (e) {
+    } on ExcepcionSesion catch (e) {
       if (!mounted) return;
-      String mensaje;
-      switch (e.code) {
-        case 'user-not-found':
-          mensaje = 'No existe una cuenta con ese correo.';
-          break;
-        case 'wrong-password':
-          mensaje = 'La contraseña es incorrecta.';
-          break;
-        case 'invalid-credential':
-          mensaje = 'Correo o contraseña incorrectos.';
-          break;
-        case 'invalid-email':
-          mensaje = 'El correo electrónico no es válido.';
-          break;
-        case 'user-disabled':
-          mensaje = 'Esta cuenta ha sido deshabilitada.';
-          break;
-        case 'too-many-requests':
-          mensaje = 'Demasiados intentos. Intenta de nuevo más tarde.';
-          break;
-        default:
-          mensaje = 'Error al iniciar sesión. Intenta de nuevo.';
-      }
+      final mensaje = switch (e.codigo) {
+        CodigoErrorSesion.credencialesInvalidas =>
+          'Correo o contraseña incorrectos.',
+        CodigoErrorSesion.correoInvalido =>
+          'El correo electrónico no es válido.',
+        CodigoErrorSesion.demasiadosIntentos =>
+          'Demasiados intentos. Intenta de nuevo más tarde.',
+        CodigoErrorSesion.sinRed || CodigoErrorSesion.tiempoAgotado =>
+          'Sin conexión. Verifica tu internet e intenta de nuevo.',
+        _ => 'Error al iniciar sesión. Intenta de nuevo.',
+      };
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(mensaje), backgroundColor: Paleta.error),
       );
@@ -125,15 +110,7 @@ class _IniciarSesionState extends ConsumerState<IniciarSesion> {
       return;
     }
     try {
-      await ref
-          .read(firebaseAuthProvider)
-          .sendPasswordResetEmail(
-            email: correo,
-            actionCodeSettings: ActionCodeSettings(
-              url: 'https://oncuidar-v1.firebaseapp.com/__/auth/action',
-              handleCodeInApp: false,
-            ),
-          );
+      await ref.read(servicioSesionProvider).recuperarContrasena(correo);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -143,19 +120,15 @@ class _IniciarSesionState extends ConsumerState<IniciarSesion> {
           backgroundColor: Paleta.doradoPrincipal,
         ),
       );
-    } on FirebaseAuthException catch (e) {
+    } on ExcepcionSesion catch (e) {
       if (!mounted) return;
-      String mensaje;
-      switch (e.code) {
-        case 'invalid-email':
-          mensaje = 'El correo electrónico no es válido.';
-          break;
-        case 'user-not-found':
-          mensaje = 'No existe una cuenta con ese correo.';
-          break;
-        default:
-          mensaje = 'No se pudo enviar el correo. Intenta de nuevo.';
-      }
+      final mensaje = switch (e.codigo) {
+        CodigoErrorSesion.correoInvalido =>
+          'El correo electrónico no es válido.',
+        CodigoErrorSesion.sinRed || CodigoErrorSesion.tiempoAgotado =>
+          'Sin conexión. Verifica tu internet e intenta de nuevo.',
+        _ => 'No se pudo enviar el correo. Intenta de nuevo.',
+      };
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(mensaje), backgroundColor: Paleta.error),
       );

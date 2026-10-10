@@ -1,5 +1,5 @@
-import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:oncuidar/app/tema/paleta.dart';
@@ -7,21 +7,23 @@ import 'package:oncuidar/caracteristicas/autenticacion/presentacion/widgets/boto
 import 'package:oncuidar/compartido/widgets/campos_formulario.dart';
 import 'package:oncuidar/compartido/widgets/encabezado_gradiente.dart';
 import 'package:oncuidar/compartido/widgets/marca.dart';
+import 'package:oncuidar/nucleo/proveedores.dart';
+import 'package:oncuidar/nucleo/sesion/servicio_sesion.dart';
 import 'package:oncuidar/nucleo/utilidades/validacion_correo.dart';
 
 bool interpretarRespuestaRecuperacion(Object? data) =>
     data is Map && data['ok'] == true;
 
-class RecuperarAcceso extends StatefulWidget {
+class RecuperarAcceso extends ConsumerStatefulWidget {
   const RecuperarAcceso({super.key, this.onSubmit});
 
   final Future<void> Function(String email)? onSubmit;
 
   @override
-  State<RecuperarAcceso> createState() => _RecuperarAccesoState();
+  ConsumerState<RecuperarAcceso> createState() => _RecuperarAccesoState();
 }
 
-class _RecuperarAccesoState extends State<RecuperarAcceso> {
+class _RecuperarAccesoState extends ConsumerState<RecuperarAcceso> {
   final _formKey = GlobalKey<FormState>();
   final _correoController = TextEditingController();
   bool _cargando = false;
@@ -34,22 +36,8 @@ class _RecuperarAccesoState extends State<RecuperarAcceso> {
     super.dispose();
   }
 
-  Future<void> _envioPorDefecto(String email) async {
-    final resultado =
-        await FirebaseFunctions.instanceFor(region: 'southamerica-west1')
-            .httpsCallable('recuperarPorCorreoRespaldo')
-            .call({'correo': email})
-            .timeout(
-              const Duration(seconds: 5),
-              onTimeout: () => throw FirebaseFunctionsException(
-                code: 'unavailable',
-                message: 'Sin conexión',
-              ),
-            );
-    if (!interpretarRespuestaRecuperacion(resultado.data)) {
-      throw StateError('Respuesta inesperada del servidor');
-    }
-  }
+  Future<void> _envioPorDefecto(String email) =>
+      ref.read(servicioSesionProvider).recuperarPorRespaldo(email);
 
   Future<void> _recuperarAcceso() async {
     if (!_formKey.currentState!.validate()) return;
@@ -67,13 +55,14 @@ class _RecuperarAccesoState extends State<RecuperarAcceso> {
         _cargando = false;
         _enviado = true;
       });
-    } on FirebaseFunctionsException catch (e) {
+    } on ExcepcionSesion catch (e) {
       if (!mounted) return;
       setState(() {
         _cargando = false;
         _enviado = false;
         _errorMensaje =
-            (e.code == 'unavailable' || e.code == 'deadline-exceeded')
+            (e.codigo == CodigoErrorSesion.sinRed ||
+                e.codigo == CodigoErrorSesion.tiempoAgotado)
             ? 'Sin conexión. Verifica tu internet e intenta de nuevo.'
             : 'No se pudo completar. Intenta de nuevo.';
       });
