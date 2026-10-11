@@ -10,6 +10,7 @@ import 'package:oncuidar/caracteristicas/perfil/presentacion/widgets/mensaje_err
 import 'package:oncuidar/caracteristicas/perfil/presentacion/widgets/pie_version.dart';
 import 'package:oncuidar/caracteristicas/perfil/presentacion/widgets/tarjeta_configuracion.dart';
 import 'package:oncuidar/caracteristicas/perfil/presentacion/widgets/tarjeta_perfil_cuidador.dart';
+import 'package:oncuidar/compartido/widgets/aviso_sin_conexion.dart';
 import 'package:oncuidar/nucleo/proveedores.dart';
 import 'package:oncuidar/nucleo/sesion/servicio_sesion.dart';
 
@@ -65,6 +66,10 @@ class _PerfilCuidadorState extends ConsumerState<PerfilCuidador> {
   }
 
   Future<void> _reenviarVerificacion() async {
+    if (estaSinConexion(ref)) {
+      mostrarAvisoSinConexion(context, TextosSinConexion.verificacion);
+      return;
+    }
     final mensajero = ScaffoldMessenger.of(context);
     String texto;
     try {
@@ -176,6 +181,10 @@ class _PerfilCuidadorState extends ConsumerState<PerfilCuidador> {
     bool editarPrincipal = false,
     bool editarRespaldo = false,
   }) async {
+    if (estaSinConexion(ref)) {
+      mostrarAvisoSinConexion(context, TextosSinConexion.correos);
+      return;
+    }
     final cuidador = _cuidador ?? {};
     final correoPrincipalOriginal =
         (cuidador['correo'] as String?)?.trim() ?? '';

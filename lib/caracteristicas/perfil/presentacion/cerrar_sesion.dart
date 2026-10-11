@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:oncuidar/app/enrutador/destino_aviso.dart';
 import 'package:oncuidar/app/tema/paleta.dart';
 import 'package:oncuidar/caracteristicas/pacientes/presentacion/proveedores_pacientes.dart';
+import 'package:oncuidar/compartido/widgets/aviso_sin_conexion.dart';
 import 'package:oncuidar/compartido/widgets/dialogo_confirmacion.dart';
 import 'package:oncuidar/nucleo/proveedores.dart';
 
@@ -20,6 +21,11 @@ Future<void> cerrarSesionConfirmando(
     textoConfirmar: 'Cerrar sesión',
     colorConfirmar: Paleta.doradoRelleno,
     iconoConfirmar: Icons.logout_rounded,
+    nota: const NotaSinConexion(
+      texto: TextosSinConexion.cerrarSesion,
+      alineacion: TextAlign.center,
+      margen: EdgeInsets.only(top: 12),
+    ),
   );
   if (confirmar != true || !context.mounted) return;
   alCambiarEstado(true);

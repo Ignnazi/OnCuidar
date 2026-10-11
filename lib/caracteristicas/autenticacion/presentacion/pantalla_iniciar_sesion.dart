@@ -10,6 +10,7 @@ import 'package:oncuidar/caracteristicas/autenticacion/presentacion/widgets/boto
 import 'package:oncuidar/caracteristicas/biblioteca/presentacion/proveedores_biblioteca.dart';
 import 'package:oncuidar/caracteristicas/pacientes/datos/proveedores_pacientes.dart';
 import 'package:oncuidar/caracteristicas/pacientes/dominio/ciclo_de_vida_paciente.dart';
+import 'package:oncuidar/compartido/widgets/aviso_sin_conexion.dart';
 import 'package:oncuidar/compartido/widgets/campos_formulario.dart';
 import 'package:oncuidar/compartido/widgets/encabezado_gradiente.dart';
 import 'package:oncuidar/nucleo/proveedores.dart';
@@ -39,6 +40,10 @@ class _IniciarSesionState extends ConsumerState<IniciarSesion> {
 
   Future<void> _iniciarSesion() async {
     if (!_formKey.currentState!.validate()) return;
+    if (estaSinConexion(ref)) {
+      mostrarAvisoSinConexion(context, TextosSinConexion.iniciarSesion);
+      return;
+    }
     setState(() => _cargando = true);
 
     try {
@@ -106,6 +111,13 @@ class _IniciarSesionState extends ConsumerState<IniciarSesion> {
           content: const Text('Ingresa tu correo para recuperar el acceso.'),
           backgroundColor: Paleta.error,
         ),
+      );
+      return;
+    }
+    if (estaSinConexion(ref)) {
+      mostrarAvisoSinConexion(
+        context,
+        TextosSinConexion.necesitaInternetPara('recuperar tu acceso'),
       );
       return;
     }
@@ -270,6 +282,9 @@ class _IniciarSesionState extends ConsumerState<IniciarSesion> {
                         ],
                       ),
                       const SizedBox(height: 24),
+                      const NotaSinConexion(
+                        texto: TextosSinConexion.iniciarSesion,
+                      ),
                       BotonDegradado(
                         etiqueta: 'Iniciar sesión',
                         cargando: _cargando,
