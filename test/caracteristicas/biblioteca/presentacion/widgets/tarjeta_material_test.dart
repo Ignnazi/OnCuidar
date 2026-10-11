@@ -20,11 +20,18 @@ class _CacheFalso implements ServicioCacheContenido {
       descargados.contains(url) ? File(url) : null;
 
   @override
-  Future<File> descargar(String url) async {
+  Future<File> descargar(
+    String url, {
+    int? tamanoBytes,
+    void Function(int descargado, int? total)? alProgresar,
+  }) async {
     if (fallar.contains(url)) throw Exception('descarga fallida');
     descargados.add(url);
     return File(url);
   }
+
+  @override
+  Future<File> redescargar(String url) => descargar(url);
 
   @override
   Future<bool> archivoDescargado(String url) async => descargados.contains(url);

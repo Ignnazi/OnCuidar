@@ -17,6 +17,9 @@ Future<void> guardarAvanceVideo(String url, Duration avance) async {
   await prefs.setInt(claveAvanceVideo(url), avance.inMilliseconds);
 }
 
+bool descargaCompleta({required int? esperado, required int real}) =>
+    esperado == null || esperado <= 0 || esperado == real;
+
 class ServicioCacheContenido {
   ServicioCacheContenido({CacheManager? gestor})
     : _gestor =
@@ -37,9 +40,44 @@ class ServicioCacheContenido {
     return null;
   }
 
-  Future<File> descargar(String url) async {
+  Future<File> descargar(
+    String url, {
+    int? tamanoBytes,
+    void Function(int descargado, int? total)? alProgresar,
+  }) async {
     final existente = await archivoEnCache(url);
     if (existente != null) return existente;
+    final archivo = alProgresar == null
+        ? await _gestor.getSingleFile(url, key: url)
+        : await _descargarConProgreso(url, alProgresar);
+    if (descargaCompleta(esperado: tamanoBytes, real: await archivo.length())) {
+      return archivo;
+    }
+    return redescargar(url);
+  }
+
+  Future<File> _descargarConProgreso(
+    String url,
+    void Function(int descargado, int? total) alProgresar,
+  ) async {
+    File? archivo;
+    await for (final respuesta in _gestor.getFileStream(
+      url,
+      key: url,
+      withProgress: true,
+    )) {
+      if (respuesta is DownloadProgress) {
+        alProgresar(respuesta.downloaded, respuesta.totalSize);
+      } else if (respuesta is FileInfo) {
+        archivo = respuesta.file;
+      }
+    }
+    if (archivo == null) throw StateError('Descarga sin archivo: $url');
+    return archivo;
+  }
+
+  Future<File> redescargar(String url) async {
+    await _gestor.removeFile(url);
     return _gestor.getSingleFile(url, key: url);
   }
 

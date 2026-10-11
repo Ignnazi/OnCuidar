@@ -7,8 +7,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:oncuidar/app/proveedores_navegacion.dart';
 import 'package:oncuidar/app/tema/paleta.dart';
+import 'package:oncuidar/caracteristicas/biblioteca/datos/proveedores_biblioteca.dart';
 import 'package:oncuidar/caracteristicas/biblioteca/datos/servicio_cache_contenido.dart';
+import 'package:oncuidar/compartido/widgets/aviso_sin_conexion.dart';
 import 'package:oncuidar/compartido/widgets/barra_visor.dart';
+import 'package:oncuidar/nucleo/proveedores.dart';
 import 'package:video_player/video_player.dart';
 
 String formatearDuracion(Duration d) {
@@ -39,15 +42,20 @@ String etiquetaVelocidad(double velocidad) {
   return '$texto×';
 }
 
+const _mensajeErrorVideo = 'No se pudo reproducir el video.';
+
 class PantallaVideo extends ConsumerStatefulWidget {
   const PantallaVideo({
     super.key,
     required this.archivo,
     required this.titulo,
     required this.idContenido,
+    this.urlArchivo,
   });
 
   final File archivo;
+
+  final String? urlArchivo;
   final String titulo;
 
   final String idContenido;
@@ -64,7 +72,9 @@ class _PantallaVideoState extends ConsumerState<PantallaVideo> {
   bool _mostrarControles = true;
   bool _pantallaCompleta = false;
   bool _hayError = false;
-  String _mensajeError = '';
+  bool _reintentoHecho = false;
+  String _mensajeError = _mensajeErrorVideo;
+  late File _archivo = widget.archivo;
 
   @override
   void initState() {
@@ -73,9 +83,31 @@ class _PantallaVideoState extends ConsumerState<PantallaVideo> {
     _inicializar();
   }
 
-  Future<void> _inicializar() async {
+  void _soltarControlador() {
+    final anterior = _controlador;
+    _controlador = null;
+    if (anterior == null) return;
+    anterior.removeListener(_alCambiarProgreso);
+    unawaited(anterior.dispose());
+  }
+
+  Future<void> _inicializar({bool redescargar = false}) async {
+    VideoPlayerController? controlador;
     try {
-      final controlador = VideoPlayerController.file(widget.archivo);
+      if (redescargar) {
+        _soltarControlador();
+        if (mounted) {
+          setState(() {
+            _hayError = false;
+            _inicializado = false;
+          });
+        }
+        _archivo = await ref
+            .read(servicioCacheContenidoProvider)
+            .redescargar(widget.urlArchivo!);
+        if (!mounted) return;
+      }
+      controlador = VideoPlayerController.file(_archivo);
       _controlador = controlador;
       await controlador.initialize();
       if (!mounted || _controlador != controlador) {
@@ -87,14 +119,41 @@ class _PantallaVideoState extends ConsumerState<PantallaVideo> {
       await _restaurarPosicion(controlador);
       await controlador.play();
       _reiniciarTimerControles();
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _hayError = true;
-          _mensajeError = e.toString();
-        });
-      }
+    } catch (_) {
+      if (_controlador != controlador) return;
+      await _manejarFallo();
     }
+  }
+
+  Future<void> _manejarFallo() async {
+    if (!mounted || _hayError) return;
+    if (!_reintentoHecho && widget.urlArchivo != null) {
+      _reintentoHecho = true;
+      await _inicializar(redescargar: true);
+      return;
+    }
+    var mensaje = _mensajeErrorVideo;
+    try {
+      if (widget.urlArchivo != null &&
+          ref.read(estadoConexionProvider).value == false) {
+        mensaje = TextosSinConexion.video;
+      }
+    } catch (_) {}
+    _soltarControlador();
+    setState(() {
+      _hayError = true;
+      _inicializado = false;
+      _mensajeError = mensaje;
+    });
+  }
+
+  /// Reintento manual desde el estado de error.
+  void _reintentarManual() {
+    setState(() {
+      _hayError = false;
+      _inicializado = false;
+    });
+    unawaited(_inicializar(redescargar: widget.urlArchivo != null));
   }
 
   Future<void> _restaurarPosicion(VideoPlayerController controlador) async {
@@ -170,7 +229,12 @@ class _PantallaVideoState extends ConsumerState<PantallaVideo> {
   }
 
   void _alCambiarProgreso() {
-    if (mounted) setState(() {});
+    if (!mounted) return;
+    if (_controlador?.value.hasError ?? false) {
+      unawaited(_manejarFallo());
+      return;
+    }
+    setState(() {});
   }
 
   void _alternarReproduccion() {
@@ -313,44 +377,64 @@ class _PantallaVideoState extends ConsumerState<PantallaVideo> {
   }
 
   Widget _vistaError() {
+    final estiloBoton = GoogleFonts.nunito(
+      fontSize: 14,
+      fontWeight: FontWeight.w700,
+    );
     return Center(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.error_outline, color: Colors.red, size: 48),
-            const SizedBox(height: 16),
-            Text(
-              'No se pudo reproducir el video',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.nunito(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: Colors.white,
+        child: Semantics(
+          liveRegion: true,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.videocam_off_outlined,
+                color: Paleta.doradoMedio,
+                size: 48,
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              _mensajeError,
-              textAlign: TextAlign.center,
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.nunito(fontSize: 12, color: Colors.white54),
-            ),
-            const SizedBox(height: 24),
-            TextButton(
-              onPressed: _cerrar,
-              style: TextButton.styleFrom(foregroundColor: Paleta.doradoMedio),
-              child: Text(
-                'Volver',
+              const SizedBox(height: 16),
+              Text(
+                _mensajeError,
+                key: const Key('mensajeErrorVideo'),
+                textAlign: TextAlign.center,
                 style: GoogleFonts.nunito(
-                  fontSize: 14,
+                  fontSize: 15,
+                  height: 1.4,
                   fontWeight: FontWeight.w700,
+                  color: Colors.white,
                 ),
               ),
-            ),
-          ],
+              const SizedBox(height: 24),
+              Wrap(
+                alignment: WrapAlignment.center,
+                spacing: 12,
+                runSpacing: 8,
+                children: [
+                  FilledButton(
+                    key: const Key('reintentarVideo'),
+                    onPressed: _reintentarManual,
+                    style: FilledButton.styleFrom(
+                      backgroundColor: Paleta.doradoPrincipal,
+                      foregroundColor: Paleta.sobreDorado,
+                      textStyle: estiloBoton,
+                    ),
+                    child: const Text('Reintentar'),
+                  ),
+                  TextButton(
+                    key: const Key('volverDeVideo'),
+                    onPressed: _cerrar,
+                    style: TextButton.styleFrom(
+                      foregroundColor: Paleta.doradoMedio,
+                      textStyle: estiloBoton,
+                    ),
+                    child: const Text('Volver'),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

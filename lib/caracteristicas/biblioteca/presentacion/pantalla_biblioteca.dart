@@ -17,6 +17,7 @@ import 'package:oncuidar/caracteristicas/biblioteca/presentacion/proveedores_bib
 import 'package:oncuidar/caracteristicas/biblioteca/presentacion/widgets/encabezado_seccion.dart';
 import 'package:oncuidar/caracteristicas/biblioteca/presentacion/widgets/etiqueta_tema.dart';
 import 'package:oncuidar/caracteristicas/biblioteca/presentacion/widgets/tarjeta_material.dart';
+import 'package:oncuidar/compartido/widgets/aviso_sin_conexion.dart';
 import 'package:oncuidar/compartido/widgets/buscador.dart';
 import 'package:oncuidar/compartido/widgets/encabezado_gradiente.dart';
 import 'package:oncuidar/compartido/widgets/insignia_conteo.dart';
@@ -131,7 +132,17 @@ class _BibliotecaScreenState extends ConsumerState<BibliotecaScreen> {
     setState(() => _urlsDescargando.add(url));
     try {
       final cache = ref.read(servicioCacheContenidoProvider);
-      final archivo = await cache.descargar(url);
+      final guardado = await cache.archivoDescargado(url);
+      if (!guardado && estaSinConexion(ref)) {
+        if (mounted) {
+          mostrarAvisoSinConexion(context, TextosSinConexion.video);
+        }
+        return;
+      }
+      final archivo = await cache.descargar(
+        url,
+        tamanoBytes: material.tamanoBytes,
+      );
       ref.read(contenidosDescargadosProvider.notifier).marcarDescargado(url);
       if (!mounted) return;
       await Navigator.of(context).push(
@@ -140,20 +151,25 @@ class _BibliotecaScreenState extends ConsumerState<BibliotecaScreen> {
             archivo: archivo,
             titulo: material.titulo,
             idContenido: material.id,
+            urlArchivo: url,
           ),
         ),
       );
-    } catch (e) {
+    } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'No se pudo preparar el video: $e',
-              style: GoogleFonts.nunito(fontSize: 14),
+        if (estaSinConexion(ref)) {
+          mostrarAvisoSinConexion(context, TextosSinConexion.video);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'No se pudo preparar el video. Intenta de nuevo.',
+                style: GoogleFonts.nunito(fontSize: 14),
+              ),
+              backgroundColor: Paleta.error,
             ),
-            backgroundColor: Paleta.error,
-          ),
-        );
+          );
+        }
       }
     } finally {
       if (mounted) setState(() => _urlsDescargando.remove(url));

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:oncuidar/app/tema/paleta.dart';
 import 'package:oncuidar/caracteristicas/autenticacion/presentacion/widgets/botones_acceso.dart';
+import 'package:oncuidar/compartido/widgets/aviso_sin_conexion.dart';
 import 'package:oncuidar/compartido/widgets/campos_formulario.dart';
 import 'package:oncuidar/compartido/widgets/encabezado_gradiente.dart';
 import 'package:oncuidar/compartido/widgets/marca.dart';
@@ -41,6 +42,13 @@ class _RecuperarAccesoState extends ConsumerState<RecuperarAcceso> {
 
   Future<void> _recuperarAcceso() async {
     if (!_formKey.currentState!.validate()) return;
+    if (widget.onSubmit == null && estaSinConexion(ref)) {
+      mostrarAvisoSinConexion(
+        context,
+        TextosSinConexion.necesitaInternetPara('recuperar tu acceso'),
+      );
+      return;
+    }
     setState(() {
       _cargando = true;
       _errorMensaje = null;
@@ -149,6 +157,10 @@ class _RecuperarAccesoState extends ConsumerState<RecuperarAcceso> {
                         ],
                       ),
                       const SizedBox(height: 24),
+                      const NotaSinConexion(
+                        texto:
+                            'Sin conexión: necesitas internet para recuperar tu acceso.',
+                      ),
                       SizedBox(
                         width: double.infinity,
                         height: 54,

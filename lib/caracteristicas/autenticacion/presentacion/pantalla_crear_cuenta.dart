@@ -9,6 +9,7 @@ import 'package:oncuidar/caracteristicas/autenticacion/dominio/validaciones_regi
 import 'package:oncuidar/caracteristicas/autenticacion/presentacion/formulario_registro.dart';
 import 'package:oncuidar/caracteristicas/autenticacion/presentacion/widgets/botones_acceso.dart';
 import 'package:oncuidar/caracteristicas/autenticacion/presentacion/widgets/campos_registro.dart';
+import 'package:oncuidar/compartido/widgets/aviso_sin_conexion.dart';
 import 'package:oncuidar/compartido/widgets/campos_formulario.dart';
 import 'package:oncuidar/compartido/widgets/encabezado_gradiente.dart';
 
@@ -34,6 +35,13 @@ class _RegistroState extends ConsumerState<Registro> {
 
   Future<void> _guardar() async {
     if (!_formKey.currentState!.validate()) return;
+    if (estaSinConexion(ref)) {
+      mostrarAvisoSinConexion(
+        context,
+        TextosSinConexion.necesitaInternetPara('crear tu cuenta'),
+      );
+      return;
+    }
     setState(() => _cargando = true);
 
     final resultado = await ref
@@ -301,6 +309,10 @@ class _RegistroState extends ConsumerState<Registro> {
                         hijos: _camposApoyo(),
                       ),
                       const SizedBox(height: 28),
+                      const NotaSinConexion(
+                        texto:
+                            'Sin conexión: necesitas internet para crear tu cuenta.',
+                      ),
                       BotonDegradado(
                         etiqueta: 'Guardar y continuar',
                         cargando: _cargando,

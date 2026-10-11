@@ -13,6 +13,7 @@ Future<bool?> mostrarDialogoConfirmacion(
   IconData? iconoConfirmar,
   Key? keyConfirmar,
   String textoCancelar = 'Cancelar',
+  Widget? nota,
 }) {
   final color = colorConfirmar ?? Paleta.doradoRelleno;
   return showDialog<bool>(
@@ -34,6 +35,7 @@ Future<bool?> mostrarDialogoConfirmacion(
             color: Paleta.textoSecundario,
           ),
         ),
+        ?nota,
         const SizedBox(height: 22),
         BotonesDialogo(
           alCancelar: () => Navigator.of(dialogCtx).pop(false),

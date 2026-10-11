@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:oncuidar/app/tema/paleta.dart';
+import 'package:oncuidar/compartido/widgets/aviso_sin_conexion.dart';
 import 'package:oncuidar/compartido/widgets/chip_franja.dart';
 import 'package:oncuidar/compartido/widgets/tarjeta_dato.dart';
 import 'package:oncuidar/compartido/widgets/tarjeta_perfil.dart';
+import 'package:oncuidar/nucleo/proveedores.dart';
 
 class TarjetaPerfilCuidador extends StatelessWidget {
   const TarjetaPerfilCuidador({
@@ -155,7 +158,7 @@ class _TarjetaDatosCuidador extends StatelessWidget {
   }
 }
 
-class _TarjetaAutenticacion extends StatelessWidget {
+class _TarjetaAutenticacion extends ConsumerWidget {
   const _TarjetaAutenticacion({
     required this.correoPrincipal,
     this.correoRespaldo,
@@ -179,7 +182,8 @@ class _TarjetaAutenticacion extends StatelessWidget {
   final VoidCallback onEditarRespaldo;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final sinConexion = ref.watch(estadoConexionProvider).value == false;
     final respaldoConfigurado =
         correoRespaldo != null && correoRespaldo!.isNotEmpty;
     return TarjetaDorada(
@@ -264,60 +268,76 @@ class _TarjetaAutenticacion extends StatelessWidget {
           Positioned(
             top: 0,
             right: 0,
-            child: PopupMenuButton<_AccionCorreo>(
-              key: const Key('menuAutenticacion'),
-              tooltip: 'Editar correos',
-              onSelected: (accion) {
-                switch (accion) {
-                  case _AccionCorreo.editarPrincipal:
-                    onEditarPrincipal();
-                  case _AccionCorreo.editarRespaldo:
-                    onEditarRespaldo();
-                }
-              },
-              itemBuilder: (context) => const [
-                PopupMenuItem(
-                  value: _AccionCorreo.editarPrincipal,
-                  child: ListTile(
-                    leading: Icon(Icons.alternate_email),
-                    title: Text('Editar correo principal'),
-                    contentPadding: EdgeInsets.zero,
-                    dense: true,
+            child: sinConexion
+                ? Tooltip(
+                    message: 'Editar correos',
+                    child: InkResponse(
+                      key: const Key('menuAutenticacion'),
+                      radius: 24,
+                      onTap: () => mostrarAvisoSinConexion(
+                        context,
+                        TextosSinConexion.correos,
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(8),
+                        child: _iconoMenuCorreos(),
+                      ),
+                    ),
+                  )
+                : PopupMenuButton<_AccionCorreo>(
+                    key: const Key('menuAutenticacion'),
+                    tooltip: 'Editar correos',
+                    onSelected: (accion) {
+                      switch (accion) {
+                        case _AccionCorreo.editarPrincipal:
+                          onEditarPrincipal();
+                        case _AccionCorreo.editarRespaldo:
+                          onEditarRespaldo();
+                      }
+                    },
+                    itemBuilder: (context) => const [
+                      PopupMenuItem(
+                        value: _AccionCorreo.editarPrincipal,
+                        child: ListTile(
+                          leading: Icon(Icons.alternate_email),
+                          title: Text('Editar correo principal'),
+                          contentPadding: EdgeInsets.zero,
+                          dense: true,
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: _AccionCorreo.editarRespaldo,
+                        child: ListTile(
+                          leading: Icon(Icons.mark_email_read_outlined),
+                          title: Text('Editar correo de respaldo'),
+                          contentPadding: EdgeInsets.zero,
+                          dense: true,
+                        ),
+                      ),
+                    ],
+                    icon: _iconoMenuCorreos(),
+                    color: Paleta.tarjeta,
                   ),
-                ),
-                PopupMenuItem(
-                  value: _AccionCorreo.editarRespaldo,
-                  child: ListTile(
-                    leading: Icon(Icons.mark_email_read_outlined),
-                    title: Text('Editar correo de respaldo'),
-                    contentPadding: EdgeInsets.zero,
-                    dense: true,
-                  ),
-                ),
-              ],
-              icon: Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [Paleta.doradoPrincipal, Paleta.doradoRelleno],
-                  ),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.more_vert_rounded,
-                  color: Paleta.sobreDorado,
-                  size: 20,
-                ),
-              ),
-              color: Paleta.tarjeta,
-            ),
           ),
         ],
       ),
     );
   }
+}
+
+Widget _iconoMenuCorreos() {
+  return Container(
+    padding: const EdgeInsets.all(6),
+    decoration: BoxDecoration(
+      gradient: LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [Paleta.doradoPrincipal, Paleta.doradoRelleno],
+      ),
+      shape: BoxShape.circle,
+    ),
+    child: Icon(Icons.more_vert_rounded, color: Paleta.sobreDorado, size: 20),
+  );
 }
 
 class _AvisoPendiente extends StatelessWidget {

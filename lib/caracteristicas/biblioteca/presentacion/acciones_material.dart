@@ -8,6 +8,8 @@ import 'package:oncuidar/caracteristicas/biblioteca/datos/proveedores_biblioteca
 import 'package:oncuidar/caracteristicas/biblioteca/dominio/material_educativo.dart';
 import 'package:oncuidar/caracteristicas/biblioteca/presentacion/pantalla_visor_pdf.dart';
 import 'package:oncuidar/caracteristicas/biblioteca/presentacion/proveedores_biblioteca.dart';
+import 'package:oncuidar/compartido/widgets/aviso_sin_conexion.dart';
+import 'package:oncuidar/nucleo/proveedores.dart';
 import 'package:open_filex/open_filex.dart';
 
 /// Aviso de error de la biblioteca.
@@ -30,7 +32,10 @@ Future<void> abrirArchivoMaterial(
   if (url == null || url.isEmpty) return;
   try {
     final cache = ref.read(servicioCacheContenidoProvider);
-    final archivo = await cache.descargar(url);
+    final archivo = await cache.descargar(
+      url,
+      tamanoBytes: material.tamanoBytes,
+    );
     ref.read(contenidosDescargadosProvider.notifier).marcarDescargado(url);
     if (!context.mounted) return;
     alDescargar?.call();
@@ -49,9 +54,13 @@ Future<void> abrirArchivoMaterial(
             : 'No hay una aplicación para abrir este tipo de archivo.',
       );
     }
-  } catch (e) {
-    if (context.mounted) {
-      mostrarAvisoBiblioteca(context, 'Error al abrir el archivo: $e');
+  } catch (_) {
+    if (!context.mounted) return;
+    if (await ref.read(servicioConectividadProvider).estaEnLinea()) {
+      if (!context.mounted) return;
+      mostrarAvisoBiblioteca(context, 'No se pudo abrir el archivo.');
+    } else if (context.mounted) {
+      mostrarAvisoSinConexion(context, TextosSinConexion.archivo);
     }
   }
 }
