@@ -67,3 +67,7 @@ docker-compose.override.yml
 # Videos de la biblioteca
 backend/archivos/**/*.mp4
 backend/archivos/miniaturas/
+
+# APK que publica la pagina de descarga
+web/*.apk
+App/

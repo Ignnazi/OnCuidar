@@ -23,6 +23,7 @@ const LEMA = 'Acompañando a quienes cuidan';
 const ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
 const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ESCAPES[c]);
 
+// Solo acepta http y https
 function urlSegura(valor) {
   let u;
   try {
