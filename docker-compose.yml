@@ -3,7 +3,7 @@ name: oncuidar-docker
 
 services:
   db:
-    image: postgres:15
+    image: docker.io/library/postgres:15
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-oncuidar}
@@ -11,7 +11,7 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-oncuidar}
     volumes:
       - datos_postgres:/var/lib/postgresql/data
-      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro,Z
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s
@@ -27,6 +27,14 @@ services:
     env_file: .env
     ports:
       - "${PUERTO_API:-8080}:3000"
+
+  web:
+    image: docker.io/library/nginx:alpine
+    restart: unless-stopped
+    volumes:
+      - ./web:/usr/share/nginx/html:ro,Z
+    ports:
+      - "${PUERTO_WEB:-8015}:80"
 
 volumes:
   datos_postgres:
