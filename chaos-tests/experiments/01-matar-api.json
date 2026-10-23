@@ -1,0 +1,84 @@
+{
+  "version": "1.0.0",
+  "title": "01 - Detener la API desde fuera (docker kill)",
+  "description": "Detiene el contenedor de la API con docker compose kill. Docker trata esa accion como una parada manual, asi que la politica restart: unless-stopped no lo vuelve a levantar.",
+  "tags": [
+    "docker",
+    "api",
+    "recuperacion"
+  ],
+  "steady-state-hypothesis": {
+    "title": "La API responde y consulta la base de datos",
+    "probes": [
+      {
+        "type": "probe",
+        "name": "api_salud_antes_del_caos",
+        "tolerance": 200,
+        "provider": {
+          "type": "http",
+          "url": "http://localhost:8080/api/salud",
+          "method": "GET",
+          "timeout": 5
+        }
+      }
+    ]
+  },
+  "method": [
+    {
+      "type": "action",
+      "name": "matar_contenedor_api",
+      "provider": {
+        "type": "process",
+        "path": "docker",
+        "arguments": [
+          "compose",
+          "kill",
+          "api"
+        ],
+        "timeout": 60
+      }
+    },
+    {
+      "type": "action",
+      "name": "esperar_15_segundos_a_que_docker_reinicie",
+      "provider": {
+        "type": "process",
+        "path": "powershell",
+        "arguments": [
+          "-NoProfile",
+          "-Command",
+          "Start-Sleep -Seconds 15"
+        ],
+        "timeout": 60
+      }
+    },
+    {
+      "type": "probe",
+      "name": "api_salud_despues_del_caos",
+      "tolerance": 200,
+      "provider": {
+        "type": "http",
+        "url": "http://localhost:8080/api/salud",
+        "method": "GET",
+        "timeout": 5
+      }
+    }
+  ],
+  "rollbacks": [
+    {
+      "type": "action",
+      "name": "asegurar_stack_arriba",
+      "provider": {
+        "type": "process",
+        "path": "docker",
+        "arguments": [
+          "compose",
+          "up",
+          "-d",
+          "--wait"
+        ],
+        "timeout": 180
+      }
+    }
+  ]
+}

@@ -1,0 +1,125 @@
+{
+  "version": "1.0.0",
+  "title": "05 - Caida de la base de datos: la API falla rapido y se recupera",
+  "description": "Repite el escenario del experimento 02 con los limites de tiempo del pool de PostgreSQL. Verifica que con la base caida la API responde 500 en menos de 8 segundos y que, cuando la base vuelve, /api/salud responde 200 otra vez.",
+  "tags": [
+    "docker",
+    "base-de-datos",
+    "recuperacion"
+  ],
+  "steady-state-hypothesis": {
+    "title": "La API consulta la base de datos sin errores antes del caos",
+    "probes": [
+      {
+        "type": "probe",
+        "name": "salud_con_db_antes_del_caos",
+        "tolerance": 200,
+        "provider": {
+          "type": "http",
+          "url": "http://localhost:8080/api/salud",
+          "method": "GET",
+          "timeout": 5
+        }
+      }
+    ]
+  },
+  "method": [
+    {
+      "type": "action",
+      "name": "matar_contenedor_postgres",
+      "provider": {
+        "type": "process",
+        "path": "docker",
+        "arguments": [
+          "compose",
+          "kill",
+          "db"
+        ],
+        "timeout": 60
+      }
+    },
+    {
+      "type": "action",
+      "name": "esperar_3_segundos_a_que_la_db_este_abajo",
+      "provider": {
+        "type": "process",
+        "path": "powershell",
+        "arguments": [
+          "-NoProfile",
+          "-Command",
+          "Start-Sleep -Seconds 3"
+        ],
+        "timeout": 30
+      }
+    },
+    {
+      "type": "probe",
+      "name": "api_falla_rapido_sin_db",
+      "tolerance": 500,
+      "provider": {
+        "type": "http",
+        "url": "http://localhost:8080/api/salud",
+        "method": "GET",
+        "timeout": 8
+      }
+    },
+    {
+      "type": "action",
+      "name": "levantar_postgres_de_nuevo",
+      "provider": {
+        "type": "process",
+        "path": "docker",
+        "arguments": [
+          "compose",
+          "up",
+          "-d",
+          "--wait",
+          "db"
+        ],
+        "timeout": 180
+      }
+    },
+    {
+      "type": "action",
+      "name": "esperar_5_segundos_a_que_el_pool_se_recupere",
+      "provider": {
+        "type": "process",
+        "path": "powershell",
+        "arguments": [
+          "-NoProfile",
+          "-Command",
+          "Start-Sleep -Seconds 5"
+        ],
+        "timeout": 30
+      }
+    },
+    {
+      "type": "probe",
+      "name": "api_se_recupera_cuando_vuelve_la_db",
+      "tolerance": 200,
+      "provider": {
+        "type": "http",
+        "url": "http://localhost:8080/api/salud",
+        "method": "GET",
+        "timeout": 10
+      }
+    }
+  ],
+  "rollbacks": [
+    {
+      "type": "action",
+      "name": "asegurar_stack_arriba",
+      "provider": {
+        "type": "process",
+        "path": "docker",
+        "arguments": [
+          "compose",
+          "up",
+          "-d",
+          "--wait"
+        ],
+        "timeout": 180
+      }
+    }
+  ]
+}

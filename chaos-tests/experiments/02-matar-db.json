@@ -1,0 +1,84 @@
+{
+  "version": "1.0.0",
+  "title": "02 - Detener la base de datos (docker kill db)",
+  "description": "Detiene el contenedor de PostgreSQL. Como /api/salud ejecuta SELECT 1, la hipotesis solo se cumple si la base vuelve y la API puede consultarla otra vez.",
+  "tags": [
+    "docker",
+    "base-de-datos",
+    "recuperacion"
+  ],
+  "steady-state-hypothesis": {
+    "title": "La API consulta la base de datos sin errores",
+    "probes": [
+      {
+        "type": "probe",
+        "name": "salud_con_db_antes_del_caos",
+        "tolerance": 200,
+        "provider": {
+          "type": "http",
+          "url": "http://localhost:8080/api/salud",
+          "method": "GET",
+          "timeout": 5
+        }
+      }
+    ]
+  },
+  "method": [
+    {
+      "type": "action",
+      "name": "matar_contenedor_postgres",
+      "provider": {
+        "type": "process",
+        "path": "docker",
+        "arguments": [
+          "compose",
+          "kill",
+          "db"
+        ],
+        "timeout": 60
+      }
+    },
+    {
+      "type": "action",
+      "name": "esperar_20_segundos_a_que_postgres_levante",
+      "provider": {
+        "type": "process",
+        "path": "powershell",
+        "arguments": [
+          "-NoProfile",
+          "-Command",
+          "Start-Sleep -Seconds 20"
+        ],
+        "timeout": 60
+      }
+    },
+    {
+      "type": "probe",
+      "name": "salud_con_db_despues_del_caos",
+      "tolerance": 200,
+      "provider": {
+        "type": "http",
+        "url": "http://localhost:8080/api/salud",
+        "method": "GET",
+        "timeout": 5
+      }
+    }
+  ],
+  "rollbacks": [
+    {
+      "type": "action",
+      "name": "asegurar_stack_arriba",
+      "provider": {
+        "type": "process",
+        "path": "docker",
+        "arguments": [
+          "compose",
+          "up",
+          "-d",
+          "--wait"
+        ],
+        "timeout": 180
+      }
+    }
+  ]
+}

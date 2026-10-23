@@ -1,0 +1,87 @@
+{
+  "version": "1.0.0",
+  "title": "04 - Terminar el proceso de Node dentro del contenedor",
+  "description": "Envia una senal al PID 1 con docker exec para simular una caida interna de la API (error fatal o falta de memoria). Docker no la trata como parada manual, asi que restart: unless-stopped deberia levantarla de nuevo.",
+  "tags": [
+    "docker",
+    "api",
+    "crash",
+    "recuperacion-automatica"
+  ],
+  "steady-state-hypothesis": {
+    "title": "La API responde y puede consultar la base de datos",
+    "probes": [
+      {
+        "type": "probe",
+        "name": "api_salud_antes_del_crash",
+        "tolerance": 200,
+        "provider": {
+          "type": "http",
+          "url": "http://localhost:8080/api/salud",
+          "method": "GET",
+          "timeout": 5
+        }
+      }
+    ]
+  },
+  "method": [
+    {
+      "type": "action",
+      "name": "matar_node_dentro_del_contenedor",
+      "provider": {
+        "type": "process",
+        "path": "docker",
+        "arguments": [
+          "compose",
+          "exec",
+          "api",
+          "kill",
+          "1"
+        ],
+        "timeout": 60
+      }
+    },
+    {
+      "type": "action",
+      "name": "esperar_20_segundos_a_que_docker_reinicie_por_crash",
+      "provider": {
+        "type": "process",
+        "path": "powershell",
+        "arguments": [
+          "-NoProfile",
+          "-Command",
+          "Start-Sleep -Seconds 20"
+        ],
+        "timeout": 60
+      }
+    },
+    {
+      "type": "probe",
+      "name": "api_salud_despues_del_crash",
+      "tolerance": 200,
+      "provider": {
+        "type": "http",
+        "url": "http://localhost:8080/api/salud",
+        "method": "GET",
+        "timeout": 5
+      }
+    }
+  ],
+  "rollbacks": [
+    {
+      "type": "action",
+      "name": "asegurar_stack_arriba",
+      "provider": {
+        "type": "process",
+        "path": "docker",
+        "arguments": [
+          "compose",
+          "up",
+          "-d",
+          "--wait"
+        ],
+        "timeout": 180
+      }
+    }
+  ]
+}

@@ -71,3 +71,6 @@ backend/archivos/miniaturas/
 # APK que publica la pagina de descarga
 web/*.apk
 App/
+
+# Log de Chaos Toolkit
+chaostoolkit.log

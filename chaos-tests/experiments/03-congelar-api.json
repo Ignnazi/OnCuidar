@@ -1,0 +1,98 @@
+{
+  "version": "1.0.0",
+  "title": "03 - Congelar la API (docker pause)",
+  "description": "docker pause congela el proceso sin terminarlo. El contenedor sigue figurando activo pero no atiende peticiones, que quedan esperando hasta su propio limite de tiempo.",
+  "tags": [
+    "docker",
+    "api",
+    "colgado"
+  ],
+  "steady-state-hypothesis": {
+    "title": "La API responde y puede consultar la base de datos",
+    "probes": [
+      {
+        "type": "probe",
+        "name": "api_salud_antes_de_congelar",
+        "tolerance": 200,
+        "provider": {
+          "type": "http",
+          "url": "http://localhost:8080/api/salud",
+          "method": "GET",
+          "timeout": 5
+        }
+      }
+    ]
+  },
+  "method": [
+    {
+      "type": "action",
+      "name": "congelar_contenedor_api",
+      "provider": {
+        "type": "process",
+        "path": "docker",
+        "arguments": [
+          "compose",
+          "pause",
+          "api"
+        ],
+        "timeout": 60
+      }
+    },
+    {
+      "type": "action",
+      "name": "esperar_10_segundos_con_la_api_congelada",
+      "provider": {
+        "type": "process",
+        "path": "powershell",
+        "arguments": [
+          "-NoProfile",
+          "-Command",
+          "Start-Sleep -Seconds 10"
+        ],
+        "timeout": 60
+      }
+    },
+    {
+      "type": "probe",
+      "name": "api_salud_mientras_esta_congelada",
+      "tolerance": 200,
+      "provider": {
+        "type": "http",
+        "url": "http://localhost:8080/api/salud",
+        "method": "GET",
+        "timeout": 5
+      }
+    }
+  ],
+  "rollbacks": [
+    {
+      "type": "action",
+      "name": "descongelar_contenedor_api",
+      "provider": {
+        "type": "process",
+        "path": "docker",
+        "arguments": [
+          "compose",
+          "unpause",
+          "api"
+        ],
+        "timeout": 60
+      }
+    },
+    {
+      "type": "action",
+      "name": "asegurar_stack_arriba",
+      "provider": {
+        "type": "process",
+        "path": "docker",
+        "arguments": [
+          "compose",
+          "up",
+          "-d",
+          "--wait"
+        ],
+        "timeout": 180
+      }
+    }
+  ]
+}
