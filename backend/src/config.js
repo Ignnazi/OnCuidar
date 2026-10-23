@@ -13,6 +13,11 @@ const config = {
   limiteAuth: Number(env.LIMITE_AUTH || 30),
   ventanaAuthMs: Number(env.VENTANA_AUTH_MS || 15 * 60 * 1000),
   esperaRecuperacionSeg: 60,
+  // Limites de tiempo del pool de PostgreSQL
+  dbTiempoConexionMs: Number(env.DB_TIEMPO_CONEXION_MS || 5000),
+  dbTiempoConsultaMs: Number(env.DB_TIEMPO_CONSULTA_MS || 5000),
+  dbTiempoOcioMs: Number(env.DB_TIEMPO_OCIO_MS || 30000),
+  dbTiempoTransaccionOciosaMs: Number(env.DB_TIEMPO_TRANSACCION_OCIOSA_MS || 10000),
   smtp: {
     host: env.SMTP_HOST || '',
     puerto: Number(env.SMTP_PUERTO || 587),
