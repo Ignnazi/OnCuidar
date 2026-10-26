@@ -21,6 +21,8 @@ services:
   api:
     build: ./backend
     restart: unless-stopped
+    # Node no corre como PID 1, asi recibe las senales y Docker lo reinicia si se cae
+    init: true
     depends_on:
       db:
         condition: service_healthy
