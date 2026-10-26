@@ -19,16 +19,18 @@ pool.on('error', (err) => {
 
 async function transaccion(fn) {
   const cliente = await pool.connect();
+  let errorConexion;
   try {
     await cliente.query('BEGIN');
     const resultado = await fn(cliente);
     await cliente.query('COMMIT');
     return resultado;
   } catch (e) {
-    await cliente.query('ROLLBACK');
+    // Si el ROLLBACK tambien falla la conexion quedo rota y no vuelve al pool
+    await cliente.query('ROLLBACK').catch((err) => { errorConexion = err; });
     throw e;
   } finally {
-    cliente.release();
+    cliente.release(errorConexion);
   }
 }
 
