@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
-  "title": "02 - Detener la base de datos (docker kill db)",
-  "description": "Detiene el contenedor de PostgreSQL. Como /api/salud ejecuta SELECT 1, la hipotesis solo se cumple si la base vuelve y la API puede consultarla otra vez.",
+  "title": "02 - Caida interna de la base de datos",
+  "description": "Apaga PostgreSQL de golpe desde dentro del contenedor con pg_ctl stop -m immediate, como si el proceso fallara solo. Docker no lo trata como parada manual, asi que lo vuelve a levantar. Verifica que la base se reinicia y que la API vuelve a consultarla sin intervencion.",
   "tags": [
     "docker",
     "base-de-datos",
@@ -12,7 +12,7 @@
     "probes": [
       {
         "type": "probe",
-        "name": "salud_con_db_antes_del_caos",
+        "name": "salud_antes_de_la_caida",
         "tolerance": 200,
         "provider": {
           "type": "http",
@@ -26,35 +26,59 @@
   "method": [
     {
       "type": "action",
-      "name": "matar_contenedor_postgres",
+      "name": "apagar_postgres_de_golpe",
       "provider": {
         "type": "process",
         "path": "docker",
         "arguments": [
           "compose",
-          "kill",
-          "db"
+          "exec",
+          "-u",
+          "postgres",
+          "db",
+          "pg_ctl",
+          "stop",
+          "-m",
+          "immediate"
         ],
         "timeout": 60
       }
     },
     {
       "type": "action",
-      "name": "esperar_20_segundos_a_que_postgres_levante",
+      "name": "esperar_15_segundos",
       "provider": {
         "type": "process",
         "path": "powershell",
         "arguments": [
           "-NoProfile",
           "-Command",
-          "Start-Sleep -Seconds 20"
+          "Start-Sleep -Seconds 15"
         ],
         "timeout": 60
       }
     },
     {
       "type": "probe",
-      "name": "salud_con_db_despues_del_caos",
+      "name": "db_se_reinicio",
+      "provider": {
+        "type": "process",
+        "path": "docker",
+        "arguments": [
+          "compose",
+          "exec",
+          "db",
+          "sh",
+          "-c",
+          "test $(( $(date +%s) - $(stat -c %Y /proc/1) )) -lt 60"
+        ],
+        "timeout": 30
+      },
+      "tolerance": 0
+    },
+    {
+      "type": "probe",
+      "name": "salud_despues_de_la_caida",
       "tolerance": 200,
       "provider": {
         "type": "http",
@@ -67,7 +91,7 @@
   "rollbacks": [
     {
       "type": "action",
-      "name": "asegurar_stack_arriba",
+      "name": "asegurar_sistema_arriba",
       "provider": {
         "type": "process",
         "path": "docker",

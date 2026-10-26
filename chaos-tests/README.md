@@ -31,12 +31,18 @@ Las esperas se hacen con `powershell Start-Sleep` porque `time.sleep` con `type:
 
 ## Experimentos
 
-| # | Falla | Qué se verifica | Resultado (20 y 23 de octubre) |
+| # | Falla | Qué se verifica | Resultado (26 de octubre) |
 |---|---|---|---|
 | 01 | `docker compose kill api` | Si Docker vuelve a levantar la API | No se levanta. Docker trata el kill como parada manual e ignora `restart: unless-stopped` |
-| 02 | `docker compose kill db` | Si la API vuelve a responder | No responde. La consulta a la base quedaba esperando sin límite de tiempo |
+| 02 | `pg_ctl stop -m immediate` dentro de la base | Si la base se reinicia sola y la API vuelve a consultarla | Docker reinicia la base y la API responde 200 sin intervención |
 | 03 | `docker compose pause api` | Si la API responde estando congelada | No responde. El contenedor sigue activo pero no atiende peticiones |
-| 04 | `docker compose exec api kill 1` | Si Docker vuelve a levantar la API tras una caída interna | La API respondió 200 a los 20 segundos |
-| 05 | `docker compose kill db` y luego `up` | Si la API falla rápido y se recupera | Responde 500 en 5 segundos con la base caída y 200 cuando vuelve |
+| 04 | `kill -9` al proceso de Node dentro de la API | Si Docker reinicia la API tras una caída interna | Docker reinicia el contenedor y la API responde 200 |
+| 05 | `docker compose kill db` y luego `up` | Si la API falla rápido y se recupera | Responde 500 en 4 segundos con la base caída y 200 cuando vuelve |
 
-A partir del experimento 02 se agregaron límites de tiempo al pool de PostgreSQL en backend/src/db.js. El experimento 05 comprueba ese cambio.
+Los experimentos 01 y 03 muestran límites de Docker y no fallas de la app. Para cubrirlos haría falta un orquestador o un monitor externo.
+
+Lo que salió de estas pruebas:
+
+- Con la base caída la consulta quedaba esperando sin límite. Se agregaron límites de tiempo al pool de PostgreSQL en backend/src/db.js y el experimento 05 comprueba el cambio.
+- Node corría como PID 1 y así ignora las señales, por lo que un `kill` dentro del contenedor no lo detenía. Se agregó `init: true` a la API en docker-compose.yml.
+- Los experimentos 02 y 04 confirman que el contenedor se reinició midiendo la antigüedad del PID 1, no solo con la respuesta de la API.
