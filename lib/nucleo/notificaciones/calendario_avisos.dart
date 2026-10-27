@@ -29,12 +29,19 @@ tz.TZDateTime proximaCoincidenciaSemanal(
           .toSet();
 
   for (var i = 0; i <= 7; i++) {
-    final prueba = candidato.add(Duration(days: i));
+    final prueba = tz.TZDateTime(
+      ahora.location,
+      candidato.year,
+      candidato.month,
+      candidato.day + i,
+      candidato.hour,
+      candidato.minute,
+    );
     if (objetivos.contains(prueba.weekday) && prueba.isAfter(ahora)) {
       return prueba;
     }
   }
-  return candidato.add(const Duration(days: 1));
+  return candidato;
 }
 
 tz.TZDateTime proximaMensual(tz.TZDateTime ahora, DateTime horaProgramada) {
@@ -61,7 +68,7 @@ tz.TZDateTime proximaMensual(tz.TZDateTime ahora, DateTime horaProgramada) {
   return ahora.add(const Duration(days: 32));
 }
 
-tz.TZDateTime momentoUnaVez(tz.TZDateTime ahora, DateTime fechaHora) {
+tz.TZDateTime? momentoUnaVez(tz.TZDateTime ahora, DateTime fechaHora) {
   final momento = tz.TZDateTime(
     ahora.location,
     fechaHora.year,
@@ -70,7 +77,19 @@ tz.TZDateTime momentoUnaVez(tz.TZDateTime ahora, DateTime fechaHora) {
     fechaHora.hour,
     fechaHora.minute,
   );
-  return momento.isBefore(ahora)
-      ? momento.add(const Duration(days: 1))
-      : momento;
+  return momento.isBefore(ahora) ? null : momento;
+}
+
+List<tz.TZDateTime> proximasMensuales(
+  tz.TZDateTime ahora,
+  DateTime horaProgramada,
+  int cantidad,
+) {
+  final momentos = <tz.TZDateTime>[];
+  var desde = ahora;
+  for (var i = 0; i < cantidad; i++) {
+    desde = proximaMensual(desde, horaProgramada);
+    momentos.add(desde);
+  }
+  return momentos;
 }

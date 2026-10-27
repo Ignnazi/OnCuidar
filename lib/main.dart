@@ -10,6 +10,7 @@ import 'package:oncuidar/app/tema/repintar.dart';
 import 'package:oncuidar/app/tema/tema.dart';
 import 'package:oncuidar/caracteristicas/configuracion/presentacion/proveedores_configuracion.dart';
 import 'package:oncuidar/nucleo/almacen/almacen_secreto_seguro.dart';
+import 'package:oncuidar/nucleo/notificaciones/silencio_avisos.dart';
 import 'package:oncuidar/nucleo/proveedores.dart';
 import 'package:oncuidar/nucleo/red/cliente_api.dart';
 import 'package:oncuidar/nucleo/red/config_api.dart';
@@ -24,6 +25,7 @@ Future<void> main() async {
   );
   sesion = ServicioSesion(api: api, almacen: const AlmacenSecretoSeguro());
   await sesion.inicializar();
+  SilencioAvisos.usuario = sesion.actual?.uid;
   runApp(
     ProviderScope(
       overrides: [
@@ -51,9 +53,11 @@ class _OncuidarAppState extends ConsumerState<OncuidarApp>
     _escucharAvisos();
     var sesionPrevia = false;
     ref.read(servicioSesionProvider).cambios.listen((usuario) {
+      SilencioAvisos.usuario = usuario?.uid;
       if (usuario == null) {
         if (!sesionPrevia) return;
         EstadoArranque.reiniciar();
+        unawaited(ref.read(servicioNotificacionesProvider).cancelarTodas());
         ref.read(servicioCifradoProvider).bloquear();
         ref.read(bloqueoCifradoProvider.notifier).fijarDesbloqueado(false);
         const publicas = {

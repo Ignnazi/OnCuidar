@@ -76,10 +76,8 @@ class ServicioCacheContenido {
     return archivo;
   }
 
-  Future<File> redescargar(String url) async {
-    await _gestor.removeFile(url);
-    return _gestor.getSingleFile(url, key: url);
-  }
+  Future<File> redescargar(String url) async =>
+      (await _gestor.downloadFile(url, key: url)).file;
 
   Future<bool> archivoDescargado(String url) async {
     return await archivoEnCache(url) != null;

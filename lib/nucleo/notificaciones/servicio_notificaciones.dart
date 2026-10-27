@@ -103,6 +103,10 @@ class ServicioNotificaciones {
   int _idRepetido(int idBase, int diaSemana) =>
       (idBase + diaSemana) & 0x7FFFFFFF;
 
+  static const _mesesProgramados = 12;
+
+  int _idMensual(int idBase, int mes) => (idBase + 100 + mes) & 0x7FFFFFFF;
+
   Future<void> programar({
     required int id,
     required String titulo,
@@ -121,14 +125,27 @@ class ServicioNotificaciones {
 
     if (mensual) {
       await cancelar(id);
-      final momento = proximaMensual(tz.TZDateTime.now(tz.local), fechaHora);
-      await _programarUna(
-        id: id,
-        titulo: titulo,
-        cuerpo: cuerpo,
-        momento: momento,
-        repetir: DateTimeComponents.dayOfMonthAndTime,
-      );
+      final ahora = tz.TZDateTime.now(tz.local);
+      if (fechaHora.day <= 28) {
+        await _programarUna(
+          id: id,
+          titulo: titulo,
+          cuerpo: cuerpo,
+          momento: proximaMensual(ahora, fechaHora),
+          repetir: DateTimeComponents.dayOfMonthAndTime,
+        );
+        return;
+      }
+      // Los dias 29 a 31 no existen en todos los meses y se programan uno por uno
+      final momentos = proximasMensuales(ahora, fechaHora, _mesesProgramados);
+      for (var i = 0; i < momentos.length; i++) {
+        await _programarUna(
+          id: _idMensual(id, i),
+          titulo: titulo,
+          cuerpo: cuerpo,
+          momento: momentos[i],
+        );
+      }
       return;
     }
 
@@ -156,7 +173,9 @@ class ServicioNotificaciones {
       return;
     }
 
+    await cancelar(id);
     final momento = momentoUnaVez(tz.TZDateTime.now(tz.local), fechaHora);
+    if (momento == null) return;
     await _programarUna(
       id: id,
       titulo: titulo,
@@ -209,6 +228,9 @@ class ServicioNotificaciones {
     await _plugin.cancel(id: id);
     for (final diaSemana in diasPorSemana.values) {
       await _plugin.cancel(id: _idRepetido(id, diaSemana));
+    }
+    for (var mes = 0; mes < _mesesProgramados; mes++) {
+      await _plugin.cancel(id: _idMensual(id, mes));
     }
     log('Cancelada notificación $id');
   }

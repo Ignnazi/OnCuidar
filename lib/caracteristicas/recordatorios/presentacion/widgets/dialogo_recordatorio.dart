@@ -47,6 +47,7 @@ class _DialogoRecordatorioState extends State<_DialogoRecordatorio> {
   late TimeOfDay _hora;
   late final List<String> _dias;
   late String _modoRepeticion;
+  String? _error;
   late final String _asignadoA;
   late final DateTime _hoy;
   late DateTime _fecha;
@@ -78,8 +79,28 @@ class _DialogoRecordatorioState extends State<_DialogoRecordatorio> {
           );
   }
 
+  String? _validar() {
+    if (_modoRepeticion == 'semanal' && _dias.isEmpty) {
+      return 'Elige al menos un día de la semana';
+    }
+    final momento = DateTime(
+      _fecha.year,
+      _fecha.month,
+      _fecha.day,
+      _hora.hour,
+      _hora.minute,
+    );
+    if (_modoRepeticion == 'unavez' && momento.isBefore(DateTime.now())) {
+      return 'Elige una fecha y hora que aún no hayan pasado';
+    }
+    return null;
+  }
+
   void _confirmar() {
     if (widget.tituloCtrl.text.trim().isEmpty) return;
+    final error = _validar();
+    setState(() => _error = error);
+    if (error != null) return;
     Navigator.pop(
       context,
       DatosRecordatorio(
@@ -251,6 +272,18 @@ class _DialogoRecordatorioState extends State<_DialogoRecordatorio> {
                 style: GoogleFonts.nunito(
                   fontSize: 12,
                   color: Paleta.textoSecundario,
+                ),
+              ),
+            ],
+            if (_error != null) ...[
+              const SizedBox(height: 12),
+              Text(
+                _error!,
+                key: const Key('errorRecordatorio'),
+                style: GoogleFonts.nunito(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: Paleta.error,
                 ),
               ),
             ],

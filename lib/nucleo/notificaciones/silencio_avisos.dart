@@ -6,10 +6,15 @@ class SilencioAvisos {
   static const claveGlobal = 'notificaciones_silenciadas';
   static const clavePacientes = 'pacientes_silenciados';
 
+  static String? usuario;
+
+  static String get _claveGlobal =>
+      usuario == null ? claveGlobal : '$claveGlobal.$usuario';
+
   static Future<bool> global() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      return prefs.getBool(claveGlobal) ?? false;
+      return prefs.getBool(_claveGlobal) ?? false;
     } catch (_) {
       return false;
     }
@@ -18,7 +23,7 @@ class SilencioAvisos {
   static Future<void> fijarGlobal(bool silenciar) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool(claveGlobal, silenciar);
+      await prefs.setBool(_claveGlobal, silenciar);
     } catch (_) {
       // Si falla, se sigue igual.
     }
