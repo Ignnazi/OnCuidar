@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:oncuidar/app/tema/paleta.dart';
 
@@ -80,6 +81,12 @@ class TarjetaSigno extends StatelessWidget {
                   keyboardType: decimal
                       ? const TextInputType.numberWithOptions(decimal: true)
                       : TextInputType.number,
+                  inputFormatters: decimal
+                      ? [
+                          FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
+                          _ComaComoPunto(),
+                        ]
+                      : [FilteringTextInputFormatter.digitsOnly],
                   style: GoogleFonts.nunito(
                     fontSize: 16,
                     fontWeight: FontWeight.w800,
@@ -122,4 +129,12 @@ class TarjetaSigno extends StatelessWidget {
       ),
     );
   }
+}
+
+class _ComaComoPunto extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue anterior,
+    TextEditingValue nuevo,
+  ) => nuevo.copyWith(text: nuevo.text.replaceAll(',', '.'));
 }

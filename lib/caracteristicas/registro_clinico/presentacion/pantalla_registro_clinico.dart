@@ -155,12 +155,8 @@ class _RegistroClinicoScreenState extends ConsumerState<RegistroClinicoScreen> {
   int _registrosHoy(List<RegistroClinico> registros) =>
       contarProgramadosDelDia(registros, DateTime.now());
 
-  String _tipoEfectivo(int registrosHoy, int tope) {
-    if (_tipoRegistro == 'programado' && registrosHoy >= tope) {
-      return 'extra';
-    }
-    return _tipoRegistro;
-  }
+  String _tipoEfectivo(int registrosHoy, int tope) =>
+      tipoEfectivoRegistro(_tipoRegistro, registrosHoy, tope);
 
   void _fijarIntensidad(String nombre, int valor) {
     setState(() {
@@ -244,33 +240,8 @@ class _RegistroClinicoScreenState extends ConsumerState<RegistroClinicoScreen> {
   }
 
   String? _errorRango() {
-    final temperatura = double.tryParse(_tempController.text.trim());
-    if (temperatura != null &&
-        (temperatura > rangoTemperatura.max ||
-            temperatura < rangoTemperatura.min)) {
-      return rangoTemperatura.mensaje;
-    }
-    final frecuenciaCardiaca = int.tryParse(
-      _frecCardiacaController.text.trim(),
-    );
-    if (frecuenciaCardiaca != null &&
-        (frecuenciaCardiaca > rangoFrecuenciaCardiaca.max ||
-            frecuenciaCardiaca < rangoFrecuenciaCardiaca.min)) {
-      return rangoFrecuenciaCardiaca.mensaje;
-    }
-    final o2 = int.tryParse(_o2Controller.text.trim());
-    if (o2 != null && (o2 > rangoSaturacion.max || o2 < rangoSaturacion.min)) {
-      return rangoSaturacion.mensaje;
-    }
-    final frecuenciaRespiratoria = int.tryParse(
-      _frecRespiratoriaController.text.trim(),
-    );
-    if (frecuenciaRespiratoria != null &&
-        (frecuenciaRespiratoria > rangoFrecuenciaRespiratoria.max ||
-            frecuenciaRespiratoria < rangoFrecuenciaRespiratoria.min)) {
-      return rangoFrecuenciaRespiratoria.mensaje;
-    }
-    return null;
+    final signos = _signosActuales();
+    return signos == null ? null : errorDeRango(signos);
   }
 
   Future<void> _guardar() async {

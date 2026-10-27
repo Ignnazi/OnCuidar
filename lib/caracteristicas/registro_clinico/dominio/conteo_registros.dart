@@ -19,6 +19,10 @@ int contarExtrasDelDia(Iterable<RegistroClinico> registros, DateTime dia) =>
         .where((r) => r.tipoRegistro == 'extra' && mismoDia(r.fecha, dia))
         .length;
 
+/// Al llegar al tope diario un registro programado se guarda como extra
+String tipoEfectivoRegistro(String elegido, int registrosHoy, int tope) =>
+    elegido == 'programado' && registrosHoy >= tope ? 'extra' : elegido;
+
 String etiquetaNumeroRegistro(
   RegistroClinico registro,
   Iterable<RegistroClinico> todos,

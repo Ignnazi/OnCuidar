@@ -1,3 +1,5 @@
+import 'package:oncuidar/caracteristicas/registro_clinico/dominio/registro_clinico.dart';
+
 /// Rango físico plausible de cada signo vital
 class RangoFisico {
   const RangoFisico({
@@ -34,3 +36,19 @@ const rangoFrecuenciaRespiratoria = RangoFisico(
   max: 60,
   mensaje: 'Frecuencia respiratoria debe estar entre 4 y 60 rpm',
 );
+
+/// Mensaje del primer signo fuera de rango o null si todos son válidos
+String? errorDeRango(SignosVitales signos) {
+  final valores = [
+    (signos.temperatura, rangoTemperatura),
+    (signos.frecuenciaCardiaca, rangoFrecuenciaCardiaca),
+    (signos.saturacionOxigeno, rangoSaturacion),
+    (signos.frecuenciaRespiratoria, rangoFrecuenciaRespiratoria),
+  ];
+  for (final (valor, rango) in valores) {
+    if (valor != null && (valor < rango.min || valor > rango.max)) {
+      return rango.mensaje;
+    }
+  }
+  return null;
+}
