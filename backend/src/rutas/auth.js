@@ -74,7 +74,7 @@ router.post('/auth/registro', async (req, res) => {
     } catch (e) {
       console.error('[verificacion de registro]', e.message);
     }
-    res.status(201).json({ token: firmarToken(uid), uid });
+    res.status(201).json({ token: firmarToken(uid, hash), uid });
   } catch (e) {
     if (e.code === '23505') throw new ErrorHttp(409, 'Ya existe una cuenta con ese correo');
     throw e;
@@ -88,7 +88,7 @@ router.post('/auth/login', async (req, res) => {
   const { rows } = await db.consulta('SELECT id, contrasena_hash FROM usuarios WHERE correo = $1', [normalizarCorreo(c)]);
   const ok = await bcrypt.compare(contrasena, rows[0]?.contrasena_hash ?? HASH_FALSO);
   if (!rows[0] || !ok) throw new ErrorHttp(401, mensaje);
-  res.json({ token: firmarToken(rows[0].id), uid: rows[0].id });
+  res.json({ token: firmarToken(rows[0].id, rows[0].contrasena_hash), uid: rows[0].id });
 });
 
 router.post('/auth/verificar-contrasena', requiereToken, async (req, res) => {
@@ -156,6 +156,7 @@ router.post('/auth/restablecer-contrasena', async (req, res) => {
   await db.consulta('UPDATE usuarios SET contrasena_hash = $1 WHERE id = $2', [
     await bcrypt.hash(contrasena, 10), rows[0].usuario_id,
   ]);
+  await db.consulta('UPDATE tokens_restablecer SET usado = true WHERE usuario_id = $1', [rows[0].usuario_id]);
   res.json({ ok: true });
 });
 
@@ -218,12 +219,28 @@ async function aplicarTokenCorreo(token) {
   });
 }
 
+function encabezadosPagina(res, nonce, opciones) {
+  res.set('Cache-Control', 'no-store');
+  res.set('Referrer-Policy', 'no-referrer');
+  res.set('Content-Security-Policy', plantillas.cspPagina(nonce, opciones));
+}
+
 router.get('/auth/confirmar-correo', async (req, res) => {
   const token = String(req.query.token ?? '');
   const nonce = crypto.randomBytes(16).toString('base64');
-  res.set('Cache-Control', 'no-store');
-  res.set('Referrer-Policy', 'no-referrer');
-  res.set('Content-Security-Policy', plantillas.cspPagina(nonce));
+  encabezadosPagina(res, nonce, { conFormulario: true });
+  const vigente = /^[a-f0-9]{64}$/.test(token) && (await db.consulta(
+    'SELECT 1 FROM tokens_correo WHERE token_hash = $1 AND usado = false AND expira_en > now()',
+    [sha256(token)],
+  )).rows[0];
+  if (vigente) return res.type('html').send(plantillas.paginaConfirmarCorreo(nonce));
+  res.status(400).type('html').send(plantillas.paginaConfirmacion(false, nonce));
+});
+
+router.post('/auth/confirmar-correo', async (req, res) => {
+  const token = String(req.query.token ?? '');
+  const nonce = crypto.randomBytes(16).toString('base64');
+  encabezadosPagina(res, nonce);
   let ok = false;
   if (/^[a-f0-9]{64}$/.test(token)) {
     try {
@@ -248,7 +265,7 @@ router.post('/clave-datos', requiereToken, async (req, res) => {
 
 const hashRespaldo = (c) => crypto.createHmac('sha256', config.hmacCorreo).update(normalizarCorreo(c)).digest('hex');
 
-router.post('/correo-respaldo', requiereToken, async (req, res) => {
+router.post('/correo-respaldo', requiereToken, limitarIntentos(), async (req, res) => {
   const { correo: c } = cuerpoObjeto(req);
   if (!correoValido(c)) throw new ErrorHttp(400, 'Correo inválido');
   const token = await db.transaccion(async (cl) => {

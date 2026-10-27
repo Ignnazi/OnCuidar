@@ -1,8 +1,8 @@
 // Ayudas compartidas por las pruebas
 const crypto = require('crypto');
 const request = require('supertest');
-const app = require('../src/app');
-const db = require('../src/db');
+const app = require('../../backend/src/app');
+const db = require('../../backend/src/db');
 
 const unico = () => crypto.randomBytes(5).toString('hex');
 

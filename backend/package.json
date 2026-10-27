@@ -28,11 +28,18 @@
   },
   "jest": {
     "testEnvironment": "node",
+    "rootDir": "..",
+    "roots": [
+      "<rootDir>/test/integracion"
+    ],
+    "modulePaths": [
+      "<rootDir>/backend/node_modules"
+    ],
     "setupFiles": [
-      "./tests/entorno.js"
+      "<rootDir>/test/integracion/entorno.js"
     ],
     "testMatch": [
-      "**/tests/**/*.test.js"
+      "**/*.test.js"
     ]
   }
 }

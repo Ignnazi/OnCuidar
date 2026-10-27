@@ -1,5 +1,5 @@
 const { app, request, db, unico, cerrar, limpiar } = require('./ayudas');
-const plantillas = require('../src/plantillas');
+const plantillas = require('../../backend/src/plantillas');
 
 afterAll(async () => { await limpiar(); await cerrar(); });
 
@@ -95,7 +95,7 @@ describe('paginas web', () => {
   });
 
   test('confirmar-correo valido: 200 con titulo de exito', async () => {
-    const correo = require('../src/correo');
+    const correo = require('../../backend/src/correo');
     const enviar = jest.spyOn(correo, 'enviarEnlace').mockResolvedValue();
     const email = `p-${unico()}@prueba.cl`;
     await request(app).post('/api/auth/registro').send({ correo: email, contrasena: 'secreta1' });
@@ -103,7 +103,7 @@ describe('paginas web', () => {
     const llamada = enviar.mock.calls.find((c) => c[0] === email);
     enviar.mockRestore();
     const url = new URL(llamada[1]);
-    const r = await request(app).get(url.pathname + url.search);
+    const r = await request(app).post(url.pathname + url.search);
     expect(r.status).toBe(200);
     expect(r.text).toContain('<title>¡Correo confirmado! - OnCuidar</title>');
     expect(r.text).toContain('Puedes cerrar esta pestaña y volver a la app');

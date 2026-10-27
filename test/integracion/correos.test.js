@@ -1,5 +1,5 @@
 const { app, request, db, unico, crearUsuario, con, cerrar, limpiar } = require('./ayudas');
-const correo = require('../src/correo');
+const correo = require('../../backend/src/correo');
 
 afterAll(async () => { await limpiar(); await cerrar(); });
 beforeEach(() => jest.restoreAllMocks());
@@ -31,7 +31,12 @@ describe('cambio de correo principal', () => {
     expect(antes.pendienteCorreoTipo).toBe('principal');
     expect((await request(app).post('/api/auth/login').send({ correo: nuevo, contrasena: u.contrasena })).status).toBe(401);
 
-    const pagina = await request(app).get(rutaDe(enviar.mock.calls[0][1]));
+    const vista = await request(app).get(rutaDe(enviar.mock.calls[0][1]));
+    expect(vista.status).toBe(200);
+    expect(vista.text).toContain('Confirmar correo');
+    expect((await cuidador(u)).pendienteCorreo).toBe(nuevo);
+
+    const pagina = await request(app).post(rutaDe(enviar.mock.calls[0][1]));
     expect(pagina.status).toBe(200);
     expect(pagina.text).toContain('Correo confirmado');
     expect(pagina.headers['content-security-policy']).toContain("default-src 'none'");
@@ -39,7 +44,7 @@ describe('cambio de correo principal', () => {
     expect(despues).toMatchObject({ correo: nuevo, pendienteCorreo: null, correoVerificado: true });
     expect((await request(app).post('/api/auth/login').send({ correo: nuevo, contrasena: u.contrasena })).status).toBe(200);
     // el mismo enlace ya no sirve
-    const repetido = await request(app).get(rutaDe(enviar.mock.calls[0][1]));
+    const repetido = await request(app).post(rutaDe(enviar.mock.calls[0][1]));
     expect(repetido.status).toBe(400);
     expect(repetido.text).toContain('Enlace inválido o vencido');
   });
@@ -51,8 +56,8 @@ describe('cambio de correo principal', () => {
     await pedir(u, `a-${unico()}@prueba.cl`);
     const segundo = `b-${unico()}@prueba.cl`;
     await pedir(u, segundo);
-    expect((await request(app).get(rutaDe(enviar.mock.calls[0][1]))).status).toBe(400);
-    expect((await request(app).get(rutaDe(enviar.mock.calls[1][1]))).status).toBe(200);
+    expect((await request(app).post(rutaDe(enviar.mock.calls[0][1]))).status).toBe(400);
+    expect((await request(app).post(rutaDe(enviar.mock.calls[1][1]))).status).toBe(200);
     expect((await cuidador(u)).correo).toBe(segundo);
   });
 
@@ -64,7 +69,7 @@ describe('cambio de correo principal', () => {
     expect((await request(app).get('/api/auth/confirmar-correo?token=malo')).status).toBe(400);
     expect((await request(app).get(`/api/auth/confirmar-correo?token=${'a'.repeat(64)}`)).status).toBe(400);
     await db.consulta("UPDATE tokens_correo SET expira_en = now() - interval '1 second' WHERE token_hash = $1", [sha256(tokenDe(enviar.mock.calls[0][1]))]);
-    const vencido = await request(app).get(rutaDe(enviar.mock.calls[0][1]));
+    const vencido = await request(app).post(rutaDe(enviar.mock.calls[0][1]));
     expect(vencido.status).toBe(400);
     expect((await cuidador(u)).correo).toBe(u.correo);
   });
@@ -81,7 +86,7 @@ describe('cambio de correo principal', () => {
     await pedir(u, codigo);
     // otro usuario registra ese correo entre medio
     await db.consulta('UPDATE usuarios SET correo = $1 WHERE id = $2', [codigo, otro.uid]);
-    const r = await request(app).get(rutaDe(enviar.mock.calls[0][1]));
+    const r = await request(app).post(rutaDe(enviar.mock.calls[0][1]));
     expect(r.status).toBe(400);
     expect((await cuidador(u)).correo).toBe(u.correo);
   });
@@ -125,13 +130,13 @@ describe('correo de respaldo', () => {
     expect(rows[0].correo_nuevo).toBeNull();
     expect(JSON.stringify(rows[0])).not.toContain(respaldo);
 
-    expect((await request(app).get(rutaDe(enlace))).status).toBe(200);
+    expect((await request(app).post(rutaDe(enlace))).status).toBe(200);
     expect(await cuidador(u)).toMatchObject({ respaldoPendiente: false, correoRespaldoVerificado: true });
     expect(JSON.stringify(await fila(u.uid))).not.toContain(respaldo);
     enviar.mockClear();
     await request(app).post('/api/auth/recuperar-por-respaldo').send({ correo: respaldo });
     expect(enviar).toHaveBeenCalledTimes(1);
-    expect((await request(app).get(rutaDe(enlace))).status).toBe(400);
+    expect((await request(app).post(rutaDe(enlace))).status).toBe(400);
   });
 
   test('el respaldo anterior sigue valido hasta confirmar el nuevo', async () => {
@@ -141,7 +146,7 @@ describe('correo de respaldo', () => {
     const viejo = `v-${unico()}@prueba.cl`;
     const nuevo = `n-${unico()}@prueba.cl`;
     await request(app).post('/api/correo-respaldo').set(con(u)).send({ correo: viejo });
-    await request(app).get(rutaDe(enviar.mock.calls[0][1]));
+    await request(app).post(rutaDe(enviar.mock.calls[0][1]));
     await request(app).post('/api/correo-respaldo').set(con(u)).send({ correo: nuevo });
     expect(await cuidador(u)).toMatchObject({ respaldoPendiente: true, correoRespaldoVerificado: true });
     enviar.mockClear();
@@ -158,7 +163,7 @@ describe('verificacion del correo de registro', () => {
     expect(enviar.mock.calls[0][0]).toBe(u.correo);
     expect(enviar.mock.calls[0][2]).toBe('verificar');
     expect((await cuidador(u)).correoVerificado).toBe(false);
-    expect((await request(app).get(rutaDe(enviar.mock.calls[0][1]))).status).toBe(200);
+    expect((await request(app).post(rutaDe(enviar.mock.calls[0][1]))).status).toBe(200);
     expect((await cuidador(u)).correoVerificado).toBe(true);
     const r = await request(app).post('/api/auth/reenviar-verificacion').set(con(u));
     expect(r.body).toEqual({ ok: true, verificado: true });
@@ -182,8 +187,8 @@ describe('verificacion del correo de registro', () => {
     expect((await request(app).post('/api/auth/reenviar-verificacion').set(con(u))).body).toEqual({ ok: true });
     expect(enviar).toHaveBeenCalledTimes(2);
     expect((await request(app).post('/api/auth/reenviar-verificacion').set(con(u))).status).toBe(429);
-    expect((await request(app).get(rutaDe(enviar.mock.calls[0][1]))).status).toBe(400);
-    expect((await request(app).get(rutaDe(enviar.mock.calls[1][1]))).status).toBe(200);
+    expect((await request(app).post(rutaDe(enviar.mock.calls[0][1]))).status).toBe(400);
+    expect((await request(app).post(rutaDe(enviar.mock.calls[1][1]))).status).toBe(200);
     expect((await cuidador(u)).correoVerificado).toBe(true);
   });
 });

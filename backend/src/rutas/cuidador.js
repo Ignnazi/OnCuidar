@@ -16,14 +16,18 @@ const aJson = (u) => ({
   pendienteCorreo: u.pendiente_correo,
   pendienteCorreoTipo: u.pendiente_correo_tipo,
   pendienteCorreoSolicitadoEn: iso(u.pendiente_correo_solicitado_en),
-  respaldoPendiente: u.respaldo_pendiente_servidor === true,
+  respaldoPendiente: u.respaldo_pendiente_servidor === true && u.respaldo_vigente !== false,
   respaldoPendienteServidor: u.respaldo_pendiente_servidor,
   correoVerificado: u.correo_verificado === true,
   correoRespaldoVerificado: u.correo_respaldo_hash != null,
 });
 
 router.get('/cuidador', async (req, res) => {
-  const { rows } = await db.consulta('SELECT * FROM usuarios WHERE id = $1', [req.uid]);
+  const { rows } = await db.consulta(
+    `SELECT u.*, EXISTS (SELECT 1 FROM tokens_correo t WHERE t.usuario_id = u.id AND t.tipo = 'respaldo'
+     AND t.usado = false AND t.expira_en > now()) AS respaldo_vigente FROM usuarios u WHERE u.id = $1`,
+    [req.uid],
+  );
   if (!rows[0]) throw new ErrorHttp(404, 'Cuidador no encontrado');
   res.json(aJson(rows[0]));
 });

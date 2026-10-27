@@ -183,7 +183,7 @@ ${script ? `<script${n}>${script}</script>` : ''}
 </body></html>`;
 }
 
-function cspPagina(nonce, { conScript = false } = {}) {
+function cspPagina(nonce, { conScript = false, conFormulario = false } = {}) {
   return [
     "default-src 'none'",
     `style-src 'nonce-${nonce}'`,
@@ -191,7 +191,7 @@ function cspPagina(nonce, { conScript = false } = {}) {
     conScript ? "connect-src 'self'" : null,
     'img-src data:',
     "base-uri 'none'",
-    "form-action 'none'",
+    conFormulario ? "form-action 'self'" : "form-action 'none'",
     "frame-ancestors 'none'",
   ].filter(Boolean).join('; ');
 }
@@ -353,7 +353,17 @@ function armarCorreo(tipo, enlace) {
   return { asunto: base.asunto, html: correoHtml(datos), texto: correoTexto(datos) };
 }
 
+function paginaConfirmarCorreo(nonce) {
+  return paginaHtml({
+    titulo: 'Confirma tu correo',
+    icono: 'info',
+    mensaje: 'Toca el botón para confirmar tu correo en OnCuidar.',
+    cuerpoExtra: '<form method="post"><button type="submit" class="principal">Confirmar correo</button></form>',
+    nonce,
+  });
+}
+
 module.exports = {
-  correoHtml, correoTexto, paginaHtml, paginaRestablecer, paginaConfirmacion, PASOS_CONTRASENA, cspPagina,
+  correoHtml, correoTexto, paginaHtml, paginaRestablecer, paginaConfirmacion, paginaConfirmarCorreo, PASOS_CONTRASENA, cspPagina,
   armarCorreo, CORREOS, CID_LOGO, LOGO_PNG, LOGO_DATA_URI, urlSegura, esc, C,
 };

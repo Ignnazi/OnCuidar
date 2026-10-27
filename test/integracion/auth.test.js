@@ -1,5 +1,5 @@
 const { app, request, db, unico, crearUsuario, con, cerrar, limpiar } = require('./ayudas');
-const correo = require('../src/correo');
+const correo = require('../../backend/src/correo');
 
 afterAll(async () => { await limpiar(); await cerrar(); });
 beforeEach(() => jest.restoreAllMocks());
@@ -10,7 +10,7 @@ async function respaldoConfirmado(u, respaldo) {
   expect(r.body).toEqual({ ok: true, pendiente: true });
   const envio = correo.enviarEnlace.mock.calls.at(-1);
   expect(envio[0]).toBe(respaldo);
-  expect((await request(app).get(new URL(envio[1]).pathname + new URL(envio[1]).search)).status).toBe(200);
+  expect((await request(app).post(new URL(envio[1]).pathname + new URL(envio[1]).search)).status).toBe(200);
   correo.enviarEnlace.mockClear();
 }
 
@@ -107,6 +107,7 @@ describe('recuperacion de contrasena', () => {
     expect(ok.body).toEqual({ ok: true });
     expect((await request(app).post('/api/auth/restablecer-contrasena').send({ token, contrasena: 'otra12345' })).status).toBe(400);
     expect((await request(app).post('/api/auth/login').send({ correo: u.correo, contrasena: 'nueva1234' })).status).toBe(200);
+    expect((await request(app).get('/api/cuidador').set(con(u))).status).toBe(401);
   });
 
   test('por correo de respaldo: envia al respaldo y aplica espera de 60 s', async () => {
