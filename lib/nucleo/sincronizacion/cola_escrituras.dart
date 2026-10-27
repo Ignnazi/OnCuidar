@@ -169,11 +169,6 @@ class ColaEscrituras {
   Future<List<EscrituraPendiente>> fallidas(String uid) =>
       _serializar(() => _leer(_claveFallidas(uid)));
 
-  Future<bool> hayPendientesPara(String uid, String ruta) async {
-    final lista = await pendientes(uid);
-    return lista.any((e) => e.ruta == ruta);
-  }
-
   Future<ResumenCola> resumen(String uid) async => ResumenCola(
     pendientes: (await pendientes(uid)).length,
     fallidas: (await fallidas(uid)).length,

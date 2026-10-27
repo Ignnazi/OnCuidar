@@ -13,7 +13,6 @@ class OrquestadorSincronizacion {
     required this._uidActual,
     this.retardoBase = const Duration(seconds: 2),
     this.retardoMaximo = const Duration(minutes: 1),
-    this.maxIntentosPorEscritura = 8,
   });
 
   final ColaEscrituras _cola;
@@ -22,12 +21,12 @@ class OrquestadorSincronizacion {
   final String? Function() _uidActual;
   final Duration retardoBase;
   final Duration retardoMaximo;
-  final int maxIntentosPorEscritura;
 
   StreamSubscription<bool>? _suscripcionRed;
   StreamSubscription<void>? _suscripcionEncolados;
   Timer? _temporizador;
   bool _drenando = false;
+  bool _otraVuelta = false;
   bool _cerrado = false;
   int _reintentosSeguidos = 0;
 
@@ -58,34 +57,46 @@ class OrquestadorSincronizacion {
   }
 
   Future<void> drenar() async {
-    if (_drenando || _cerrado) return;
+    if (_cerrado) return;
+    if (_drenando) {
+      _otraVuelta = true;
+      return;
+    }
     _drenando = true;
     try {
-      final uid = _uidActual();
-      if (uid == null) return;
-      if (!await _conectividad.estaEnLinea()) return;
-      for (final escritura in await _cola.pendientes(uid)) {
-        if (_uidActual() != uid) return;
-        try {
-          await _base.aplicarEscrituraPendiente(escritura);
-          await _cola.quitar(uid, escritura.id);
-        } catch (error) {
-          if (_esPermanente(error)) {
-            await _cola.moverAFallidas(uid, escritura.id);
-            continue;
-          }
-          final intentos = await _cola.registrarIntento(uid, escritura.id);
-          if (intentos >= maxIntentosPorEscritura) {
-            await _cola.moverAFallidas(uid, escritura.id);
-            continue;
-          }
-          _programarReintento();
-          return;
-        }
-      }
-      _reintentosSeguidos = 0;
+      do {
+        _otraVuelta = false;
+        await _enviarPendientes();
+      } while (_otraVuelta && !_cerrado);
     } finally {
       _drenando = false;
+    }
+  }
+
+  Future<void> _enviarPendientes() async {
+    final uid = _uidActual();
+    if (uid == null) return;
+    if (!await _conectividad.estaEnLinea()) return;
+    while (_uidActual() == uid) {
+      final pendientes = await _cola.pendientes(uid);
+      if (pendientes.isEmpty) {
+        _reintentosSeguidos = 0;
+        return;
+      }
+      final escritura = pendientes.first;
+      try {
+        await _base.aplicarEscrituraPendiente(escritura);
+        await _cola.quitar(uid, escritura.id);
+      } catch (error) {
+        if (error is ExcepcionApi && error.esTokenInvalido) return;
+        if (_esPermanente(error)) {
+          await _cola.moverAFallidas(uid, escritura.id);
+          continue;
+        }
+        await _cola.registrarIntento(uid, escritura.id);
+        _programarReintento();
+        return;
+      }
     }
   }
 

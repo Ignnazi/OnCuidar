@@ -216,7 +216,7 @@ class BaseDatosSegura {
       return;
     }
     if (!await conectividad!.estaEnLinea() ||
-        await cola!.hayPendientesPara(uid, ruta)) {
+        (await cola!.pendientes(uid)).isNotEmpty) {
       await encolar(ruta, datos, operacion, idPaciente);
       await reflejarEnCache(ruta, datos, operacion);
       return;
