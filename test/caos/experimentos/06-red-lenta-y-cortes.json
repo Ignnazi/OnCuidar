@@ -1,0 +1,82 @@
+{
+  "version": "1.0.0",
+  "title": "06 - Red lenta y con cortes al azar",
+  "description": "Pone Toxiproxy entre el cliente y la API con 800 ms de demora y cortes en el 30% de las conexiones. El cliente envia 30 registros y reintenta cada uno como la cola de la app. Verifica que todos llegan una sola vez y en orden.",
+  "tags": [
+    "red",
+    "registros",
+    "duplicados"
+  ],
+  "steady-state-hypothesis": {
+    "title": "La API responde y consulta la base de datos",
+    "probes": [
+      {
+        "type": "probe",
+        "name": "salud_antes_de_la_red_inestable",
+        "tolerance": 200,
+        "provider": {
+          "type": "http",
+          "url": "http://localhost:8080/api/salud",
+          "method": "GET",
+          "timeout": 5
+        }
+      }
+    ]
+  },
+  "method": [
+    {
+      "type": "action",
+      "name": "levantar_toxiproxy",
+      "provider": {
+        "type": "process",
+        "path": "docker",
+        "arguments": [
+          "compose",
+          "-f",
+          "docker-compose.yml",
+          "-f",
+          "test/caos/docker-compose.caos.yml",
+          "up",
+          "-d",
+          "--wait",
+          "toxiproxy"
+        ],
+        "timeout": 180
+      }
+    },
+    {
+      "type": "probe",
+      "name": "registros_llegan_una_vez_y_en_orden",
+      "provider": {
+        "type": "process",
+        "path": "node",
+        "arguments": [
+          "test/caos/cliente_registros.js"
+        ],
+        "timeout": 300
+      },
+      "tolerance": 0
+    }
+  ],
+  "rollbacks": [
+    {
+      "type": "action",
+      "name": "apagar_toxiproxy",
+      "provider": {
+        "type": "process",
+        "path": "docker",
+        "arguments": [
+          "compose",
+          "-f",
+          "docker-compose.yml",
+          "-f",
+          "test/caos/docker-compose.caos.yml",
+          "rm",
+          "-sf",
+          "toxiproxy"
+        ],
+        "timeout": 60
+      }
+    }
+  ]
+}

@@ -6,7 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:oncuidar/nucleo/conectividad/servicio_conectividad.dart';
 import 'package:oncuidar/nucleo/proveedores.dart';
 
-import '../../ayudas/offline.dart';
+import '../../../ayudas/offline.dart';
 
 void main() {
   group('ServicioConectividad', () {

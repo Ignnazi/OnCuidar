@@ -30,6 +30,8 @@ Los videos de la biblioteca no están en el repositorio por su peso, se copian a
 
 ## Pruebas
 
+El detalle de cada nivel está en test/README.md.
+
 ```
 flutter test
 docker compose -f docker-compose.pruebas.yml up -d

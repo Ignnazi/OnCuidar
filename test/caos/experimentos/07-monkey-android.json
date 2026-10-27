@@ -1,0 +1,99 @@
+{
+  "version": "1.0.0",
+  "title": "07 - Toques al azar en la interfaz (monkey de Android)",
+  "description": "Abre la app en un emulador o telefono conectado y le envia 3000 toques, deslizamientos y teclas al azar con el monkey de Android. Verifica que la app sigue abierta al terminar.",
+  "tags": [
+    "android",
+    "interfaz",
+    "estabilidad"
+  ],
+  "steady-state-hypothesis": {
+    "title": "Hay un dispositivo Android conectado",
+    "probes": [
+      {
+        "type": "probe",
+        "name": "dispositivo_conectado",
+        "provider": {
+          "type": "process",
+          "path": "adb",
+          "arguments": [
+            "get-state"
+          ],
+          "timeout": 30
+        },
+        "tolerance": 0
+      }
+    ]
+  },
+  "method": [
+    {
+      "type": "action",
+      "name": "abrir_la_app",
+      "provider": {
+        "type": "process",
+        "path": "adb",
+        "arguments": [
+          "shell",
+          "monkey",
+          "-p",
+          "cl.zapataramirez.oncuidar",
+          "-c",
+          "android.intent.category.LAUNCHER",
+          "1"
+        ],
+        "timeout": 30
+      }
+    },
+    {
+      "type": "action",
+      "name": "esperar_5_segundos",
+      "provider": {
+        "type": "process",
+        "path": "powershell",
+        "arguments": [
+          "-NoProfile",
+          "-Command",
+          "Start-Sleep -Seconds 5"
+        ],
+        "timeout": 60
+      }
+    },
+    {
+      "type": "action",
+      "name": "toques_al_azar",
+      "provider": {
+        "type": "process",
+        "path": "adb",
+        "arguments": [
+          "shell",
+          "monkey",
+          "-p",
+          "cl.zapataramirez.oncuidar",
+          "--throttle",
+          "100",
+          "--pct-syskeys",
+          "0",
+          "-v",
+          "3000"
+        ],
+        "timeout": 600
+      }
+    },
+    {
+      "type": "probe",
+      "name": "la_app_sigue_abierta",
+      "provider": {
+        "type": "process",
+        "path": "adb",
+        "arguments": [
+          "shell",
+          "pidof",
+          "cl.zapataramirez.oncuidar"
+        ],
+        "timeout": 30
+      },
+      "tolerance": 0
+    }
+  ],
+  "rollbacks": []
+}

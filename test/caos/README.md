@@ -19,13 +19,13 @@ docker compose up -d --wait
 Desde la raíz del repositorio:
 
 ```
-chaos validate chaos-tests/experiments/01-matar-api.json
-chaos run chaos-tests/experiments/01-matar-api.json --rollback-strategy=always --journal-path chaos-tests/registros/01-journal.json
+chaos validate test/caos/experimentos/01-matar-api.json
+chaos run test/caos/experimentos/01-matar-api.json --rollback-strategy=always --journal-path test/caos/registros/01-journal.json
 ```
 
 Con `--rollback-strategy=always` el sistema se vuelve a levantar aunque el experimento falle. Por defecto Chaos Toolkit no lo hace si la hipótesis no se cumple.
 
-El resultado de cada corrida queda en chaos-tests/registros, con el estado y la duración de cada medición.
+El resultado de cada corrida queda en test/caos/registros, con el estado y la duración de cada medición.
 
 Las esperas se hacen con `powershell Start-Sleep` porque `time.sleep` con `type: python` no pasa la validación de Chaos Toolkit.
 
@@ -38,6 +38,10 @@ Las esperas se hacen con `powershell Start-Sleep` porque `time.sleep` con `type:
 | 03 | `docker compose pause api` | Si la API responde estando congelada | No responde. El contenedor sigue activo pero no atiende peticiones |
 | 04 | `kill -9` al proceso de Node dentro de la API | Si Docker reinicia la API tras una caída interna | Docker reinicia el contenedor y la API responde 200 |
 | 05 | `docker compose kill db` y luego `up` | Si la API falla rápido y se recupera | Responde 500 en 4 segundos con la base caída y 200 cuando vuelve |
+| 06 | Toxiproxy con 800 ms de demora y cortes en el 30% de las conexiones | Si 30 registros llegan una sola vez y en orden | Llegan los 30 sin duplicados ni pérdidas, con 13 reintentos por cortes |
+| 07 | 3000 toques al azar con el monkey de Android | Si la app sigue abierta | Pendiente de ejecutar |
+
+El experimento 06 usa test/caos/docker-compose.caos.yml y el cliente test/caos/cliente_registros.js, que reintenta cada registro igual que la cola de la app. El 07 necesita `adb` en el PATH y la app instalada en un emulador o teléfono.
 
 Los experimentos 01 y 03 muestran límites de Docker y no fallas de la app. Para cubrirlos haría falta un orquestador o un monitor externo.
 

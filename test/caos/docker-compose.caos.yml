@@ -1,0 +1,7 @@
+# Proxy entre las pruebas y la API para simular una red lenta o que se corta
+services:
+  toxiproxy:
+    image: ghcr.io/shopify/toxiproxy:2.9.0
+    ports:
+      - "8474:8474"
+      - "8090:8090"

@@ -106,21 +106,24 @@ void main() {
       ('claro', coloresClaros),
       ('oscuro', coloresOscuros),
     ]) {
-      test('en modo $nombre: número blanco, aro claro y fondo del degradado', () {
-        Paleta.usar(c);
-        expect(InsigniaConteo.colorNumero, const Color(0xFFFFFFFF));
-        expect(
-          contraste(InsigniaConteo.colorNumero, InsigniaConteo.colorFondo()),
-          greaterThan(2.0),
-        );
-        // El aro claro la separa del botón en oscuro.
-        if (c.oscuro) {
+      test(
+        'en modo $nombre: número blanco, aro claro y fondo del degradado',
+        () {
+          Paleta.usar(c);
+          expect(InsigniaConteo.colorNumero, const Color(0xFFFFFFFF));
           expect(
-            contraste(Paleta.aroInsignia, Paleta.tarjeta),
-            greaterThanOrEqualTo(4.5),
+            contraste(InsigniaConteo.colorNumero, InsigniaConteo.colorFondo()),
+            greaterThan(2.0),
           );
-        }
-      });
+          // El aro claro la separa del botón en oscuro.
+          if (c.oscuro) {
+            expect(
+              contraste(Paleta.aroInsignia, Paleta.tarjeta),
+              greaterThanOrEqualTo(4.5),
+            );
+          }
+        },
+      );
     }
 
     test('el fondo es el del degradado y no cambia con el modo', () {
