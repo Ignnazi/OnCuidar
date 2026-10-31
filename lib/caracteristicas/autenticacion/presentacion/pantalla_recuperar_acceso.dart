@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:oncuidar/app/tema/paleta.dart';
-import 'package:oncuidar/caracteristicas/autenticacion/presentacion/widgets/botones_acceso.dart';
 import 'package:oncuidar/compartido/widgets/aviso_sin_conexion.dart';
 import 'package:oncuidar/compartido/widgets/campos_formulario.dart';
-import 'package:oncuidar/compartido/widgets/encabezado_gradiente.dart';
-import 'package:oncuidar/compartido/widgets/marca.dart';
+import 'package:oncuidar/compartido/widgets/hoja_segura.dart';
 import 'package:oncuidar/nucleo/proveedores.dart';
 import 'package:oncuidar/nucleo/sesion/servicio_sesion.dart';
 import 'package:oncuidar/nucleo/utilidades/validacion_correo.dart';
@@ -15,10 +12,21 @@ import 'package:oncuidar/nucleo/utilidades/validacion_correo.dart';
 bool interpretarRespuestaRecuperacion(Object? data) =>
     data is Map && data['ok'] == true;
 
+Future<void> mostrarHojaRecuperarAcceso(BuildContext context) {
+  return showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    useSafeArea: true,
+    backgroundColor: Colors.transparent,
+    builder: (_) => const RecuperarAcceso(enHoja: true),
+  );
+}
+
 class RecuperarAcceso extends ConsumerStatefulWidget {
-  const RecuperarAcceso({super.key, this.onSubmit});
+  const RecuperarAcceso({super.key, this.onSubmit, this.enHoja = false});
 
   final Future<void> Function(String email)? onSubmit;
+  final bool enHoja;
 
   @override
   ConsumerState<RecuperarAcceso> createState() => _RecuperarAccesoState();
@@ -88,159 +96,168 @@ class _RecuperarAccesoState extends ConsumerState<RecuperarAcceso> {
 
   @override
   Widget build(BuildContext context) {
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, result) {
-        if (!didPop) context.go('/iniciar-sesion');
-      },
-      child: Scaffold(
-        backgroundColor: Paleta.crema,
-        body: Stack(
-          children: [
-            Positioned.fill(
-              child: SingleChildScrollView(
-                padding: EdgeInsets.fromLTRB(
-                  20,
-                  MediaQuery.of(context).padding.top + 100 + 8,
-                  20,
-                  24,
+    final contenido = _contenido(context);
+    if (widget.enHoja) return _MarcoHojaRespaldo(child: contenido);
+
+    return Scaffold(
+      backgroundColor: Paleta.crema,
+      body: Align(alignment: Alignment.bottomCenter, child: contenido),
+    );
+  }
+
+  Widget _contenido(BuildContext context) {
+    return Material(
+      color: Paleta.tarjeta,
+      clipBehavior: Clip.antiAlias,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Paleta.bordeTarjeta,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
                 ),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    children: [
-                      const Marca(tamano: 96),
-                      const SizedBox(height: 16),
-                      Text(
-                        '¿No recuerdas tu correo?',
-                        textAlign: TextAlign.center,
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: Paleta.doradoClaro,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        Icons.lock_reset_rounded,
+                        color: Paleta.doradoOscuro,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Recuperar acceso',
                         style: GoogleFonts.nunito(
-                          fontSize: 22,
+                          fontSize: 18,
                           fontWeight: FontWeight.w800,
                           color: Paleta.textoPrincipal,
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Ingresa tu correo de respaldo y te enviaremos los datos para recuperar tu cuenta.',
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.nunito(
-                          fontSize: 14,
-                          color: Paleta.textoSecundario,
-                        ),
+                    ),
+                    IconButton(
+                      tooltip: 'Cerrar',
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: Icon(
+                        Icons.close_rounded,
+                        color: Paleta.textoSecundario,
                       ),
-                      const SizedBox(height: 24),
-                      TarjetaSeccion(
-                        icono: Icons.lock_reset_rounded,
-                        titulo: 'Correo de respaldo',
-                        hijos: [
-                          const EtiquetaCampo(texto: 'Correo de respaldo'),
-                          const SizedBox(height: 8),
-                          CampoFormulario(
-                            controlador: _correoController,
-                            textoAyuda: 'correo@ejemplo.com',
-                            icono: Icons.email_outlined,
-                            tipoTeclado: TextInputType.emailAddress,
-                            accionTeclado: TextInputAction.done,
-                            alEnviar: (_) => _recuperarAcceso(),
-                            habilitado: !_bloquearEnvios,
-                            validador: (v) {
-                              if (v == null || v.trim().isEmpty) {
-                                return 'Ingresa tu correo de respaldo';
-                              }
-                              if (!regexCorreo.hasMatch(v.trim())) {
-                                return 'Ingresa un correo válido';
-                              }
-                              return null;
-                            },
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 24),
-                      const NotaSinConexion(
-                        texto:
-                            'Sin conexión: necesitas internet para recuperar tu acceso.',
-                      ),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 54,
-                        child: ElevatedButton(
-                          onPressed: _bloquearEnvios ? null : _recuperarAcceso,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Paleta.doradoPrincipal,
-                            foregroundColor: Paleta.sobreDorado,
-                            elevation: 2,
-                            shadowColor: Paleta.doradoPrincipal.withValues(
-                              alpha: 0.35,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            disabledBackgroundColor: Paleta.doradoPrincipal
-                                .withValues(alpha: 0.5),
-                          ),
-                          child: _cargando
-                              ? SizedBox(
-                                  height: 22,
-                                  width: 22,
-                                  child: CircularProgressIndicator(
-                                    color: Paleta.sobreDorado,
-                                    strokeWidth: 2.5,
-                                  ),
-                                )
-                              : Text(
-                                  _enviado ? 'Enlace enviado' : 'Enviar enlace',
-                                  style: GoogleFonts.nunito(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      if (_enviado) ...[
-                        _PanelEstado(
-                          color: Paleta.doradoPrincipal,
-                          icono: Icons.mark_email_read_outlined,
-                          texto:
-                              'Si ese correo de respaldo está asociado a una cuenta, te enviamos un enlace para restablecer la contraseña. Revisa tu bandeja de entrada (y el spam).',
-                        ),
-                      ] else if (_errorMensaje != null) ...[
-                        _PanelEstado(
-                          color: Paleta.error,
-                          icono: Icons.wifi_off_rounded,
-                          texto: _errorMensaje!,
-                        ),
-                      ],
-                      const SizedBox(height: 12),
-                      EnlaceAcceso(
-                        pregunta: '¿Recordaste tus datos? ',
-                        accion: 'Iniciar sesión',
-                        alPulsar: () => context.push('/iniciar-sesion'),
-                      ),
-                      const SizedBox(height: 24),
-                    ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Escribe tu correo de respaldo. Te enviaremos un enlace para restablecer la contraseña.',
+                  style: GoogleFonts.nunito(
+                    fontSize: 13.5,
+                    height: 1.4,
+                    color: Paleta.textoSecundario,
                   ),
                 ),
-              ),
+                const SizedBox(height: 20),
+                const EtiquetaCampo(texto: 'Correo de respaldo'),
+                const SizedBox(height: 8),
+                CampoFormulario(
+                  controlador: _correoController,
+                  textoAyuda: 'correo@ejemplo.com',
+                  icono: Icons.email_outlined,
+                  tipoTeclado: TextInputType.emailAddress,
+                  accionTeclado: TextInputAction.done,
+                  alEnviar: (_) => _recuperarAcceso(),
+                  habilitado: !_bloquearEnvios,
+                  validador: (v) {
+                    if (v == null || v.trim().isEmpty) {
+                      return 'Ingresa tu correo de respaldo';
+                    }
+                    if (!regexCorreo.hasMatch(v.trim())) {
+                      return 'Ingresa un correo válido';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  height: 52,
+                  child: ElevatedButton(
+                    onPressed: _bloquearEnvios ? null : _recuperarAcceso,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Paleta.doradoPrincipal,
+                      foregroundColor: Paleta.sobreDorado,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    child: _cargando
+                        ? SizedBox(
+                            height: 22,
+                            width: 22,
+                            child: CircularProgressIndicator(
+                              color: Paleta.sobreDorado,
+                              strokeWidth: 2.5,
+                            ),
+                          )
+                        : Text(
+                            _enviado ? 'Enlace enviado' : 'Enviar enlace',
+                            style: GoogleFonts.nunito(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                  ),
+                ),
+                if (_enviado || _errorMensaje != null) ...[
+                  const SizedBox(height: 16),
+                  _PanelEstado(
+                    color: _enviado ? Paleta.verdeExito : Paleta.error,
+                    icono: _enviado
+                        ? Icons.mark_email_read_outlined
+                        : Icons.wifi_off_rounded,
+                    texto: _enviado
+                        ? 'Si ese correo está asociado a una cuenta, revisa tu bandeja de entrada y spam.'
+                        : _errorMensaje!,
+                  ),
+                ],
+              ],
             ),
-            const Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: EncabezadoGradiente(
-                titulo: 'Recuperar acceso',
-                subtitulo: 'Usa tu correo de respaldo para recuperar tu cuenta',
-                logo: AssetImage('assets/images/OnCuidar.png'),
-                tamanoTitulo: 20,
-                alto: 100,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
+}
+
+class _MarcoHojaRespaldo extends StatelessWidget {
+  const _MarcoHojaRespaldo({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) =>
+      HojaConAreaSegura(separacionSuperior: 20, child: child);
 }
 
 class _PanelEstado extends StatelessWidget {

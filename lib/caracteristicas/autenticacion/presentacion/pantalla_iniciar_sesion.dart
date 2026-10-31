@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:oncuidar/app/enrutador/destino_aviso.dart';
 import 'package:oncuidar/app/tema/paleta.dart';
+import 'package:oncuidar/caracteristicas/autenticacion/presentacion/pantalla_recuperar_acceso.dart';
 import 'package:oncuidar/caracteristicas/autenticacion/presentacion/widgets/botones_acceso.dart';
 import 'package:oncuidar/caracteristicas/biblioteca/presentacion/proveedores_biblioteca.dart';
 import 'package:oncuidar/caracteristicas/pacientes/datos/proveedores_pacientes.dart';
@@ -267,8 +268,9 @@ class _IniciarSesionState extends ConsumerState<IniciarSesion> {
                           Align(
                             alignment: Alignment.centerRight,
                             child: TextButton(
-                              onPressed: () =>
-                                  context.push('/recuperar-acceso'),
+                              onPressed: () => unawaited(
+                                mostrarHojaRecuperarAcceso(context),
+                              ),
                               child: Text(
                                 'Recuperar con el correo de respaldo',
                                 style: GoogleFonts.nunito(
