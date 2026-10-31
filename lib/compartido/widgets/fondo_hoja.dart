@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:oncuidar/app/tema/paleta.dart';
+import 'package:oncuidar/compartido/widgets/hoja_segura.dart';
 
 class FondoHoja extends StatelessWidget {
   const FondoHoja({
@@ -16,13 +17,15 @@ class FondoHoja extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: sobreTarjeta ? Paleta.tarjeta : Paleta.crema,
-      clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(radio)),
+    return HojaConAreaSegura(
+      child: Material(
+        color: sobreTarjeta ? Paleta.tarjeta : Paleta.crema,
+        clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(radio)),
+        ),
+        child: child,
       ),
-      child: child,
     );
   }
 }

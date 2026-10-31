@@ -11,6 +11,7 @@ Future<({DateTime? inicio, DateTime? fin})?> mostrarDialogoRangoFechas(
 }) {
   return showDialog<({DateTime? inicio, DateTime? fin})>(
     context: context,
+    useSafeArea: true,
     builder: (_) =>
         _DialogoRangoFechas(fechaInicio: fechaInicio, fechaFin: fechaFin),
   );

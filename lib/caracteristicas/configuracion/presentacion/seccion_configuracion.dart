@@ -14,6 +14,7 @@ Future<void> mostrarHojaConfiguracion(BuildContext context) {
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
+    useSafeArea: true,
     backgroundColor: Colors.transparent,
     builder: (contexto) => FondoHoja(
       radio: 24,

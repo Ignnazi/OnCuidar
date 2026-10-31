@@ -4,6 +4,7 @@ import 'package:oncuidar/app/tema/paleta.dart';
 import 'package:oncuidar/caracteristicas/pacientes/dominio/paciente.dart';
 import 'package:oncuidar/compartido/widgets/campos_formulario.dart';
 import 'package:oncuidar/compartido/widgets/dialogo_confirmacion.dart';
+import 'package:oncuidar/compartido/widgets/hoja_segura.dart';
 
 Future<void> mostrarDialogoCambiarPaciente(
   BuildContext context, {
@@ -13,13 +14,17 @@ Future<void> mostrarDialogoCambiarPaciente(
 }) {
   return showModalBottomSheet<void>(
     context: context,
+    isScrollControlled: true,
+    useSafeArea: true,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
     ),
-    builder: (ctx) => _DialogoCambiarPaciente(
-      pacientes: pacientes,
-      idActual: idActual,
-      alCambiar: alCambiar,
+    builder: (ctx) => HojaConAreaSegura(
+      child: _DialogoCambiarPaciente(
+        pacientes: pacientes,
+        idActual: idActual,
+        alCambiar: alCambiar,
+      ),
     ),
   );
 }

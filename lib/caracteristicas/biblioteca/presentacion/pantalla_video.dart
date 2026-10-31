@@ -11,6 +11,7 @@ import 'package:oncuidar/caracteristicas/biblioteca/datos/proveedores_biblioteca
 import 'package:oncuidar/caracteristicas/biblioteca/datos/servicio_cache_contenido.dart';
 import 'package:oncuidar/compartido/widgets/aviso_sin_conexion.dart';
 import 'package:oncuidar/compartido/widgets/barra_visor.dart';
+import 'package:oncuidar/compartido/widgets/hoja_segura.dart';
 import 'package:oncuidar/nucleo/proveedores.dart';
 import 'package:video_player/video_player.dart';
 
@@ -285,11 +286,14 @@ class _PantallaVideoState extends ConsumerState<PantallaVideo> {
     _timerControles?.cancel();
     final elegida = await showModalBottomSheet<double>(
       context: context,
+      useSafeArea: true,
       backgroundColor: const Color(0xFF1C1C1E),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
-      builder: (_) => _HojaVelocidad(actual: controlador.value.playbackSpeed),
+      builder: (_) => HojaConAreaSegura(
+        child: _HojaVelocidad(actual: controlador.value.playbackSpeed),
+      ),
     );
     if (elegida != null && mounted) {
       await controlador.setPlaybackSpeed(elegida);

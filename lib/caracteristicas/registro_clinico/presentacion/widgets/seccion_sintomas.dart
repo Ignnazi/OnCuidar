@@ -35,16 +35,12 @@ class SeccionSintomas extends StatelessWidget {
       backgroundColor: Colors.transparent,
       builder: (ctx) => FondoHoja(
         sobreTarjeta: true,
-        child: AnimatedPadding(
-          duration: Duration.zero,
-          padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(ctx).bottom),
-          child: SizedBox(
-            height: MediaQuery.sizeOf(ctx).height * 0.9,
-            child: SelectorMultiSintoma(
-              seleccionados: seleccionados,
-              onAlternar: onAlternar,
-              onCerrar: () => Navigator.of(ctx).pop(),
-            ),
+        child: SizedBox(
+          height: MediaQuery.sizeOf(ctx).height * 0.9,
+          child: SelectorMultiSintoma(
+            seleccionados: seleccionados,
+            onAlternar: onAlternar,
+            onCerrar: () => Navigator.of(ctx).pop(),
           ),
         ),
       ),
