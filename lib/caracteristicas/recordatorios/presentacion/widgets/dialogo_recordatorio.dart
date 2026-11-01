@@ -16,6 +16,7 @@ Future<DatosRecordatorio?> mostrarDialogoRecordatorio(
 }) {
   return showDialog<DatosRecordatorio>(
     context: context,
+    useSafeArea: true,
     builder: (_) => _DialogoRecordatorio(
       tituloCtrl: tituloCtrl,
       descCtrl: descCtrl,

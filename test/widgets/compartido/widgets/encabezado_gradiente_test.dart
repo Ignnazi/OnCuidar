@@ -1,4 +1,7 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:oncuidar/compartido/widgets/buscador.dart';
 import 'package:oncuidar/compartido/widgets/encabezado_gradiente.dart';
@@ -75,5 +78,52 @@ void main() {
     await tester.pumpWidget(_app(escala: 1.0));
     final subtitulo = tester.widget<Text>(find.text('Resuelve tus dudas'));
     expect(subtitulo.style!.fontWeight, FontWeight.w700);
+  });
+
+  testWidgets('la curva pinta sobre la ola y deja transparente por debajo', (
+    tester,
+  ) async {
+    const fondo = Color(0xFFFF0000);
+    final clave = GlobalKey();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Align(
+          alignment: Alignment.topLeft,
+          child: RepaintBoundary(
+            key: clave,
+            child: const ColoredBox(
+              color: fondo,
+              child: SizedBox(
+                width: 300,
+                child: EncabezadoGradiente(titulo: 'Chat'),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    final limite =
+        clave.currentContext!.findRenderObject()! as RenderRepaintBoundary;
+    final bytes = await tester.runAsync(() async {
+      final imagen = await limite.toImage();
+      return imagen.toByteData(format: ui.ImageByteFormat.rawRgba);
+    });
+    final ancho = limite.size.width.toInt();
+    Color pixel(int x, int y) {
+      final i = (y * ancho + x) * 4;
+      return Color.fromARGB(
+        bytes!.getUint8(i + 3),
+        bytes.getUint8(i),
+        bytes.getUint8(i + 1),
+        bytes.getUint8(i + 2),
+      );
+    }
+
+    expect(pixel(10, 44), isNot(fondo));
+    expect(pixel(290, 44), isNot(fondo));
+    expect(pixel(270, 80), isNot(fondo));
+    expect(pixel(30, 80), isNot(fondo));
+    expect(pixel(150, 60), isNot(fondo));
+    expect(pixel(150, 99), fondo);
   });
 }

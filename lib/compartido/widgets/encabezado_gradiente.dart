@@ -44,13 +44,10 @@ class EncabezadoGradiente extends StatelessWidget {
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          Positioned.fill(
+          const Positioned.fill(
             child: IgnorePointer(
-              child: ClipPath(
-                clipper: const _ClipperOla(profundidad: _profundidadOla),
-                child: DecoratedBox(
-                  decoration: BoxDecoration(gradient: Paleta.degradadoCabecera),
-                ),
+              child: CustomPaint(
+                painter: _PintorCabeceraOnda(profundidad: _profundidadOla),
               ),
             ),
           ),
@@ -205,37 +202,37 @@ class EncabezadoGradiente extends StatelessWidget {
   }
 }
 
-class _ClipperOla extends CustomClipper<Path> {
-  const _ClipperOla({required this.profundidad});
+class _PintorCabeceraOnda extends CustomPainter {
+  const _PintorCabeceraOnda({required this.profundidad});
+
   final double profundidad;
 
   @override
-  Path getClip(Size size) {
+  void paint(Canvas canvas, Size size) {
     final bordeOla = size.height - profundidad;
-    final ola = Path()
-      ..moveTo(0, bordeOla)
+    final forma = Path()
+      ..moveTo(0, 0)
+      ..lineTo(size.width, 0)
+      ..lineTo(size.width, bordeOla)
       ..cubicTo(
-        size.width * 0.33,
-        size.height,
         size.width * 0.66,
         size.height,
-        size.width,
+        size.width * 0.33,
+        size.height,
+        0,
         bordeOla,
       )
-      ..lineTo(size.width, size.height)
-      ..lineTo(0, size.height)
       ..close();
 
-    return Path.combine(
-      PathOperation.difference,
-      Path()..addRect(Offset.zero & size),
-      ola,
-    );
+    final rect = Offset.zero & size;
+    final pintura = Paint()
+      ..shader = Paleta.degradadoCabecera.createShader(rect);
+    canvas.drawPath(forma, pintura);
   }
 
   @override
-  bool shouldReclip(covariant _ClipperOla oldClipper) =>
-      oldClipper.profundidad != profundidad;
+  bool shouldRepaint(covariant _PintorCabeceraOnda oldDelegate) =>
+      oldDelegate.profundidad != profundidad;
 }
 
 class PantallaConEncabezado extends StatelessWidget {
