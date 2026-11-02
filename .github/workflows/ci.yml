@@ -5,6 +5,7 @@ on:
     branches: [main, desarrollo]
   push:
     branches: [main, desarrollo]
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -34,6 +35,48 @@ jobs:
 
       - name: Pruebas
         run: flutter test
+
+  apk:
+    name: APK
+    needs: app
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.44.8
+          channel: stable
+          cache: true
+
+      - name: Verificar API_URL
+        env:
+          API_URL: ${{ vars.API_URL }}
+        run: |
+          if [ -z "$API_URL" ]; then
+            echo "Falta la variable API_URL en Settings > Secrets and variables > Actions > Variables"
+            exit 1
+          fi
+
+      - run: flutter pub get
+
+      - name: Compilar
+        env:
+          API_URL: ${{ vars.API_URL }}
+        run: flutter build apk --release --dart-define=API_URL="$API_URL"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: OnCuidar-${{ github.sha }}
+          path: build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 30
 
   backend:
     name: Backend
