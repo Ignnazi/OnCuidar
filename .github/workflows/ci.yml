@@ -1,0 +1,79 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main, desarrollo]
+  push:
+    branches: [main, desarrollo]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  app:
+    name: App
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.44.8
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+
+      - name: Formato
+        run: dart format --output=none --set-exit-if-changed lib test
+
+      - name: Análisis
+        run: flutter analyze
+
+      - name: Pruebas
+        run: flutter test
+
+  backend:
+    name: Backend
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: pruebas
+          POSTGRES_PASSWORD: pruebas
+          POSTGRES_DB: oncuidar_pruebas
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U pruebas -d oncuidar_pruebas"
+          --health-interval 3s
+          --health-timeout 3s
+          --health-retries 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Esquema
+        run: psql -v ON_ERROR_STOP=1 -f database/init.sql
+        env:
+          PGHOST: localhost
+          PGPORT: 5433
+          PGUSER: pruebas
+          PGPASSWORD: pruebas
+          PGDATABASE: oncuidar_pruebas
+
+      - run: npm ci
+        working-directory: backend
+
+      - name: Pruebas
+        run: npm test
+        working-directory: backend
