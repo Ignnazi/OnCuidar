@@ -27,6 +27,8 @@ class MaterialEducativo {
 
   bool get esVideo => categoria.toLowerCase() == 'videos';
 
+  bool get esInfografia => categoria.toLowerCase() == 'infografías';
+
   bool get esPdf {
     if (tipoArchivo?.toLowerCase() == 'pdf') return true;
     final url = urlArchivo;
