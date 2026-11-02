@@ -32,17 +32,18 @@ class IconoTipoMaterial extends StatelessWidget {
   Widget build(BuildContext context) {
     final estilo = estiloTipoMaterial(categoria);
     return Semantics(
+      container: true,
       label: etiquetaCategoria(categoria),
       excludeSemantics: true,
       child: Container(
         key: const Key('iconoTipoMaterial'),
-        width: 38,
-        height: 38,
+        width: 30,
+        height: 30,
         decoration: BoxDecoration(
           color: estilo.color.withValues(alpha: 0.14),
-          borderRadius: BorderRadius.circular(11),
+          borderRadius: BorderRadius.circular(9),
         ),
-        child: Icon(estilo.icono, size: 21, color: estilo.color),
+        child: Icon(estilo.icono, size: 17, color: estilo.color),
       ),
     );
   }
@@ -64,48 +65,31 @@ class TarjetaMaterial extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final radio = BorderRadius.circular(16);
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 16),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: Paleta.tarjeta,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: radio,
         border: Border.all(color: Paleta.bordeTarjeta),
         boxShadow: [
           BoxShadow(
-            color: Paleta.doradoOscuro.withValues(alpha: 0.06),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
+            color: Paleta.doradoOscuro.withValues(alpha: 0.05),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (material.tema.isNotEmpty)
-            Container(
-              key: const Key('franjaTema'),
-              height: 3,
-              color: acentoDelTema(material.tema).acento,
-            ),
-          GestureDetector(
-            key: const Key('miniaturaTarjetaMaterial'),
-            onTap: alTocar,
-            behavior: HitTestBehavior.opaque,
-            child: _miniatura(),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 10, 4, 10),
-            child: Row(
-              children: [
-                IconoTipoMaterial(categoria: material.categoria),
-                const SizedBox(width: 10),
-                Expanded(child: _textos()),
-                _iconoFavorito(),
-              ],
-            ),
-          ),
-        ],
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          key: const Key('abrirTarjetaMaterial'),
+          onTap: alTocar,
+          borderRadius: radio,
+          excludeFromSemantics: true,
+          child: material.esVideo ? _tarjetaVideo() : _tarjetaConPortada(),
+        ),
       ),
     );
   }
@@ -118,74 +102,161 @@ class TarjetaMaterial extends StatelessWidget {
     return null;
   }
 
-  Widget _miniatura() {
-    final url = _urlImagen;
-    Widget imagen = url != null
-        ? ImagenCacheada(
-            url: url,
-            ajuste: BoxFit.cover,
-            reemplazo: _reemplazoMiniatura(),
-          )
-        : _reemplazoMiniatura();
-    if (url != null && !material.esVideo) {
-      imagen = Hero(tag: etiquetaHeroImagen(material.id), child: imagen);
-    }
-    return SizedBox(
-      height: 108,
-      width: double.infinity,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          imagen,
-          if (material.esVideo)
-            Center(
-              child: Container(
-                width: 46,
-                height: 46,
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.35),
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.7),
-                    width: 2,
+  Widget _tarjetaVideo() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        AspectRatio(
+          aspectRatio: 2.2,
+          child: Stack(
+            key: const Key('miniaturaTarjetaMaterial'),
+            fit: StackFit.expand,
+            children: [
+              _imagen(BoxFit.cover, Alignment.center),
+              Center(child: _botonReproducir()),
+            ],
+          ),
+        ),
+        _franjaTitulo(),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 4, 6, 4),
+          child: Row(
+            children: [..._tipoYTema(expandir: true), _iconoFavorito()],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _tarjetaConPortada() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _franjaTitulo(),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(14, 12, 6, 8),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _portada(),
+              const SizedBox(width: 14),
+              Expanded(
+                child: SizedBox(
+                  height: 108,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(children: _tipoYTema()),
+                      Align(
+                        alignment: Alignment.bottomRight,
+                        child: _iconoFavorito(),
+                      ),
+                    ],
                   ),
                 ),
-                child: const Icon(
-                  Icons.play_arrow_rounded,
-                  color: Colors.white,
-                  size: 30,
-                ),
               ),
-            ),
-          if (material.tema.isNotEmpty)
-            Positioned(
-              top: 8,
-              left: 8,
-              right: 8,
-              child: Align(
-                alignment: Alignment.topRight,
-                child: _etiquetaSobreImagen(),
-              ),
-            ),
-        ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _franjaTitulo() {
+    return Container(
+      color: Paleta.doradoBannerOscuro.withValues(alpha: 0.55),
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+      child: Text(
+        material.titulo,
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+        style: GoogleFonts.nunito(
+          fontSize: 15.5,
+          fontWeight: FontWeight.w800,
+          color: Paleta.textoTerciario,
+          height: 1.25,
+        ),
       ),
     );
   }
 
-  Widget _etiquetaSobreImagen() {
+  List<Widget> _tipoYTema({bool expandir = false}) {
+    return [
+      IconoTipoMaterial(categoria: material.categoria),
+      if (material.tema.isNotEmpty) ...[
+        const SizedBox(width: 8),
+        if (expandir)
+          Expanded(
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: EtiquetaTema(tema: material.tema),
+            ),
+          )
+        else
+          Flexible(child: EtiquetaTema(tema: material.tema)),
+      ],
+    ];
+  }
+
+  Widget _portada() {
+    final estilo = estiloTipoMaterial(material.categoria);
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(10),
+      child: SizedBox(
+        key: const Key('miniaturaTarjetaMaterial'),
+        width: 82,
+        height: 108,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            ColoredBox(color: estilo.color.withValues(alpha: 0.08)),
+            _imagen(BoxFit.cover, Alignment.topCenter),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _imagen(BoxFit ajuste, Alignment alineacion) {
+    final url = _urlImagen;
+    if (url == null) return _reemplazoMiniatura();
+    final imagen = ImagenCacheada(
+      url: url,
+      ajuste: ajuste,
+      alineacion: alineacion,
+      reemplazo: _reemplazoMiniatura(),
+    );
+    if (material.esVideo) return imagen;
+    return Hero(tag: etiquetaHeroImagen(material.id), child: imagen);
+  }
+
+  Widget _botonReproducir() {
     return Container(
+      width: 58,
+      height: 58,
       decoration: BoxDecoration(
-        color: Paleta.tarjeta,
-        borderRadius: BorderRadius.circular(8),
+        color: Paleta.doradoPrincipal,
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.85),
+          width: 2.5,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.18),
-            blurRadius: 4,
-            offset: const Offset(0, 1),
+            color: Colors.black.withValues(alpha: 0.22),
+            blurRadius: 12,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
-      child: EtiquetaTema(tema: material.tema),
+      child: const Icon(
+        Icons.play_arrow_rounded,
+        color: Colors.white,
+        size: 36,
+      ),
     );
   }
 
@@ -213,39 +284,15 @@ class TarjetaMaterial extends StatelessWidget {
     );
   }
 
-  Widget _textos() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          material.titulo,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-          style: GoogleFonts.nunito(
-            fontSize: 15,
-            fontWeight: FontWeight.w700,
-            color: Paleta.textoPrincipal,
-            height: 1.2,
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _iconoFavorito() {
-    return GestureDetector(
-      onTap: alAlternarFavorito,
-      behavior: HitTestBehavior.opaque,
-      child: Container(
-        width: 44,
-        height: 44,
-        alignment: Alignment.center,
-        child: Icon(
-          esFavorito ? Icons.bookmark : Icons.bookmark_border,
-          color: esFavorito ? Paleta.doradoPrincipal : Paleta.textoSecundario,
-          size: 30,
-        ),
+    return IconButton(
+      key: const Key('alternarFavoritoMaterial'),
+      tooltip: esFavorito ? 'Quitar de favoritos' : 'Guardar en favoritos',
+      onPressed: alAlternarFavorito,
+      icon: Icon(
+        esFavorito ? Icons.bookmark : Icons.bookmark_border,
+        color: esFavorito ? Paleta.doradoPrincipal : Paleta.textoSecundario,
+        size: 32,
       ),
     );
   }

@@ -10,11 +10,13 @@ class ImagenCacheada extends ConsumerStatefulWidget {
     required this.url,
     required this.ajuste,
     this.reemplazo,
+    this.alineacion = Alignment.center,
   });
 
   final String url;
   final BoxFit ajuste;
   final Widget? reemplazo;
+  final Alignment alineacion;
 
   @override
   ConsumerState<ImagenCacheada> createState() => _ImagenCacheadaState();
@@ -36,6 +38,7 @@ class _ImagenCacheadaState extends ConsumerState<ImagenCacheada> {
       return Image.asset(
         url,
         fit: widget.ajuste,
+        alignment: widget.alineacion,
         errorBuilder: (_, _, _) => widget.reemplazo ?? const SizedBox.shrink(),
       );
     }
@@ -48,6 +51,7 @@ class _ImagenCacheadaState extends ConsumerState<ImagenCacheada> {
           return Image.file(
             archivo,
             fit: widget.ajuste,
+            alignment: widget.alineacion,
             errorBuilder: (_, _, _) =>
                 widget.reemplazo ?? const SizedBox.shrink(),
           );

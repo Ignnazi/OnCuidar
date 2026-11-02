@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:oncuidar/compartido/widgets/controles_zoom.dart';
 import 'package:oncuidar/compartido/widgets/visor_con_zoom.dart';
 
 void main() {
@@ -100,6 +101,34 @@ void main() {
 
     await tester.tap(find.byKey(const Key('zoomAjustar')));
     expect(total(tester), closeTo(1, 0.01));
+  });
+
+  testWidgets('los controles dejan libre el notch y el indicador inferior', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(400, 800);
+    tester.view.devicePixelRatio = 1.0;
+    tester.view.viewPadding = const FakeViewPadding(right: 30, bottom: 24);
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetViewPadding);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: VisorConZoom(
+            pie: const Text('1 / 3'),
+            constructor: (_, _) => const ColoredBox(color: Colors.teal),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final controles = tester.getRect(find.byType(ControlesZoom));
+    final pie = tester.getRect(find.text('1 / 3'));
+    expect(controles.right, lessThanOrEqualTo(400 - 30 - 12));
+    expect(controles.bottom, lessThanOrEqualTo(800 - 24 - 16));
+    expect(pie.right, lessThanOrEqualTo(controles.left));
   });
 
   testWidgets(
