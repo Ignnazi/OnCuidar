@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:oncuidar/app/tema/paleta.dart';
+import 'package:oncuidar/compartido/widgets/hoja_segura.dart';
 
 class HojaDialogo extends StatelessWidget {
   const HojaDialogo({
@@ -26,65 +27,70 @@ class HojaDialogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DraggableScrollableSheet(
-      expand: false,
-      initialChildSize: tamanoInicial,
-      minChildSize: tamanoMinimo,
-      maxChildSize: tamanoMaximo,
-      builder: (ctx, controlador) => Container(
-        decoration: BoxDecoration(
-          color: Paleta.tarjeta,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: Column(
-          children: [
-            Container(
-              margin: const EdgeInsets.only(top: 12),
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Paleta.bordeTarjeta,
-                borderRadius: BorderRadius.circular(2),
+    return HojaConAreaSegura(
+      child: DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: tamanoInicial,
+        minChildSize: tamanoMinimo,
+        maxChildSize: tamanoMaximo,
+        builder: (ctx, controlador) => Container(
+          decoration: BoxDecoration(
+            color: Paleta.tarjeta,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            children: [
+              Container(
+                margin: const EdgeInsets.only(top: 12),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Paleta.bordeTarjeta,
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 14, 8, 0),
-              child: Row(
-                children: [
-                  Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [Paleta.doradoPrincipal, Paleta.doradoRelleno],
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 14, 8, 0),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            Paleta.doradoPrincipal,
+                            Paleta.doradoRelleno,
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(10),
                       ),
-                      borderRadius: BorderRadius.circular(10),
+                      child: Icon(icono, color: Paleta.sobreDorado, size: 18),
                     ),
-                    child: Icon(icono, color: Paleta.sobreDorado, size: 18),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      titulo,
-                      style: GoogleFonts.nunito(
-                        fontSize: tamanoTitulo,
-                        fontWeight: FontWeight.w800,
-                        color: Paleta.textoPrincipal,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        titulo,
+                        style: GoogleFonts.nunito(
+                          fontSize: tamanoTitulo,
+                          fontWeight: FontWeight.w800,
+                          color: Paleta.textoPrincipal,
+                        ),
                       ),
                     ),
-                  ),
-                  IconButton(
-                    onPressed: () => Navigator.of(ctx).pop(),
-                    icon: Icon(Icons.close, color: Paleta.textoSecundario),
-                  ),
-                ],
+                    IconButton(
+                      onPressed: () => Navigator.of(ctx).pop(),
+                      icon: Icon(Icons.close, color: Paleta.textoSecundario),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 4),
-            ...cuerpo(ctx, controlador),
-          ],
+              const SizedBox(height: 4),
+              ...cuerpo(ctx, controlador),
+            ],
+          ),
         ),
       ),
     );

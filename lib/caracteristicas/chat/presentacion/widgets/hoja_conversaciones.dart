@@ -21,6 +21,7 @@ Future<void> mostrarHojaConversaciones(
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
+    useSafeArea: true,
     backgroundColor: Colors.transparent,
     builder: (_) => FondoHoja(
       child: _HojaConversaciones(
@@ -102,6 +103,7 @@ class _HojaConversacionesState extends ConsumerState<_HojaConversaciones> {
     return showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
       enableDrag: false,
       isDismissible: false,
       backgroundColor: Colors.transparent,
@@ -145,6 +147,7 @@ class _HojaConversacionesState extends ConsumerState<_HojaConversaciones> {
     _controladorNueva.clear();
     final confirmado = await showDialog<bool>(
       context: context,
+      useSafeArea: true,
       builder: (context) => AlertDialog(
         key: const Key('dialogoNombreConversacion'),
         title: const Text('Nueva conversación'),

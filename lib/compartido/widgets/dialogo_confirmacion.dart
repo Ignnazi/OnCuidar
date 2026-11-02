@@ -18,6 +18,7 @@ Future<bool?> mostrarDialogoConfirmacion(
   final color = colorConfirmar ?? Paleta.doradoRelleno;
   return showDialog<bool>(
     context: context,
+    useSafeArea: true,
     builder: (dialogCtx) => DialogoTarjeta(
       key: key,
       icono: icono,

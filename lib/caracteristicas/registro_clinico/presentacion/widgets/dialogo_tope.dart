@@ -9,6 +9,7 @@ Future<int?> mostrarDialogoTope(
   var valor = valorInicial;
   return showDialog<int>(
     context: context,
+    useSafeArea: true,
     builder: (dialogCtx) => StatefulBuilder(
       builder: (ctx, setDialogState) => AlertDialog(
         backgroundColor: Paleta.tarjeta,

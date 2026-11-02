@@ -180,6 +180,8 @@ class EstadoVisorConZoom extends State<VisorConZoom>
           );
         }
         final minimo = _minimo;
+        final areaSegura = MediaQuery.of(context).viewPadding;
+        final margenInferior = areaSegura.bottom + 16;
         return Stack(
           children: [
             Positioned.fill(
@@ -208,8 +210,8 @@ class EstadoVisorConZoom extends State<VisorConZoom>
               ),
             ),
             Positioned(
-              right: 12,
-              bottom: MediaQuery.of(context).padding.bottom + 16,
+              right: areaSegura.right + 12,
+              bottom: margenInferior,
               child: ControlesZoom(
                 sobreOscuro: widget.sobreOscuro,
                 alAcercar: () => _acercar(1.5),
@@ -219,9 +221,9 @@ class EstadoVisorConZoom extends State<VisorConZoom>
             ),
             if (widget.pie != null)
               Positioned(
-                left: 0,
-                right: 0,
-                bottom: MediaQuery.of(context).padding.bottom + 16,
+                left: areaSegura.left + 12,
+                right: areaSegura.right + 72,
+                bottom: margenInferior,
                 child: Center(child: widget.pie),
               ),
           ],

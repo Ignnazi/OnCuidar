@@ -207,31 +207,49 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   Widget build(BuildContext context) {
     ref.watch(chatActivoProvider);
     ref.watch(contenidosEducativosProvider);
+    final altoEncabezado = MediaQuery.paddingOf(context).top + 100;
     return Scaffold(
       backgroundColor: Paleta.crema,
-      body: Column(
+      body: Stack(
         children: [
-          EncabezadoGradiente(
-            titulo: 'Chat de orientación',
-            subtitulo: switch (_chat.tituloConversacion) {
-              final titulo? when titulo.trim().isNotEmpty => resumirPalabras(
-                titulo,
-              ),
-              _ => 'Resuelve tus dudas',
-            },
-            logo: const AssetImage('assets/images/OnCuidar.png'),
-            tamanoTitulo: 20,
-            alto: 100,
-            alTocarLogo: () => context.go('/dashboard'),
-            accionDerecha: _botonesAccion(),
+          Positioned.fill(
+            child: Column(
+              children: [
+                Expanded(
+                  child: _zonaChat(altoEncabezado + (_buscando ? 64 : 0)),
+                ),
+                EntradaChat(
+                  controlador: _controladorTexto,
+                  foco: _focoEntrada,
+                  habilitada: !_escribiendo,
+                  alEnviar: _enviar,
+                ),
+              ],
+            ),
           ),
-          if (_buscando) _campoBusqueda(),
-          Expanded(child: _zonaChat()),
-          EntradaChat(
-            controlador: _controladorTexto,
-            foco: _focoEntrada,
-            habilitada: !_escribiendo,
-            alEnviar: _enviar,
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                EncabezadoGradiente(
+                  titulo: 'Chat de orientación',
+                  subtitulo: switch (_chat.tituloConversacion) {
+                    final titulo? when titulo.trim().isNotEmpty =>
+                      resumirPalabras(titulo),
+                    _ => 'Resuelve tus dudas',
+                  },
+                  logo: const AssetImage('assets/images/OnCuidar.png'),
+                  tamanoTitulo: 20,
+                  alto: 100,
+                  alTocarLogo: () => context.go('/dashboard'),
+                  accionDerecha: _botonesAccion(),
+                ),
+                if (_buscando) _campoBusqueda(),
+              ],
+            ),
           ),
         ],
       ),
@@ -288,6 +306,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   Widget _campoBusqueda() {
     return Container(
+      color: Paleta.crema,
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
       child: TextField(
         key: const Key('campoBusquedaChat'),
@@ -326,15 +345,18 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     return previa == null || !mismoDia(previa, fecha);
   }
 
-  Widget _zonaChat() {
+  Widget _zonaChat(double arriba) {
     final filtrados = _chat.filtrar(_busqueda);
     if (_buscando && _busqueda.trim().isNotEmpty && filtrados.isEmpty) {
-      return const _SinResultados();
+      return Padding(
+        padding: EdgeInsets.only(top: arriba),
+        child: const _SinResultados(),
+      );
     }
     final ahora = DateTime.now();
     return ListView(
       controller: _scroll,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: EdgeInsets.fromLTRB(16, arriba + 12, 16, 12),
       children: [
         for (var i = 0; i < filtrados.length; i++) ...[
           if (_empiezaDia(filtrados, i))

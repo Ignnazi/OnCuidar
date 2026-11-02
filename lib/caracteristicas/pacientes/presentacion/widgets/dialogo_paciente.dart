@@ -18,6 +18,7 @@ Future<void> mostrarDialogoPaciente(
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
+    useSafeArea: true,
     enableDrag: false,
     isDismissible: false,
     backgroundColor: Colors.transparent,
