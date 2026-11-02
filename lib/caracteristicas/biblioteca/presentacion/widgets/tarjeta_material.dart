@@ -32,6 +32,7 @@ class IconoTipoMaterial extends StatelessWidget {
   Widget build(BuildContext context) {
     final estilo = estiloTipoMaterial(categoria);
     return Semantics(
+      container: true,
       label: etiquetaCategoria(categoria),
       excludeSemantics: true,
       child: Container(
@@ -64,12 +65,13 @@ class TarjetaMaterial extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final radio = BorderRadius.circular(16);
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: Paleta.tarjeta,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: radio,
         border: Border.all(color: Paleta.bordeTarjeta),
         boxShadow: [
           BoxShadow(
@@ -79,33 +81,37 @@ class TarjetaMaterial extends StatelessWidget {
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (material.tema.isNotEmpty)
-            Container(
-              key: const Key('franjaTema'),
-              height: 3,
-              color: acentoDelTema(material.tema).acento,
-            ),
-          GestureDetector(
-            key: const Key('miniaturaTarjetaMaterial'),
-            onTap: alTocar,
-            behavior: HitTestBehavior.opaque,
-            child: _miniatura(),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          key: const Key('abrirTarjetaMaterial'),
+          onTap: alTocar,
+          borderRadius: radio,
+          excludeFromSemantics: true,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (material.tema.isNotEmpty)
+                Container(
+                  key: const Key('franjaTema'),
+                  height: 3,
+                  color: acentoDelTema(material.tema).acento,
+                ),
+              _miniatura(),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 10, 4, 10),
+                child: Row(
+                  children: [
+                    IconoTipoMaterial(categoria: material.categoria),
+                    const SizedBox(width: 10),
+                    Expanded(child: _textos()),
+                    _iconoFavorito(),
+                  ],
+                ),
+              ),
+            ],
           ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 10, 4, 10),
-            child: Row(
-              children: [
-                IconoTipoMaterial(categoria: material.categoria),
-                const SizedBox(width: 10),
-                Expanded(child: _textos()),
-                _iconoFavorito(),
-              ],
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -131,6 +137,7 @@ class TarjetaMaterial extends StatelessWidget {
       imagen = Hero(tag: etiquetaHeroImagen(material.id), child: imagen);
     }
     return SizedBox(
+      key: const Key('miniaturaTarjetaMaterial'),
       height: 108,
       width: double.infinity,
       child: Stack(
@@ -234,18 +241,14 @@ class TarjetaMaterial extends StatelessWidget {
   }
 
   Widget _iconoFavorito() {
-    return GestureDetector(
-      onTap: alAlternarFavorito,
-      behavior: HitTestBehavior.opaque,
-      child: Container(
-        width: 44,
-        height: 44,
-        alignment: Alignment.center,
-        child: Icon(
-          esFavorito ? Icons.bookmark : Icons.bookmark_border,
-          color: esFavorito ? Paleta.doradoPrincipal : Paleta.textoSecundario,
-          size: 30,
-        ),
+    return IconButton(
+      key: const Key('alternarFavoritoMaterial'),
+      tooltip: esFavorito ? 'Quitar de favoritos' : 'Guardar en favoritos',
+      onPressed: alAlternarFavorito,
+      icon: Icon(
+        esFavorito ? Icons.bookmark : Icons.bookmark_border,
+        color: esFavorito ? Paleta.doradoPrincipal : Paleta.textoSecundario,
+        size: 30,
       ),
     );
   }

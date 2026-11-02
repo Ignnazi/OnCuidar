@@ -211,7 +211,7 @@ void main() {
       expect(vezTocado, 1);
     });
 
-    testWidgets('tocar la zona blanca no invoca alTocar', (tester) async {
+    testWidgets('tocar el título también abre el material', (tester) async {
       var vezTocado = 0;
       await tester.pumpWidget(
         _tarjeta(
@@ -223,7 +223,7 @@ void main() {
       await tester.tap(find.text('Material de prueba'));
       await tester.pump();
 
-      expect(vezTocado, 0);
+      expect(vezTocado, 1);
     });
 
     testWidgets('una miniatura que falla muestra el reemplazo sin excepción', (
