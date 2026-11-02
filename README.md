@@ -37,3 +37,7 @@ flutter test
 docker compose -f docker-compose.pruebas.yml up -d
 cd backend && npm install && npm test
 ```
+
+## Despliegue
+
+El servidor, la publicación del APK, los respaldos y la integración continua están en docs/despliegue.md.
