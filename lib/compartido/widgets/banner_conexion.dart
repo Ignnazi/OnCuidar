@@ -21,6 +21,7 @@ class _EstadoBannerConexion extends ConsumerState<BannerConexion>
     with WidgetsBindingObserver {
   Timer? _temporizador;
   bool _visible = false;
+  bool _conexionRecuperada = false;
 
   @override
   void initState() {
@@ -30,7 +31,7 @@ class _EstadoBannerConexion extends ConsumerState<BannerConexion>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState estado) {
-    if (estado == AppLifecycleState.resumed) _mostrarUnRato();
+    if (estado == AppLifecycleState.resumed) _mostrarSinConexion();
   }
 
   @override
@@ -42,10 +43,27 @@ class _EstadoBannerConexion extends ConsumerState<BannerConexion>
 
   bool get _sinConexion => ref.read(estadoConexionProvider).value == false;
 
-  void _mostrarUnRato() {
+  void _mostrarSinConexion() {
     if (!mounted || !_sinConexion) return;
     _temporizador?.cancel();
-    setState(() => _visible = true);
+    setState(() {
+      _visible = true;
+      _conexionRecuperada = false;
+    });
+    _programarOcultar();
+  }
+
+  void _mostrarConexionRecuperada() {
+    if (!mounted) return;
+    _temporizador?.cancel();
+    setState(() {
+      _visible = true;
+      _conexionRecuperada = true;
+    });
+    _programarOcultar();
+  }
+
+  void _programarOcultar() {
     _temporizador = Timer(widget.duracion, () {
       if (mounted) setState(() => _visible = false);
     });
@@ -59,28 +77,44 @@ class _EstadoBannerConexion extends ConsumerState<BannerConexion>
   @override
   Widget build(BuildContext context) {
     ref.listen<AsyncValue<bool>>(estadoConexionProvider, (previo, actual) {
-      if (actual.value == false && previo?.value != false) _mostrarUnRato();
-      if (actual.value == true) _ocultar();
+      if (actual.value == false && previo?.value != false) {
+        _mostrarSinConexion();
+      }
+      if (actual.value == true && previo?.value == false) {
+        _mostrarConexionRecuperada();
+      } else if (actual.value == true) {
+        _ocultar();
+      }
     });
     final sinConexion = ref.watch(estadoConexionProvider).value == false;
-    if (!_visible || !sinConexion) return const SizedBox.shrink();
+    final mostrarRecuperada = _visible && _conexionRecuperada && !sinConexion;
+    if ((!_visible || !sinConexion) && !mostrarRecuperada) {
+      return const SizedBox.shrink();
+    }
+    final recuperada = _conexionRecuperada;
+    final fondo = recuperada ? Paleta.verdeExito : Paleta.doradoBannerOscuro;
+    final color = recuperada ? Colors.white : Paleta.textoTerciario;
     return Semantics(
       liveRegion: true,
       child: Container(
         key: const Key('banner_conexion'),
         width: double.infinity,
-        color: Paleta.doradoBannerOscuro,
+        color: fondo,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         child: Row(
           children: [
-            Icon(Icons.cloud_off, size: 18, color: Paleta.textoTerciario),
+            Icon(
+              recuperada ? Icons.cloud_done_rounded : Icons.cloud_off,
+              size: 18,
+              color: color,
+            ),
             const SizedBox(width: 8),
             Text(
-              'Sin conexión',
+              recuperada ? 'Conexión recuperada' : 'Sin conexión',
               style: GoogleFonts.nunito(
                 fontSize: 12.5,
                 fontWeight: FontWeight.w700,
-                color: Paleta.textoTerciario,
+                color: color,
               ),
             ),
           ],
