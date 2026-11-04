@@ -9,6 +9,7 @@ import 'package:oncuidar/caracteristicas/pacientes/presentacion/widgets/dialogo_
 import 'package:oncuidar/caracteristicas/pacientes/presentacion/widgets/dialogo_paciente.dart';
 import 'package:oncuidar/caracteristicas/pacientes/presentacion/widgets/tarjeta_paciente_activo.dart';
 import 'package:oncuidar/caracteristicas/pacientes/presentacion/widgets/tarjeta_sin_pacientes.dart';
+import 'package:oncuidar/compartido/widgets/aviso_app.dart';
 import 'package:oncuidar/compartido/widgets/boton_principal.dart';
 import 'package:oncuidar/compartido/widgets/dialogo_confirmacion.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -105,25 +106,15 @@ class _GestionPacientesState extends ConsumerState<GestionPacientes> {
   }
 
   Future<void> _desarchivarPaciente(Paciente paciente) async {
-    final messenger = ScaffoldMessenger.of(context);
+    final aviso = AvisoApp.capturar(context);
     try {
       await ref.read(cicloDeVidaPacienteProvider).desarchivar(paciente.id);
       if (mounted) {
-        messenger.showSnackBar(
-          SnackBar(
-            content: Text('${paciente.nombreCompleto} restaurado'),
-            backgroundColor: Paleta.doradoPrincipal,
-          ),
-        );
+        aviso.info('${paciente.nombreCompleto} fue restaurado.');
       }
     } catch (_) {
       if (mounted) {
-        messenger.showSnackBar(
-          SnackBar(
-            content: const Text('No se pudo restaurar. Intenta de nuevo.'),
-            backgroundColor: Paleta.error,
-          ),
-        );
+        aviso.alerta('No se pudo restaurar. Intenta de nuevo.');
       }
     }
   }
@@ -139,12 +130,9 @@ class _GestionPacientesState extends ConsumerState<GestionPacientes> {
             .read(idPacienteSeleccionadoProvider.notifier)
             .seleccionar(p.id);
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Paciente activo: ${p.nombreCompleto}'),
-              duration: const Duration(seconds: 2),
-              backgroundColor: Paleta.doradoPrincipal,
-            ),
+          AvisoApp.info(
+            context,
+            'Ahora el paciente activo es ${p.nombreCompleto}.',
           );
         }
       },
@@ -172,25 +160,15 @@ class _GestionPacientesState extends ConsumerState<GestionPacientes> {
       iconoConfirmar: Icons.archive_outlined,
     );
     if (confirmar != true || !mounted) return;
-    final messenger = ScaffoldMessenger.of(context);
+    final aviso = AvisoApp.capturar(context);
     try {
       await ref.read(cicloDeVidaPacienteProvider).archivar(paciente.id);
       if (mounted) {
-        messenger.showSnackBar(
-          SnackBar(
-            content: Text('${paciente.nombreCompleto} archivado'),
-            backgroundColor: Paleta.doradoPrincipal,
-          ),
-        );
+        aviso.info('${paciente.nombreCompleto} fue archivado.');
       }
     } catch (_) {
       if (mounted) {
-        messenger.showSnackBar(
-          SnackBar(
-            content: const Text('No se pudo archivar. Intenta de nuevo.'),
-            backgroundColor: Paleta.error,
-          ),
-        );
+        aviso.alerta('No se pudo archivar. Intenta de nuevo.');
       }
     }
   }
@@ -208,7 +186,7 @@ class _GestionPacientesState extends ConsumerState<GestionPacientes> {
       iconoConfirmar: Icons.delete_forever_outlined,
     );
     if (confirmar != true || !mounted) return;
-    final messenger = ScaffoldMessenger.of(context);
+    final aviso = AvisoApp.capturar(context);
     final eraActivo = ref.read(pacienteActivoProvider).value?.id == paciente.id;
     try {
       await ref.read(cicloDeVidaPacienteProvider).eliminar(paciente.id);
@@ -222,21 +200,11 @@ class _GestionPacientesState extends ConsumerState<GestionPacientes> {
             .seleccionar(restantes.isEmpty ? null : restantes.first.id);
       }
       if (mounted) {
-        messenger.showSnackBar(
-          SnackBar(
-            content: Text('${paciente.nombreCompleto} eliminado'),
-            backgroundColor: Paleta.doradoPrincipal,
-          ),
-        );
+        aviso.info('${paciente.nombreCompleto} fue eliminado.');
       }
     } catch (_) {
       if (mounted) {
-        messenger.showSnackBar(
-          SnackBar(
-            content: const Text('No se pudo eliminar. Intenta de nuevo.'),
-            backgroundColor: Paleta.error,
-          ),
-        );
+        aviso.alerta('No se pudo eliminar. Intenta de nuevo.');
       }
     }
   }

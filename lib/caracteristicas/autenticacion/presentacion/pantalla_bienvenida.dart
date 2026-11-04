@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:oncuidar/app/tema/paleta.dart';
+import 'package:oncuidar/compartido/widgets/aviso_app.dart';
 import 'package:oncuidar/compartido/widgets/boton_principal.dart';
 import 'package:oncuidar/compartido/widgets/encabezado_gradiente.dart';
 import 'package:oncuidar/compartido/widgets/marca.dart';
@@ -31,12 +32,7 @@ class _BienvenidaState extends State<Bienvenida> {
       return;
     }
     _ultimaPulsacion = ahora;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Presiona atrás de nuevo para salir'),
-        duration: Duration(seconds: 2),
-      ),
-    );
+    AvisoApp.info(context, 'Presiona atrás de nuevo para salir de la app.');
   }
 
   @override

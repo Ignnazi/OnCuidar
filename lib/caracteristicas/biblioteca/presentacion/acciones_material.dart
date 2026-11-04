@@ -2,24 +2,19 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:oncuidar/app/tema/paleta.dart';
 import 'package:oncuidar/caracteristicas/biblioteca/datos/proveedores_biblioteca.dart';
+import 'package:oncuidar/caracteristicas/biblioteca/dominio/categorias.dart';
 import 'package:oncuidar/caracteristicas/biblioteca/dominio/material_educativo.dart';
 import 'package:oncuidar/caracteristicas/biblioteca/presentacion/pantalla_visor_pdf.dart';
 import 'package:oncuidar/caracteristicas/biblioteca/presentacion/proveedores_biblioteca.dart';
+import 'package:oncuidar/compartido/widgets/aviso_app.dart';
 import 'package:oncuidar/compartido/widgets/aviso_sin_conexion.dart';
 import 'package:oncuidar/nucleo/proveedores.dart';
 import 'package:open_filex/open_filex.dart';
 
 /// Aviso de error de la biblioteca.
 void mostrarAvisoBiblioteca(BuildContext context, String mensaje) {
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: Text(mensaje, style: GoogleFonts.nunito(fontSize: 14)),
-      backgroundColor: Paleta.error,
-    ),
-  );
+  AvisoApp.alerta(context, mensaje);
 }
 
 Future<void> abrirArchivoMaterial(
@@ -65,25 +60,30 @@ Future<void> abrirArchivoMaterial(
   }
 }
 
+String mensajeFavorito(String? categoria, {required bool agregado}) {
+  final tipo = categoria == null ? 'Material' : etiquetaCategoria(categoria);
+  final masculino = tipo == 'Video' || tipo == 'Material';
+  final accion = agregado
+      ? (masculino ? 'añadido a' : 'añadida a')
+      : (masculino ? 'quitado de' : 'quitada de');
+  return '$tipo $accion tus favoritos';
+}
+
 Future<void> alternarFavoritoMaterial(
   WidgetRef ref,
   BuildContext context,
-  String materialId,
-) async {
+  String materialId, {
+  String? categoria,
+}) async {
   final repositorio = ref.read(repositorioBibliotecaProvider);
   final ids = ref.read(idsFavoritosProvider).value ?? const <String>[];
   final eraFavorito = ids.contains(materialId);
   try {
     await repositorio.fijarFavorito(materialId, favorito: !eraFavorito);
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            eraFavorito ? 'Quitado de favoritos' : 'Añadido a favoritos',
-            style: const TextStyle(color: Colors.white),
-          ),
-          backgroundColor: Paleta.doradoPrincipal,
-        ),
+      AvisoApp.info(
+        context,
+        mensajeFavorito(categoria, agregado: !eraFavorito),
       );
     }
   } catch (_) {

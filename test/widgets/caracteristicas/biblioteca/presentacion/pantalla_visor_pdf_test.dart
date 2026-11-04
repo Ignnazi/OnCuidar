@@ -50,7 +50,14 @@ void main() {
     expect(find.text('documento falso'), findsOneWidget);
     expect(rutaRecibida, '/datos/manual.pdf');
     expect(find.byKey(const Key('cerrarVisorPdf')), findsOneWidget);
-    expect(find.byKey(const Key('girarVisor')), findsOneWidget);
+    expect(find.byIcon(Icons.screen_rotation_rounded), findsNothing);
+    expect(
+      find.descendant(
+        of: find.byType(AppBar),
+        matching: find.byIcon(Icons.screen_rotation_rounded),
+      ),
+      findsNothing,
+    );
     expect(find.byIcon(Icons.bookmark_border), findsNothing);
     expect(find.byIcon(Icons.share_rounded), findsNothing);
     final scaffold = tester.widget<Scaffold>(

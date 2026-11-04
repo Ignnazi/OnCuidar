@@ -1,9 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:oncuidar/app/tema/paleta.dart';
 import 'package:oncuidar/caracteristicas/pacientes/datos/repositorio_pacientes.dart';
 import 'package:oncuidar/caracteristicas/pacientes/dominio/paciente.dart';
+import 'package:oncuidar/compartido/widgets/aviso_app.dart';
 import 'package:oncuidar/compartido/widgets/boton_principal.dart';
 import 'package:oncuidar/compartido/widgets/campos_formulario.dart';
 import 'package:oncuidar/compartido/widgets/hoja_dialogo.dart';
@@ -117,7 +117,7 @@ class _DialogoPacienteState extends State<_DialogoPaciente> {
 
   Future<void> _guardar() async {
     if (!_formKey.currentState!.validate()) return;
-    final messenger = ScaffoldMessenger.of(context);
+    final aviso = AvisoApp.capturar(context);
     final nav = Navigator.of(context);
     final datos = <String, dynamic>{
       'nombreCompleto': _nombreController.text.trim(),
@@ -137,7 +137,7 @@ class _DialogoPacienteState extends State<_DialogoPaciente> {
     nav.pop();
     unawaited(
       _guardarEnBackground(
-        messenger,
+        aviso,
         repositorio: repositorio,
         datos: datos,
         esEdicion: esEdicion,
@@ -147,7 +147,7 @@ class _DialogoPacienteState extends State<_DialogoPaciente> {
   }
 
   Future<void> _guardarEnBackground(
-    ScaffoldMessengerState messenger, {
+    AvisoCapturado aviso, {
     required RepositorioPacientes repositorio,
     required Map<String, dynamic> datos,
     required bool esEdicion,
@@ -176,21 +176,13 @@ class _DialogoPacienteState extends State<_DialogoPaciente> {
           ),
         );
       }
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text(
-            esEdicion ? 'Paciente actualizado' : 'Paciente agregado',
-          ),
-          backgroundColor: Paleta.doradoPrincipal,
-        ),
+      aviso.info(
+        esEdicion
+            ? 'Los datos del paciente se actualizaron.'
+            : 'El paciente se agregó correctamente.',
       );
     } catch (_) {
-      messenger.showSnackBar(
-        SnackBar(
-          content: const Text('No se pudo guardar. Intenta de nuevo.'),
-          backgroundColor: Paleta.error,
-        ),
-      );
+      aviso.alerta('No se pudo guardar. Intenta de nuevo.');
     }
   }
 
