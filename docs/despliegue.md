@@ -9,6 +9,8 @@ La API, la base de datos y la página de descarga corren en `parra.chillan.ubiob
 | `api` | 8014 | API REST (`/api`) |
 | `web` | 8015 | Página de descarga y `OnCuidar.apk` |
 | `db` | interno | PostgreSQL 15, datos en el volumen `datos_postgres` |
+| `grafana` | 8015 en `/grafana/` | Paneles de monitoreo |
+| `prometheus`, `blackbox`, `alertmanager` | interno | Revisión de servicios y alertas por correo |
 
 El archivo `~/oncuidar/.env` tiene las credenciales de producción y no se versiona. Las variables necesarias están en `.env.ejemplo`.
 
@@ -59,6 +61,36 @@ git push origin v1.0.1
 ```
 
 `.github/workflows/release.yml` comprueba que la etiqueta coincida con `pubspec.yaml` y apunte a un commit de `main`, corre las pruebas, compila el APK y lo publica en la pestaña Releases como `OnCuidar-v1.0.1.apk`, con las notas generadas a partir de los pull requests.
+
+## Monitoreo
+
+Los servicios se revisan desde dentro del servidor, así que el firewall de la universidad no afecta las mediciones:
+
+- `blackbox` consulta `http://api:3000/api/salud` (que también comprueba la base de datos) y la página web.
+- `prometheus` guarda los resultados cada 30 segundos durante 30 días y evalúa las reglas de `monitoreo/prometheus/alertas.yml`: servicio caído por más de 2 minutos, respuesta de más de 3 segundos durante 5 minutos y monitoreo sin datos.
+- `alertmanager` envía las alertas y su resolución por correo.
+- `grafana` muestra el panel "OnCuidar - Servicios" en `http://parra.chillan.ubiobio.cl:8015/grafana/`. Solo Grafana queda accesible desde fuera, a través del nginx de la web.
+
+Variables del `.env`:
+
+```
+GRAFANA_CLAVE=<contraseña del usuario admin de Grafana>
+URL_GRAFANA=http://parra.chillan.ubiobio.cl:8015/grafana/
+ALERTAS_CORREO=oncuidar1@gmail.com
+ALERTAS_CLAVE=<contraseña de aplicación de Gmail>
+```
+
+`GRAFANA_CLAVE` es obligatoria. La contraseña de aplicación se crea en la cuenta de Google, en Seguridad > Verificación en dos pasos > Contraseñas de aplicaciones; no sirve la contraseña normal. Sin `ALERTAS_CORREO` o `ALERTAS_CLAVE`, Alertmanager no arranca, pero el resto de los servicios sigue funcionando.
+
+El `docker-compose.yml` del servidor no es el del repositorio: usa `name: oncuidar` y los puertos 8014 y 8015 fijos. Copiar el del repositorio crearía otro proyecto con una base de datos vacía, así que solo se le agregan los servicios nuevos y se copia la carpeta `monitoreo/`.
+
+Para levantarlo por primera vez o después de cambiar la configuración (la primera vez Grafana tarda unos minutos en responder):
+
+```bash
+cd ~/oncuidar
+podman-compose up -d prometheus blackbox alertmanager grafana
+podman-compose up -d --no-deps web
+```
 
 ## Respaldos
 
