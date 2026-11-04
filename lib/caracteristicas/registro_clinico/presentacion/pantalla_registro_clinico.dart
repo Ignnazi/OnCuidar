@@ -4,7 +4,6 @@ import 'dart:collection';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:oncuidar/app/tema/paleta.dart';
 import 'package:oncuidar/caracteristicas/pacientes/datos/proveedores_pacientes.dart';
 import 'package:oncuidar/caracteristicas/pacientes/dominio/paciente.dart';
@@ -25,6 +24,7 @@ import 'package:oncuidar/caracteristicas/registro_clinico/presentacion/widgets/s
 import 'package:oncuidar/caracteristicas/registro_clinico/presentacion/widgets/seccion_sintomas.dart';
 import 'package:oncuidar/caracteristicas/registro_clinico/presentacion/widgets/seccion_tipo_registro.dart';
 import 'package:oncuidar/caracteristicas/registro_clinico/presentacion/widgets/titulo_seccion_registro.dart';
+import 'package:oncuidar/compartido/widgets/aviso_app.dart';
 import 'package:oncuidar/nucleo/cifrado/servicio_cifrado.dart';
 import 'package:oncuidar/nucleo/proveedores.dart';
 import 'package:uuid/uuid.dart';
@@ -232,8 +232,8 @@ class _RegistroClinicoScreenState extends ConsumerState<RegistroClinicoScreen> {
     );
     if (mounted) {
       _mostrarSnack(
-        'Tope actualizado a $valor',
-        color: Paleta.doradoPrincipal,
+        'El tope se actualizó a $valor.',
+        tono: TonoAviso.info,
         icono: Icons.check,
       );
     }
@@ -248,8 +248,8 @@ class _RegistroClinicoScreenState extends ConsumerState<RegistroClinicoScreen> {
     final paciente = ref.read(pacienteActivoProvider).value;
     if (paciente == null) {
       _mostrarSnack(
-        'No hay paciente seleccionado',
-        color: Paleta.error,
+        'No hay un paciente seleccionado.',
+        tono: TonoAviso.alerta,
         icono: Icons.error_outline,
       );
       return;
@@ -258,12 +258,11 @@ class _RegistroClinicoScreenState extends ConsumerState<RegistroClinicoScreen> {
     if (errorRango != null) {
       _mostrarSnack(
         errorRango,
-        color: Paleta.error,
+        tono: TonoAviso.alerta,
         icono: Icons.error_outline,
       );
       return;
     }
-    final messenger = ScaffoldMessenger.of(context);
     final esEdicion = _registroEdicion != null;
     final registros =
         ref.read(registrosClinicosProvider).value ?? const <RegistroClinico>[];
@@ -296,45 +295,34 @@ class _RegistroClinicoScreenState extends ConsumerState<RegistroClinicoScreen> {
       } on ClaveNoDisponibleSinConexion catch (e) {
         _mostrarSnack(
           e.toString(),
-          color: Paleta.error,
+          tono: TonoAviso.alerta,
           icono: Icons.lock_outline,
         );
         return;
       } catch (e) {
-        messenger.showSnackBar(
-          SnackBar(
-            behavior: SnackBarBehavior.floating,
-            duration: const Duration(seconds: 2),
-            backgroundColor: Paleta.error,
-            content: Row(
-              children: [
-                const Icon(Icons.error_outline, color: Colors.white, size: 20),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    'No se pudo guardar. Tu registro sigue en el formulario.',
-                    style: GoogleFonts.nunito(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
+        _mostrarSnack(
+          'No se pudo guardar. Tu registro sigue en el formulario.',
+          tono: TonoAviso.alerta,
+          icono: Icons.error_outline,
         );
         return;
       }
       final enLinea = ref.read(estadoConexionProvider).value ?? true;
-      _snackCon(
-        messenger,
-        enLinea
-            ? (esEdicion ? 'Registro actualizado' : 'Guardado correctamente')
-            : 'Guardado en este dispositivo. Se enviará al recuperar la red.',
-        color: Paleta.doradoPrincipal,
-        icono: Icons.check_circle,
-      );
+      if (enLinea) {
+        _mostrarSnack(
+          esEdicion
+              ? 'El registro se actualizó correctamente.'
+              : 'El registro se guardó correctamente.',
+          tono: TonoAviso.info,
+          icono: Icons.check_circle,
+        );
+      } else {
+        _mostrarSnack(
+          'Guardado en este dispositivo. Se enviará al recuperar la red.',
+          tono: TonoAviso.conexion,
+          icono: Icons.cloud_off_rounded,
+        );
+      }
       _reiniciarFormulario();
     } finally {
       if (mounted) setState(() => _guardando = false);
@@ -367,42 +355,16 @@ class _RegistroClinicoScreenState extends ConsumerState<RegistroClinicoScreen> {
     }
   }
 
-  void _mostrarSnack(String texto, {required Color color, IconData? icono}) {
+  void _mostrarSnack(String texto, {required TonoAviso tono, IconData? icono}) {
     if (!mounted) return;
-    _snackCon(ScaffoldMessenger.of(context), texto, color: color, icono: icono);
-  }
-
-  void _snackCon(
-    ScaffoldMessengerState messenger,
-    String texto, {
-    required Color color,
-    IconData? icono,
-  }) {
-    messenger.showSnackBar(
-      SnackBar(
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 2),
-        backgroundColor: color,
-        content: Row(
-          children: [
-            if (icono != null) ...[
-              Icon(icono, color: Colors.white, size: 20),
-              const SizedBox(width: 10),
-            ],
-            Expanded(
-              child: Text(
-                texto,
-                style: GoogleFonts.nunito(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+    switch (tono) {
+      case TonoAviso.info:
+        AvisoApp.info(context, texto, icono: icono);
+      case TonoAviso.alerta:
+        AvisoApp.alerta(context, texto, icono: icono);
+      case TonoAviso.conexion:
+        AvisoApp.conexion(context, texto, icono: icono);
+    }
   }
 
   @override

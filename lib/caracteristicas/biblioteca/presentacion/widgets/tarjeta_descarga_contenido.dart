@@ -26,6 +26,8 @@ class AvisoDescargaContenido extends ConsumerWidget {
     return TarjetaDescargaContenido(
       fase: estado.fase,
       porcentaje: estado.porcentaje,
+      completadas: estado.completadas,
+      total: estado.total,
     );
   }
 }
@@ -35,10 +37,14 @@ class TarjetaDescargaContenido extends StatelessWidget {
     super.key,
     required this.fase,
     required this.porcentaje,
+    this.completadas = 0,
+    this.total = 0,
   });
 
   final FaseDescarga fase;
   final int porcentaje;
+  final int completadas;
+  final int total;
 
   bool get _visible => fase != FaseDescarga.ninguna;
 
@@ -57,6 +63,8 @@ class TarjetaDescargaContenido extends StatelessWidget {
                 key: const Key('tarjeta_descarga_contenido'),
                 fase: fase,
                 porcentaje: porcentaje,
+                completadas: completadas,
+                total: total,
               )
             : const SizedBox.shrink(key: Key('sin_tarjeta_descarga')),
       ),
@@ -65,13 +73,25 @@ class TarjetaDescargaContenido extends StatelessWidget {
 }
 
 class _Contenido extends StatelessWidget {
-  const _Contenido({super.key, required this.fase, required this.porcentaje});
+  const _Contenido({
+    super.key,
+    required this.fase,
+    required this.porcentaje,
+    required this.completadas,
+    required this.total,
+  });
 
   final FaseDescarga fase;
   final int porcentaje;
+  final int completadas;
+  final int total;
 
   bool get _conBarra =>
       fase == FaseDescarga.descargando || fase == FaseDescarga.pausada;
+
+  bool get _muestraConteo => _conBarra && total > 0;
+
+  String get _conteoArchivos => '$completadas de $total archivos listos';
 
   String get _titulo => switch (fase) {
     FaseDescarga.lista => TextosDescargaContenido.lista,
@@ -104,7 +124,8 @@ class _Contenido extends StatelessWidget {
         fase == FaseDescarga.descargando || fase == FaseDescarga.pausada
         ? 'Descargando contenido educativo, ${porcentajeAnunciable(porcentaje)} por ciento'
         : _titulo;
-    return detalle == null ? base : '$base. $detalle';
+    final conteo = _muestraConteo ? '. $_conteoArchivos' : '';
+    return detalle == null ? '$base$conteo' : '$base$conteo. $detalle';
   }
 
   @override
@@ -155,6 +176,18 @@ class _Contenido extends StatelessWidget {
                           minHeight: 4,
                           backgroundColor: Paleta.bordeTarjeta,
                           color: Paleta.doradoMedio,
+                        ),
+                      ),
+                    ],
+                    if (_muestraConteo) ...[
+                      const SizedBox(height: 5),
+                      Text(
+                        _conteoArchivos,
+                        key: const Key('conteoArchivosDescarga'),
+                        style: GoogleFonts.nunito(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w700,
+                          color: Paleta.textoSecundario,
                         ),
                       ),
                     ],

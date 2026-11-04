@@ -28,12 +28,18 @@ class ControlesZoom extends StatelessWidget {
     required this.alAcercar,
     required this.alAlejar,
     required this.alAjustar,
+    this.alGirar,
+    this.horizontal = false,
     this.sobreOscuro = true,
   });
 
   final VoidCallback alAcercar;
   final VoidCallback alAlejar;
   final VoidCallback alAjustar;
+
+  final VoidCallback? alGirar;
+
+  final bool horizontal;
 
   final bool sobreOscuro;
 
@@ -67,7 +73,7 @@ class ControlesZoom extends StatelessWidget {
           ),
         ],
       ),
-      child: Column(
+      child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           boton(const Key('zoomMas'), Icons.add_rounded, 'Acercar', alAcercar),
@@ -83,6 +89,15 @@ class ControlesZoom extends StatelessWidget {
             'Ajustar al ancho',
             alAjustar,
           ),
+          if (alGirar != null)
+            boton(
+              const Key('girarVisor'),
+              horizontal
+                  ? Icons.screen_lock_portrait_rounded
+                  : Icons.screen_rotation_rounded,
+              horizontal ? 'Volver a vertical' : 'Girar a pantalla completa',
+              alGirar!,
+            ),
         ],
       ),
     );

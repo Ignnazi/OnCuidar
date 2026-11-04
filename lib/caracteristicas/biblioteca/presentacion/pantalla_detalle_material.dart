@@ -90,8 +90,14 @@ class _PantallaDetalleMaterialState
               tooltip: esFavorito
                   ? 'Quitar de favoritos'
                   : 'Guardar en favoritos',
-              alTocar: () =>
-                  unawaited(alternarFavoritoMaterial(ref, context, widget.id)),
+              alTocar: () => unawaited(
+                alternarFavoritoMaterial(
+                  ref,
+                  context,
+                  widget.id,
+                  categoria: materialActual?.categoria,
+                ),
+              ),
               hijo: Icon(
                 esFavorito ? Icons.bookmark : Icons.bookmark_border,
                 color: esFavorito

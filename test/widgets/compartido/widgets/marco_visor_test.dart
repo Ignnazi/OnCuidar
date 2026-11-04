@@ -3,6 +3,25 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:oncuidar/compartido/widgets/marco_visor.dart';
 
+class _CuerpoGirable extends StatelessWidget {
+  const _CuerpoGirable();
+
+  @override
+  Widget build(BuildContext context) {
+    final giro = ControlGiroVisor.maybeOf(context)!;
+    return ColoredBox(
+      color: Colors.teal,
+      child: Center(
+        child: TextButton(
+          key: const Key('girarCuerpo'),
+          onPressed: giro.alternarGiro,
+          child: Text(giro.horizontal ? 'horizontal' : 'vertical'),
+        ),
+      ),
+    );
+  }
+}
+
 void main() {
   late List<MethodCall> llamadas;
 
@@ -38,7 +57,7 @@ void main() {
                 builder: (_) => const MarcoVisor(
                   titulo: 'Guía',
                   claveVolver: Key('volver'),
-                  cuerpo: ColoredBox(color: Colors.teal),
+                  cuerpo: _CuerpoGirable(),
                 ),
               ),
             ),
@@ -51,13 +70,12 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('el botón gira a horizontal en pantalla completa', (
-    tester,
-  ) async {
+  testWidgets('los controles del cuerpo giran a horizontal', (tester) async {
     await abrir(tester);
-    expect(find.byKey(const Key('girarVisor')), findsOneWidget);
+    expect(find.byKey(const Key('girarCuerpo')), findsOneWidget);
+    expect(find.byKey(const Key('salirHorizontal')), findsNothing);
 
-    await tester.tap(find.byKey(const Key('girarVisor')));
+    await tester.tap(find.byKey(const Key('girarCuerpo')));
     await tester.pump();
 
     expect(ultimaOrientacion(), [
@@ -68,32 +86,32 @@ void main() {
     expect(find.byType(AppBar), findsOneWidget);
     expect(find.text('Guía'), findsOneWidget);
     expect(find.byKey(const Key('volver')), findsNothing);
-    expect(find.byIcon(Icons.screen_lock_portrait_rounded), findsOneWidget);
-    expect(find.byIcon(Icons.screen_rotation_rounded), findsNothing);
-    final boton = tester.getRect(find.byKey(const Key('girarVisor')));
+    expect(find.text('horizontal'), findsOneWidget);
+    final boton = tester.getRect(find.byKey(const Key('salirHorizontal')));
     expect(boton.left, lessThan(60));
   });
 
-  testWidgets('el mismo botón vuelve a vertical', (tester) async {
+  testWidgets('el mismo control vuelve a vertical', (tester) async {
     await abrir(tester);
-    await tester.tap(find.byKey(const Key('girarVisor')));
+    await tester.tap(find.byKey(const Key('girarCuerpo')));
     await tester.pump();
 
-    await tester.tap(find.byKey(const Key('girarVisor')));
+    await tester.tap(find.byKey(const Key('girarCuerpo')));
     await tester.pump();
 
     expect(ultimaOrientacion(), [
       'DeviceOrientation.portraitUp',
       'DeviceOrientation.portraitDown',
     ]);
-    expect(find.byIcon(Icons.screen_rotation_rounded), findsOneWidget);
+    expect(find.text('vertical'), findsOneWidget);
+    expect(find.byKey(const Key('volver')), findsOneWidget);
   });
 
   testWidgets('atrás primero vuelve a vertical y después cierra', (
     tester,
   ) async {
     await abrir(tester);
-    await tester.tap(find.byKey(const Key('girarVisor')));
+    await tester.tap(find.byKey(const Key('girarCuerpo')));
     await tester.pump();
 
     await tester.binding.handlePopRoute();
@@ -108,7 +126,7 @@ void main() {
 
   testWidgets('cerrar el visor girado deja la app en vertical', (tester) async {
     await abrir(tester);
-    await tester.tap(find.byKey(const Key('girarVisor')));
+    await tester.tap(find.byKey(const Key('girarCuerpo')));
     await tester.pump();
 
     Navigator.of(tester.element(find.byType(MarcoVisor))).pop();
@@ -118,41 +136,54 @@ void main() {
     expect(ultimaOrientacion()!.first, 'DeviceOrientation.portraitUp');
   });
 
-  testWidgets(
-    'título a la izquierda y botones en orden: girar, descargar, compartir',
-    (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: MarcoVisor(
-            titulo: 'Historial clínico',
-            cuerpo: const SizedBox(),
-            acciones: [
-              IconButton(
-                key: const Key('descargar'),
-                icon: const Icon(Icons.download_rounded),
-                onPressed: () {},
-              ),
-              IconButton(
-                key: const Key('compartir'),
-                icon: const Icon(Icons.share_rounded),
-                onPressed: () {},
-              ),
-            ],
-          ),
+  testWidgets('la barra superior ya no lleva el botón de girar', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: MarcoVisor(titulo: 'Guía', cuerpo: SizedBox()),
+      ),
+    );
+
+    expect(
+      find.descendant(
+        of: find.byType(AppBar),
+        matching: find.byIcon(Icons.screen_rotation_rounded),
+      ),
+      findsNothing,
+    );
+  });
+
+  testWidgets('título a la izquierda y acciones en orden', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MarcoVisor(
+          titulo: 'Historial clínico',
+          cuerpo: const SizedBox(),
+          acciones: [
+            IconButton(
+              key: const Key('descargar'),
+              icon: const Icon(Icons.download_rounded),
+              onPressed: () {},
+            ),
+            IconButton(
+              key: const Key('compartir'),
+              icon: const Icon(Icons.share_rounded),
+              onPressed: () {},
+            ),
+          ],
         ),
-      );
+      ),
+    );
 
-      final girar = tester.getCenter(find.byKey(const Key('girarVisor'))).dx;
-      final descargar = tester.getCenter(find.byKey(const Key('descargar'))).dx;
-      final compartir = tester.getCenter(find.byKey(const Key('compartir'))).dx;
-      expect(girar, lessThan(descargar));
-      expect(descargar, lessThan(compartir));
+    final descargar = tester.getCenter(find.byKey(const Key('descargar'))).dx;
+    final compartir = tester.getCenter(find.byKey(const Key('compartir'))).dx;
+    expect(descargar, lessThan(compartir));
 
-      final titulo = tester.getRect(find.text('Historial clínico'));
-      final ancho = tester.getSize(find.byType(AppBar)).width;
-      expect(titulo.left, lessThan(ancho * 0.25));
-    },
-  );
+    final titulo = tester.getRect(find.text('Historial clínico'));
+    final ancho = tester.getSize(find.byType(AppBar)).width;
+    expect(titulo.left, lessThan(ancho * 0.25));
+  });
 
   testWidgets(
     'la barra de todos los visores lleva el degradado dorado visible',

@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:oncuidar/app/tema/paleta.dart';
+import 'package:oncuidar/compartido/widgets/aviso_app.dart';
 import 'package:oncuidar/compartido/widgets/boton_principal.dart';
 import 'package:oncuidar/compartido/widgets/campos_formulario.dart';
 import 'package:oncuidar/compartido/widgets/hoja_dialogo.dart';
@@ -85,7 +85,7 @@ class _DialogoEditarCuidadorState extends State<_DialogoEditarCuidador> {
 
   Future<void> _guardar() async {
     if (!_formKey.currentState!.validate()) return;
-    final messenger = ScaffoldMessenger.of(context);
+    final aviso = AvisoApp.capturar(context);
     final nav = Navigator.of(context);
     final nombre = _nombreController.text.trim();
     final telefono = _telefonoController.text.trim();
@@ -95,7 +95,7 @@ class _DialogoEditarCuidadorState extends State<_DialogoEditarCuidador> {
     nav.pop();
     unawaited(
       _guardarEnBackground(
-        messenger,
+        aviso,
         alGuardar,
         nombre: nombre,
         telefono: telefono,
@@ -106,7 +106,7 @@ class _DialogoEditarCuidadorState extends State<_DialogoEditarCuidador> {
   }
 
   Future<void> _guardarEnBackground(
-    ScaffoldMessengerState messenger,
+    AvisoCapturado aviso,
     Future<void> Function({
       required String nombre,
       required String telefono,
@@ -126,19 +126,9 @@ class _DialogoEditarCuidadorState extends State<_DialogoEditarCuidador> {
         relacion: relacion,
         direccion: direccion,
       );
-      messenger.showSnackBar(
-        SnackBar(
-          content: const Text('Datos actualizados'),
-          backgroundColor: Paleta.doradoPrincipal,
-        ),
-      );
+      aviso.info('Tus datos se actualizaron correctamente.');
     } catch (e) {
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text(_mensajeErrorGuardado(e)),
-          backgroundColor: Paleta.error,
-        ),
-      );
+      aviso.alerta(_mensajeErrorGuardado(e));
     }
   }
 

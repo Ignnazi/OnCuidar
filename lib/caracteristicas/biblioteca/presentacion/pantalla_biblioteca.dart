@@ -17,6 +17,7 @@ import 'package:oncuidar/caracteristicas/biblioteca/presentacion/proveedores_bib
 import 'package:oncuidar/caracteristicas/biblioteca/presentacion/widgets/encabezado_seccion.dart';
 import 'package:oncuidar/caracteristicas/biblioteca/presentacion/widgets/etiqueta_tema.dart';
 import 'package:oncuidar/caracteristicas/biblioteca/presentacion/widgets/tarjeta_material.dart';
+import 'package:oncuidar/compartido/widgets/aviso_app.dart';
 import 'package:oncuidar/compartido/widgets/aviso_sin_conexion.dart';
 import 'package:oncuidar/compartido/widgets/buscador.dart';
 import 'package:oncuidar/compartido/widgets/encabezado_gradiente.dart';
@@ -160,14 +161,9 @@ class _BibliotecaScreenState extends ConsumerState<BibliotecaScreen> {
         if (estaSinConexion(ref)) {
           mostrarAvisoSinConexion(context, TextosSinConexion.video);
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'No se pudo preparar el video. Intenta de nuevo.',
-                style: GoogleFonts.nunito(fontSize: 14),
-              ),
-              backgroundColor: Paleta.error,
-            ),
+          AvisoApp.alerta(
+            context,
+            'No se pudo preparar el video. Intenta de nuevo.',
           );
         }
       }
@@ -179,21 +175,21 @@ class _BibliotecaScreenState extends ConsumerState<BibliotecaScreen> {
   Future<void> _abrirArchivo(MaterialEducativo material, String url) async {
     if (_urlsDescargando.contains(url)) return;
     setState(() => _urlsDescargando.add(url));
-    final aviso = ScaffoldMessenger.of(context);
-    aviso.showSnackBar(
-      SnackBar(
-        content: Text(
-          'Descargando ${material.titulo}…',
-          style: GoogleFonts.nunito(fontSize: 14),
-        ),
-      ),
+    AvisoApp.info(
+      context,
+      'Descargando ${material.esVideo
+          ? 'el video'
+          : material.esInfografia
+          ? 'la infografía'
+          : 'la guía'}…',
+      icono: Icons.downloading_rounded,
     );
     try {
       await abrirArchivoMaterial(
         ref,
         context,
         material,
-        alDescargar: aviso.hideCurrentSnackBar,
+        alDescargar: AvisoApp.ocultar,
       );
     } finally {
       if (mounted) setState(() => _urlsDescargando.remove(url));
@@ -533,7 +529,7 @@ class _BibliotecaScreenState extends ConsumerState<BibliotecaScreen> {
         ? agruparPorSeccion(filtrados)
         : [SeccionBiblioteca(titulo: '', materiales: filtrados)];
     return ListView(
-      padding: const EdgeInsets.only(top: 4),
+      padding: const EdgeInsets.only(top: 8),
       children: [
         for (final seccion in secciones) ...[
           if (seccion.titulo.isNotEmpty)
@@ -554,7 +550,14 @@ class _BibliotecaScreenState extends ConsumerState<BibliotecaScreen> {
           ref.read(idsFavoritosProvider).value?.contains(material.id) ?? false,
       alTocar: () => _abrirMaterial(material),
       alAlternarFavorito: () {
-        unawaited(alternarFavoritoMaterial(ref, context, material.id));
+        unawaited(
+          alternarFavoritoMaterial(
+            ref,
+            context,
+            material.id,
+            categoria: material.categoria,
+          ),
+        );
       },
     );
   }

@@ -11,6 +11,7 @@ import 'package:oncuidar/caracteristicas/autenticacion/presentacion/widgets/boto
 import 'package:oncuidar/caracteristicas/biblioteca/presentacion/proveedores_biblioteca.dart';
 import 'package:oncuidar/caracteristicas/pacientes/datos/proveedores_pacientes.dart';
 import 'package:oncuidar/caracteristicas/pacientes/dominio/ciclo_de_vida_paciente.dart';
+import 'package:oncuidar/compartido/widgets/aviso_app.dart';
 import 'package:oncuidar/compartido/widgets/aviso_sin_conexion.dart';
 import 'package:oncuidar/compartido/widgets/campos_formulario.dart';
 import 'package:oncuidar/compartido/widgets/encabezado_gradiente.dart';
@@ -67,12 +68,7 @@ class _IniciarSesionState extends ConsumerState<IniciarSesion> {
 
       if (mounted) {
         FocusManager.instance.primaryFocus?.unfocus();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('¡Bienvenido de vuelta!'),
-            backgroundColor: Paleta.doradoPrincipal,
-          ),
-        );
+        AvisoApp.info(context, '¡Bienvenido de vuelta!');
         context.go(EstadoArranque.consumirDestino());
       }
     } on ExcepcionSesion catch (e) {
@@ -88,17 +84,10 @@ class _IniciarSesionState extends ConsumerState<IniciarSesion> {
           'Sin conexión. Verifica tu internet e intenta de nuevo.',
         _ => 'Error al iniciar sesión. Intenta de nuevo.',
       };
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(mensaje), backgroundColor: Paleta.error),
-      );
+      AvisoApp.alerta(context, mensaje);
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Error inesperado. Intenta de nuevo.'),
-          backgroundColor: Paleta.error,
-        ),
-      );
+      AvisoApp.alerta(context, 'Error inesperado. Intenta de nuevo.');
     } finally {
       if (mounted) setState(() => _cargando = false);
     }
@@ -107,12 +96,7 @@ class _IniciarSesionState extends ConsumerState<IniciarSesion> {
   Future<void> _recuperarContrasena() async {
     final correo = _correoController.text.trim();
     if (correo.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Ingresa tu correo para recuperar el acceso.'),
-          backgroundColor: Paleta.error,
-        ),
-      );
+      AvisoApp.alerta(context, 'Ingresa tu correo para recuperar el acceso.');
       return;
     }
     if (estaSinConexion(ref)) {
@@ -125,13 +109,9 @@ class _IniciarSesionState extends ConsumerState<IniciarSesion> {
     try {
       await ref.read(servicioSesionProvider).recuperarContrasena(correo);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text(
-            'Te enviamos un correo para restablecer tu contraseña.',
-          ),
-          backgroundColor: Paleta.doradoPrincipal,
-        ),
+      AvisoApp.info(
+        context,
+        'Te enviamos un correo para restablecer tu contraseña.',
       );
     } on ExcepcionSesion catch (e) {
       if (!mounted) return;
@@ -142,16 +122,12 @@ class _IniciarSesionState extends ConsumerState<IniciarSesion> {
           'Sin conexión. Verifica tu internet e intenta de nuevo.',
         _ => 'No se pudo enviar el correo. Intenta de nuevo.',
       };
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(mensaje), backgroundColor: Paleta.error),
-      );
+      AvisoApp.alerta(context, mensaje);
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('No se pudo enviar el correo. Intenta de nuevo.'),
-          backgroundColor: Paleta.error,
-        ),
+      AvisoApp.alerta(
+        context,
+        'No se pudo enviar el correo. Intenta de nuevo.',
       );
     }
   }

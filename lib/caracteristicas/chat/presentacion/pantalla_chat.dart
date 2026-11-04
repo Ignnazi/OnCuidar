@@ -17,6 +17,7 @@ import 'package:oncuidar/caracteristicas/chat/presentacion/widgets/hoja_conversa
 import 'package:oncuidar/caracteristicas/chat/presentacion/widgets/sugerencias_chat.dart';
 import 'package:oncuidar/caracteristicas/preguntas_frecuentes/dominio/catalogo_preguntas.dart';
 import 'package:oncuidar/compartido/estilos.dart';
+import 'package:oncuidar/compartido/widgets/aviso_app.dart';
 import 'package:oncuidar/compartido/widgets/buscador.dart';
 import 'package:oncuidar/compartido/widgets/encabezado_gradiente.dart';
 import 'package:oncuidar/compartido/widgets/insignia_conteo.dart';
@@ -127,14 +128,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   void _avisarFalloGuardado() {
     if (_avisoGuardadoMostrado) return;
     _avisoGuardadoMostrado = true;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text(
-          'No se pudo guardar la conversación. Revisa tu conexión.',
-        ),
-        backgroundColor: Paleta.doradoPrincipal,
-        duration: const Duration(seconds: 2),
-      ),
+    AvisoApp.conexion(
+      context,
+      'No se pudo guardar la conversación. Revisa tu conexión.',
     );
   }
 

@@ -9,6 +9,7 @@ import 'package:oncuidar/caracteristicas/autenticacion/dominio/validaciones_regi
 import 'package:oncuidar/caracteristicas/autenticacion/presentacion/formulario_registro.dart';
 import 'package:oncuidar/caracteristicas/autenticacion/presentacion/widgets/botones_acceso.dart';
 import 'package:oncuidar/caracteristicas/autenticacion/presentacion/widgets/campos_registro.dart';
+import 'package:oncuidar/compartido/widgets/aviso_app.dart';
 import 'package:oncuidar/compartido/widgets/aviso_sin_conexion.dart';
 import 'package:oncuidar/compartido/widgets/campos_formulario.dart';
 import 'package:oncuidar/compartido/widgets/encabezado_gradiente.dart';
@@ -52,19 +53,12 @@ class _RegistroState extends ConsumerState<Registro> {
       case RegistroExitoso():
         if (mounted) {
           FocusManager.instance.primaryFocus?.unfocus();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('¡Cuenta creada exitosamente!'),
-              backgroundColor: Paleta.doradoPrincipal,
-            ),
-          );
+          AvisoApp.info(context, '¡Cuenta creada exitosamente!');
           context.go(EstadoArranque.consumirDestino());
         }
       case RegistroFallido(:final mensaje):
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(mensaje), backgroundColor: Paleta.error),
-          );
+          AvisoApp.alerta(context, mensaje);
         }
     }
 

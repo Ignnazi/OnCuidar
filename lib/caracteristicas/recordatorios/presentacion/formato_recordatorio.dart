@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:oncuidar/app/tema/paleta.dart';
+import 'package:oncuidar/caracteristicas/recordatorios/dominio/recordatorio.dart';
+import 'package:oncuidar/nucleo/notificaciones/calendario_avisos.dart';
 
 const todosLosDias = ['lun', 'mar', 'mie', 'jue', 'vie', 'sab', 'dom'];
 
@@ -33,6 +35,68 @@ String diaCorto(String dia) => switch (dia) {
   'dom' => 'Dom',
   _ => dia,
 };
+
+DateTime? proximoAviso(Recordatorio recordatorio, DateTime ahora) {
+  final base = recordatorio.fechaHora;
+  if (recordatorio.esMensual) {
+    var anio = ahora.year;
+    var mes = ahora.month;
+    for (var i = 0; i < 13; i++) {
+      final diasEnMes = DateTime(anio, mes + 1, 0).day;
+      final dia = base.day > diasEnMes ? diasEnMes : base.day;
+      final candidato = DateTime(anio, mes, dia, base.hour, base.minute);
+      if (candidato.isAfter(ahora)) return candidato;
+      mes++;
+      if (mes > 12) {
+        mes = 1;
+        anio++;
+      }
+    }
+    return null;
+  }
+  if (recordatorio.diasRepeticion.isNotEmpty) {
+    final objetivos = {
+      for (final dia in recordatorio.diasRepeticion)
+        if (diasPorSemana[dia] != null) diasPorSemana[dia]!,
+    };
+    if (objetivos.isEmpty) return null;
+    for (var i = 0; i <= 7; i++) {
+      final candidato = DateTime(
+        ahora.year,
+        ahora.month,
+        ahora.day + i,
+        base.hour,
+        base.minute,
+      );
+      if (objetivos.contains(candidato.weekday) && candidato.isAfter(ahora)) {
+        return candidato;
+      }
+    }
+    return null;
+  }
+  return base.isAfter(ahora) ? base : null;
+}
+
+String textoProximoAviso(DateTime proximo, DateTime ahora) {
+  final diferencia = proximo.difference(ahora);
+  final minutos = diferencia.inMinutes;
+  if (minutos < 1) return 'en menos de 1 min';
+  final dias = diferencia.inDays;
+  final horas = diferencia.inHours.remainder(24);
+  final restoMinutos = minutos.remainder(60);
+  final textoHoras = horas == 1 ? '1 h' : '$horas h';
+  if (dias > 0) {
+    return restoMinutos == 0
+        ? 'en $dias d y $textoHoras'
+        : 'en $dias d, $textoHoras y $restoMinutos min';
+  }
+  if (horas > 0) {
+    return restoMinutos == 0
+        ? 'en $textoHoras'
+        : 'en $textoHoras y $restoMinutos min';
+  }
+  return 'en $restoMinutos min';
+}
 
 class EtiquetaSeccionRecordatorio extends StatelessWidget {
   const EtiquetaSeccionRecordatorio(this.texto, {super.key});

@@ -1,18 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:oncuidar/compartido/widgets/aviso_app.dart';
 
 Future<void> descargarConAviso(
   BuildContext context,
   Future<bool> Function() descargar,
 ) async {
-  final aviso = ScaffoldMessenger.of(context);
   final guardado = await descargar();
-  aviso.showSnackBar(
-    SnackBar(
-      content: Text(
-        guardado
-            ? 'Archivo guardado en tu teléfono'
-            : 'No se guardó el archivo',
-      ),
-    ),
-  );
+  if (!context.mounted) return;
+  if (guardado) {
+    AvisoApp.info(context, 'El archivo se guardó en tu teléfono.');
+  } else {
+    AvisoApp.alerta(context, 'No se pudo guardar el archivo.');
+  }
 }

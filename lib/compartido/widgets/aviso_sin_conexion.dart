@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:oncuidar/app/tema/paleta.dart';
+import 'package:oncuidar/compartido/widgets/aviso_app.dart';
 import 'package:oncuidar/nucleo/proveedores.dart';
 
 class TextosSinConexion {
@@ -30,40 +31,7 @@ bool estaSinConexion(WidgetRef ref) =>
 
 /// Aviso flotante breve con ícono de nube tachada.
 void mostrarAvisoSinConexion(BuildContext context, String mensaje) {
-  final mensajero = ScaffoldMessenger.of(context);
-  mensajero.hideCurrentSnackBar();
-  mensajero.showSnackBar(
-    SnackBar(
-      behavior: SnackBarBehavior.floating,
-      duration: const Duration(seconds: 4),
-      backgroundColor: Paleta.doradoBannerOscuro,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      content: Semantics(
-        liveRegion: true,
-        child: Row(
-          children: [
-            Icon(
-              Icons.cloud_off_rounded,
-              size: 20,
-              color: Paleta.textoTerciario,
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                mensaje,
-                style: GoogleFonts.nunito(
-                  fontSize: 13.5,
-                  height: 1.35,
-                  fontWeight: FontWeight.w700,
-                  color: Paleta.textoTerciario,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    ),
-  );
+  AvisoApp.conexion(context, mensaje, icono: Icons.cloud_off_rounded);
 }
 
 class NotaSinConexion extends ConsumerWidget {

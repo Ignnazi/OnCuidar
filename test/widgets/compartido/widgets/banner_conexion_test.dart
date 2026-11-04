@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -7,11 +9,9 @@ import 'package:oncuidar/nucleo/proveedores.dart';
 const _breve = Duration(seconds: 3);
 final _banner = find.byKey(const Key('banner_conexion'));
 
-Widget _app({required bool enLinea}) {
+Widget _app({required Stream<bool> conexion}) {
   return ProviderScope(
-    overrides: [
-      estadoConexionProvider.overrideWith((_) => Stream.value(enLinea)),
-    ],
+    overrides: [estadoConexionProvider.overrideWith((_) => conexion)],
     child: const MaterialApp(
       home: Scaffold(body: BannerConexion(duracion: _breve)),
     ),
@@ -19,7 +19,7 @@ Widget _app({required bool enLinea}) {
 }
 
 Future<void> _montar(WidgetTester tester, {required bool enLinea}) async {
-  await tester.pumpWidget(_app(enLinea: enLinea));
+  await tester.pumpWidget(_app(conexion: Stream.value(enLinea)));
   await tester.pump();
   await tester.pump();
 }
@@ -65,5 +65,26 @@ void main() {
 
     expect(_banner, findsOneWidget);
     await tester.pump(_breve);
+  });
+
+  testWidgets('al recuperar la red muestra una confirmación breve', (
+    tester,
+  ) async {
+    final conexion = StreamController<bool>();
+    addTearDown(conexion.close);
+    await tester.pumpWidget(_app(conexion: conexion.stream));
+    conexion.add(false);
+    await tester.pump();
+    await tester.pump();
+    expect(find.text('Sin conexión'), findsOneWidget);
+
+    conexion.add(true);
+    await tester.pump();
+    await tester.pump();
+    expect(find.text('Conexión recuperada'), findsOneWidget);
+    expect(find.byIcon(Icons.cloud_done_rounded), findsOneWidget);
+
+    await tester.pump(_breve);
+    expect(_banner, findsNothing);
   });
 }

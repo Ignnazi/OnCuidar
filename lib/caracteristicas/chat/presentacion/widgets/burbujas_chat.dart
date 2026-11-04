@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:oncuidar/app/tema/paleta.dart';
 import 'package:oncuidar/caracteristicas/chat/dominio/conversacion.dart';
+import 'package:oncuidar/compartido/widgets/aviso_app.dart';
 import 'package:oncuidar/nucleo/utilidades/formato_fecha.dart';
 
 /// Avatar redondo del asistente.
@@ -52,15 +53,9 @@ class BurbujaMensaje extends StatelessWidget {
   final VoidCallback? alAbrirMaterial;
 
   Future<void> _copiar(BuildContext context) async {
-    final aviso = ScaffoldMessenger.of(context);
+    final aviso = AvisoApp.capturar(context);
     await Clipboard.setData(ClipboardData(text: mensaje.texto));
-    aviso.showSnackBar(
-      SnackBar(
-        content: const Text('Mensaje copiado'),
-        backgroundColor: Paleta.doradoPrincipal,
-        duration: const Duration(seconds: 1),
-      ),
-    );
+    aviso.info('Mensaje copiado al portapapeles.');
   }
 
   @override

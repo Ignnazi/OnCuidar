@@ -128,7 +128,16 @@ void main() {
     final pie = tester.getRect(find.text('1 / 3'));
     expect(controles.right, lessThanOrEqualTo(400 - 30 - 12));
     expect(controles.bottom, lessThanOrEqualTo(800 - 24 - 16));
-    expect(pie.right, lessThanOrEqualTo(controles.left));
+    expect(pie.bottom, lessThanOrEqualTo(controles.top));
+    expect(pie.left, greaterThanOrEqualTo(12));
+    expect(pie.right, lessThanOrEqualTo(400 - 30 - 12));
+  });
+
+  testWidgets('sin marco de visor no se muestra el botón de girar', (
+    tester,
+  ) async {
+    await abrir(tester);
+    expect(find.byKey(const Key('girarVisor')), findsNothing);
   });
 
   testWidgets(
