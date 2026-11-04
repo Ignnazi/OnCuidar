@@ -2,6 +2,26 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:oncuidar/compartido/widgets/barra_visor.dart';
 
+class ControlGiroVisor extends InheritedWidget {
+  const ControlGiroVisor({
+    super.key,
+    required this.alternarGiro,
+    required this.horizontal,
+    required super.child,
+  });
+
+  final VoidCallback alternarGiro;
+
+  final bool horizontal;
+
+  static ControlGiroVisor? maybeOf(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<ControlGiroVisor>();
+
+  @override
+  bool updateShouldNotify(ControlGiroVisor anterior) =>
+      horizontal != anterior.horizontal;
+}
+
 class MarcoVisor extends StatefulWidget {
   const MarcoVisor({
     super.key,
@@ -55,37 +75,32 @@ class _MarcoVisorState extends State<MarcoVisor> {
 
   @override
   Widget build(BuildContext context) {
-    return PopScope(
-      canPop: !_horizontal,
-      onPopInvokedWithResult: (didPop, _) {
-        if (!didPop && _horizontal) _alternarGiro();
-      },
-      child: Scaffold(
-        backgroundColor: widget.fondo,
-        appBar: _horizontal
-            ? barraVisor(
-                titulo: widget.titulo,
-                claveVolver: const Key('girarVisor'),
-                iconoVolver: Icons.screen_lock_portrait_rounded,
-                ayudaVolver: 'Volver a vertical',
-                alVolver: _alternarGiro,
-                acciones: widget.acciones,
-              )
-            : barraVisor(
-                titulo: widget.titulo,
-                claveVolver: widget.claveVolver,
-                alVolver: () => Navigator.of(context).maybePop(),
-                acciones: [
-                  IconButton(
-                    key: const Key('girarVisor'),
-                    tooltip: 'Girar a pantalla completa',
-                    icon: const Icon(Icons.screen_rotation_rounded),
-                    onPressed: _alternarGiro,
-                  ),
-                  ...widget.acciones,
-                ],
-              ),
-        body: widget.cuerpo,
+    return ControlGiroVisor(
+      alternarGiro: _alternarGiro,
+      horizontal: _horizontal,
+      child: PopScope(
+        canPop: !_horizontal,
+        onPopInvokedWithResult: (didPop, _) {
+          if (!didPop && _horizontal) _alternarGiro();
+        },
+        child: Scaffold(
+          backgroundColor: widget.fondo,
+          appBar: _horizontal
+              ? barraVisor(
+                  titulo: widget.titulo,
+                  claveVolver: const Key('salirHorizontal'),
+                  ayudaVolver: 'Volver a vertical',
+                  alVolver: _alternarGiro,
+                  acciones: widget.acciones,
+                )
+              : barraVisor(
+                  titulo: widget.titulo,
+                  claveVolver: widget.claveVolver,
+                  alVolver: () => Navigator.of(context).maybePop(),
+                  acciones: widget.acciones,
+                ),
+          body: widget.cuerpo,
+        ),
       ),
     );
   }

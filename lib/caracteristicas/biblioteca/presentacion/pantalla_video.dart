@@ -178,14 +178,10 @@ class _PantallaVideoState extends ConsumerState<PantallaVideo> {
   }
 
   void _entrarPantallaCompleta() {
-    final controlador = _controlador;
-    final horizontal =
-        controlador == null || controlador.value.aspectRatio >= 1;
-    SystemChrome.setPreferredOrientations(
-      horizontal
-          ? [DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight]
-          : [DeviceOrientation.portraitUp],
-    );
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
   }
 
@@ -366,18 +362,7 @@ class _PantallaVideoState extends ConsumerState<PantallaVideo> {
   }
 
   PreferredSizeWidget _barraSuperior() {
-    return barraVisor(
-      titulo: widget.titulo,
-      alVolver: _cerrar,
-      acciones: [
-        IconButton(
-          key: const Key('alternarPantallaCompleta'),
-          tooltip: 'Girar a pantalla completa',
-          icon: const Icon(Icons.screen_rotation_rounded),
-          onPressed: _alternarPantallaCompleta,
-        ),
-      ],
-    );
+    return barraVisor(titulo: widget.titulo, alVolver: _cerrar);
   }
 
   Widget _vistaError() {
@@ -550,6 +535,21 @@ class _PantallaVideoState extends ConsumerState<PantallaVideo> {
                       ),
                     ),
                     _chipVelocidad(controlador.value.playbackSpeed),
+                    const SizedBox(width: 4),
+                    IconButton(
+                      key: const Key('alternarPantallaCompleta'),
+                      tooltip: _pantallaCompleta
+                          ? 'Volver a vertical'
+                          : 'Girar a pantalla completa',
+                      onPressed: _alternarPantallaCompleta,
+                      icon: Icon(
+                        _pantallaCompleta
+                            ? Icons.screen_lock_portrait_rounded
+                            : Icons.screen_rotation_rounded,
+                        color: Colors.white,
+                        size: 26,
+                      ),
+                    ),
                   ],
                 ),
               ],
@@ -570,12 +570,9 @@ class _PantallaVideoState extends ConsumerState<PantallaVideo> {
       child: Row(
         children: [
           IconButton(
-            key: const Key('alternarPantallaCompleta'),
+            key: const Key('salirPantallaCompleta'),
             tooltip: 'Volver a vertical',
-            icon: const Icon(
-              Icons.screen_lock_portrait_rounded,
-              color: Colors.white,
-            ),
+            icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
             onPressed: _alternarPantallaCompleta,
           ),
           const SizedBox(width: 4),

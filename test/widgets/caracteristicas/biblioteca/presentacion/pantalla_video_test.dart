@@ -15,6 +15,9 @@ import 'package:video_player/video_player.dart';
 import 'package:video_player_platform_interface/video_player_platform_interface.dart';
 
 class _VideoFalso extends VideoPlayerPlatform with MockPlatformInterfaceMixin {
+  _VideoFalso({this.tamano = const Size(1920, 1080)});
+
+  final Size tamano;
   final llamadas = <String>[];
   final _eventos = <int, StreamController<VideoEvent>>{};
   Duration posicion = Duration.zero;
@@ -29,7 +32,7 @@ class _VideoFalso extends VideoPlayerPlatform with MockPlatformInterfaceMixin {
       VideoEvent(
         eventType: VideoEventType.initialized,
         duration: const Duration(minutes: 5),
-        size: const Size(1920, 1080),
+        size: tamano,
       ),
     );
     return id;
@@ -101,7 +104,11 @@ void main() {
     sistema = [];
   });
 
-  Future<void> abrir(WidgetTester tester) async {
+  Future<void> abrir(WidgetTester tester, {_VideoFalso? conVideo}) async {
+    if (conVideo != null) {
+      video = conVideo;
+      VideoPlayerPlatform.instance = video;
+    }
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
       SystemChannels.platform,
       (llamada) async {
@@ -157,10 +164,30 @@ void main() {
         of: find.byType(AppBar),
         matching: find.byIcon(Icons.screen_rotation_rounded),
       ),
-      findsOneWidget,
+      findsNothing,
     );
     expect(find.byIcon(Icons.fullscreen), findsNothing);
+    expect(find.byKey(const Key('alternarPantallaCompleta')), findsOneWidget);
+    expect(find.byIcon(Icons.screen_rotation_rounded), findsOneWidget);
     expect(video.llamadas, contains('play'));
+
+    await cerrar(tester);
+  });
+
+  testWidgets('el botón de girar queda a la derecha de la velocidad', (
+    tester,
+  ) async {
+    await abrir(tester);
+
+    final velocidad = tester
+        .getRect(find.byKey(const Key('velocidadVideo')))
+        .center
+        .dx;
+    final girar = tester
+        .getRect(find.byKey(const Key('alternarPantallaCompleta')))
+        .center
+        .dx;
+    expect(girar, greaterThan(velocidad));
 
     await cerrar(tester);
   });
@@ -182,6 +209,7 @@ void main() {
       ]);
       expect(find.byType(AppBar), findsNothing);
       expect(find.byIcon(Icons.screen_lock_portrait_rounded), findsOneWidget);
+      expect(find.byKey(const Key('salirPantallaCompleta')), findsOneWidget);
       expect(contenedor.read(pantallaCompletaProvider), isTrue);
 
       await tester.tap(find.byKey(const Key('alternarPantallaCompleta')));
@@ -200,6 +228,43 @@ void main() {
       await cerrar(tester);
     },
   );
+
+  testWidgets('un video vertical también gira a apaisado', (tester) async {
+    await abrir(tester, conVideo: _VideoFalso(tamano: const Size(1080, 1920)));
+
+    await tester.tap(find.byKey(const Key('alternarPantallaCompleta')));
+    await tester.pump();
+
+    expect(ultima('SystemChrome.setPreferredOrientations'), [
+      'DeviceOrientation.landscapeLeft',
+      'DeviceOrientation.landscapeRight',
+    ]);
+    expect(
+      ultima('SystemChrome.setEnabledSystemUIMode'),
+      'SystemUiMode.immersiveSticky',
+    );
+
+    await cerrar(tester);
+  });
+
+  testWidgets('la flecha superior izquierda vuelve a vertical', (tester) async {
+    await abrir(tester);
+    await tester.tap(find.byKey(const Key('alternarPantallaCompleta')));
+    await tester.pump();
+    expect(contenedor.read(pantallaCompletaProvider), isTrue);
+
+    await tester.tap(find.byKey(const Key('salirPantallaCompleta')));
+    await tester.pump();
+
+    expect(contenedor.read(pantallaCompletaProvider), isFalse);
+    expect(find.byType(AppBar), findsOneWidget);
+    expect(
+      ultima('SystemChrome.setEnabledSystemUIMode'),
+      'SystemUiMode.edgeToEdge',
+    );
+
+    await cerrar(tester);
+  });
 
   testWidgets('salir de la pantalla en pantalla completa restaura todo', (
     tester,

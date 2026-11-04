@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:oncuidar/compartido/widgets/controles_zoom.dart';
+import 'package:oncuidar/compartido/widgets/marco_visor.dart';
 
 /// Escala a la que acerca el doble toque.
 const _escalaDobleToque = 2.0;
@@ -182,6 +183,7 @@ class EstadoVisorConZoom extends State<VisorConZoom>
         final minimo = _minimo;
         final areaSegura = MediaQuery.of(context).viewPadding;
         final margenInferior = areaSegura.bottom + 16;
+        final giro = ControlGiroVisor.maybeOf(context);
         return Stack(
           children: [
             Positioned.fill(
@@ -214,6 +216,8 @@ class EstadoVisorConZoom extends State<VisorConZoom>
               bottom: margenInferior,
               child: ControlesZoom(
                 sobreOscuro: widget.sobreOscuro,
+                horizontal: giro?.horizontal ?? false,
+                alGirar: giro?.alternarGiro,
                 alAcercar: () => _acercar(1.5),
                 alAlejar: () => _acercar(1 / 1.5),
                 alAjustar: () => _irAEscala(widget.escalaAjuste(_zona)),
@@ -222,8 +226,8 @@ class EstadoVisorConZoom extends State<VisorConZoom>
             if (widget.pie != null)
               Positioned(
                 left: areaSegura.left + 12,
-                right: areaSegura.right + 72,
-                bottom: margenInferior,
+                right: areaSegura.right + 12,
+                bottom: margenInferior + 56,
                 child: Center(child: widget.pie),
               ),
           ],
