@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:oncuidar/app/tema/paleta.dart';
 import 'package:oncuidar/caracteristicas/perfil/datos/repositorio_cuidador.dart';
+import 'package:oncuidar/compartido/widgets/aviso_app.dart';
 import 'package:oncuidar/compartido/widgets/boton_principal.dart';
 import 'package:oncuidar/compartido/widgets/campos_formulario.dart';
 import 'package:oncuidar/compartido/widgets/hoja_dialogo.dart';
@@ -143,7 +144,7 @@ class _DialogoCorreosState extends State<_DialogoCorreos> {
 
   Future<void> _guardar() async {
     if (!_formKey.currentState!.validate()) return;
-    final messenger = ScaffoldMessenger.of(context);
+    final aviso = AvisoApp.capturar(context);
     final nav = Navigator.of(context);
     if (!_hayCambios) {
       nav.pop();
@@ -190,9 +191,7 @@ class _DialogoCorreosState extends State<_DialogoCorreos> {
       if (mounted) setState(() => _cargando = false);
     }
     if (errorCorreo != null) {
-      messenger.showSnackBar(
-        SnackBar(content: Text(errorCorreo), backgroundColor: Paleta.error),
-      );
+      aviso.alerta(errorCorreo);
     } else {
       final texto = pidioPrincipal
           ? 'Te enviamos un enlace a ${_principalController.text.trim()}. '
@@ -202,13 +201,7 @@ class _DialogoCorreosState extends State<_DialogoCorreos> {
                 'El respaldo se activa cuando lo confirmes.'
           : '';
       if (texto.isNotEmpty) {
-        messenger.showSnackBar(
-          SnackBar(
-            content: Text(texto),
-            backgroundColor: Paleta.doradoPrincipal,
-            duration: const Duration(seconds: 6),
-          ),
-        );
+        aviso.info(texto);
       }
     }
   }

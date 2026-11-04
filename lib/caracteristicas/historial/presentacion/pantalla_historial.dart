@@ -22,6 +22,7 @@ import 'package:oncuidar/caracteristicas/perfil/presentacion/proveedores_perfil.
 import 'package:oncuidar/caracteristicas/registro_clinico/dominio/conteo_registros.dart';
 import 'package:oncuidar/caracteristicas/registro_clinico/dominio/registro_clinico.dart';
 import 'package:oncuidar/caracteristicas/registro_clinico/presentacion/proveedores_registro_clinico.dart';
+import 'package:oncuidar/compartido/widgets/aviso_app.dart';
 import 'package:oncuidar/compartido/widgets/dialogo_confirmacion.dart';
 import 'package:oncuidar/compartido/widgets/encabezado_gradiente.dart';
 
@@ -97,7 +98,12 @@ class _HistorialScreenState extends ConsumerState<HistorialScreen> {
         }
       });
     } catch (e) {
-      if (mounted) _snack('Error al cargar registros: $e', Paleta.error);
+      if (mounted) {
+        _snack(
+          'No se pudieron cargar los registros. Intenta de nuevo.',
+          tono: TonoAviso.alerta,
+        );
+      }
     } finally {
       if (mounted) setState(() => _cargandoMas = false);
     }
@@ -216,10 +222,15 @@ class _HistorialScreenState extends ConsumerState<HistorialScreen> {
     );
   }
 
-  void _snack(String mensaje, Color fondo) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(mensaje), backgroundColor: fondo));
+  void _snack(String mensaje, {required TonoAviso tono}) {
+    switch (tono) {
+      case TonoAviso.info:
+        AvisoApp.info(context, mensaje);
+      case TonoAviso.alerta:
+        AvisoApp.alerta(context, mensaje);
+      case TonoAviso.conexion:
+        AvisoApp.conexion(context, mensaje);
+    }
   }
 
   Future<void> _exportar(FormatoExportacion formato) async {
@@ -257,7 +268,10 @@ class _HistorialScreenState extends ConsumerState<HistorialScreen> {
       );
     } catch (e) {
       if (mounted) {
-        _snack('No se pudo generar el ${formato.nombre}: $e', Paleta.error);
+        _snack(
+          'No se pudo generar el ${formato.nombre}. Intenta de nuevo.',
+          tono: TonoAviso.alerta,
+        );
       }
     } finally {
       if (mounted) setState(() => _exportando = false);
@@ -304,7 +318,10 @@ class _HistorialScreenState extends ConsumerState<HistorialScreen> {
       }
     } catch (e) {
       if (mounted) {
-        _snack('No se pudo abrir el archivo: $e', Paleta.error);
+        _snack(
+          'No se pudo abrir el archivo. Intenta de nuevo.',
+          tono: TonoAviso.alerta,
+        );
       }
     }
   }
@@ -351,11 +368,14 @@ class _HistorialScreenState extends ConsumerState<HistorialScreen> {
       await _controlador.eliminar(paciente.id, registro.id);
       if (mounted) {
         setState(() => _cargados.removeWhere((r) => r.id == registro.id));
-        _snack('Registro eliminado', Paleta.doradoPrincipal);
+        _snack('El registro fue eliminado.', tono: TonoAviso.info);
       }
     } catch (_) {
       if (mounted) {
-        _snack('No se pudo eliminar. Intenta de nuevo.', Paleta.error);
+        _snack(
+          'No se pudo eliminar. Intenta de nuevo.',
+          tono: TonoAviso.alerta,
+        );
       }
     }
   }

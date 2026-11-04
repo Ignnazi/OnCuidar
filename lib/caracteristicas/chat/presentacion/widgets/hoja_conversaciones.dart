@@ -8,6 +8,7 @@ import 'package:oncuidar/caracteristicas/chat/presentacion/proveedores_chat.dart
 import 'package:oncuidar/caracteristicas/chat/presentacion/widgets/hoja_renombrar_conversacion.dart';
 import 'package:oncuidar/caracteristicas/chat/presentacion/widgets/tarjeta_conversacion.dart';
 import 'package:oncuidar/compartido/estilos.dart';
+import 'package:oncuidar/compartido/widgets/aviso_app.dart';
 import 'package:oncuidar/compartido/widgets/dialogo_confirmacion.dart';
 import 'package:oncuidar/compartido/widgets/fondo_hoja.dart';
 
@@ -63,24 +64,18 @@ class _HojaConversacionesState extends ConsumerState<_HojaConversaciones> {
     super.dispose();
   }
 
-  void _mostrarSnackbar(ScaffoldMessengerState messenger, String mensaje) {
-    messenger.showSnackBar(
-      SnackBar(
-        content: Text(mensaje),
-        backgroundColor: Paleta.doradoPrincipal,
-        duration: const Duration(seconds: 2),
-      ),
-    );
+  void _mostrarSnackbar(AvisoCapturado aviso, String mensaje) {
+    aviso.info(mensaje);
   }
 
   Future<void> _renombrar(Conversacion conversacion) async {
-    final messenger = ScaffoldMessenger.of(context);
+    final aviso = AvisoApp.capturar(context);
     _controladorRenombrar.text = conversacion.titulo;
     final confirmado = await _mostrarDialogoRenombrar();
     if (confirmado != true || !mounted) return;
     final titulo = _controladorRenombrar.text.trim();
     if (titulo.isEmpty) {
-      _mostrarSnackbar(messenger, 'Escribe un nombre para la conversación.');
+      _mostrarSnackbar(aviso, 'Escribe un nombre para la conversación.');
       return;
     }
     try {
@@ -89,11 +84,11 @@ class _HojaConversacionesState extends ConsumerState<_HojaConversaciones> {
           .renombrarConversacion(conversacion.id, titulo);
       if (!mounted) return;
       widget.alRenombrar?.call(conversacion.id, titulo);
-      _mostrarSnackbar(messenger, 'Conversación renombrada');
+      _mostrarSnackbar(aviso, 'La conversación fue renombrada.');
     } catch (_) {
       if (!mounted) return;
       _mostrarSnackbar(
-        messenger,
+        aviso,
         'No se pudo completar la acción. Revisa tu conexión.',
       );
     }
@@ -113,7 +108,7 @@ class _HojaConversacionesState extends ConsumerState<_HojaConversaciones> {
   }
 
   Future<void> _eliminar(Conversacion conversacion) async {
-    final messenger = ScaffoldMessenger.of(context);
+    final aviso = AvisoApp.capturar(context);
     final confirmado = await mostrarDialogoConfirmacion(
       context,
       key: const Key('dialogoEliminarConversacion'),
@@ -132,12 +127,12 @@ class _HojaConversacionesState extends ConsumerState<_HojaConversaciones> {
           .read(repositorioConversacionesProvider)
           .eliminarConversacion(conversacion.id);
       if (!mounted) return;
-      _mostrarSnackbar(messenger, 'Conversación eliminada');
+      _mostrarSnackbar(aviso, 'La conversación fue eliminada.');
       widget.alEliminar(conversacion);
     } catch (_) {
       if (!mounted) return;
       _mostrarSnackbar(
-        messenger,
+        aviso,
         'No se pudo completar la acción. Revisa tu conexión.',
       );
     }

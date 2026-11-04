@@ -12,6 +12,7 @@ import 'package:oncuidar/caracteristicas/recordatorios/presentacion/proveedores_
 import 'package:oncuidar/caracteristicas/recordatorios/presentacion/widgets/acceso_rapido_recordatorios.dart';
 import 'package:oncuidar/caracteristicas/recordatorios/presentacion/widgets/dialogo_recordatorio.dart';
 import 'package:oncuidar/caracteristicas/recordatorios/presentacion/widgets/tarjeta_recordatorio.dart';
+import 'package:oncuidar/compartido/widgets/aviso_app.dart';
 import 'package:oncuidar/compartido/widgets/buscador.dart';
 import 'package:oncuidar/compartido/widgets/dialogo_confirmacion.dart';
 import 'package:oncuidar/compartido/widgets/encabezado_gradiente.dart';
@@ -179,6 +180,20 @@ class _RecordatoriosScreenState extends ConsumerState<RecordatoriosScreen> {
     if (paciente == null) return;
     try {
       await _controlador.alternarActivo(paciente, r);
+      if (!mounted) return;
+      if (r.activo) {
+        AvisoApp.info(context, 'El recordatorio fue desactivado.');
+      } else {
+        final ahora = DateTime.now();
+        final proximo = proximoAviso(r, ahora);
+        AvisoApp.info(
+          context,
+          proximo == null
+              ? 'El recordatorio fue activado.'
+              : 'Recordatorio activado. Sonará '
+                    '${textoProximoAviso(proximo, ahora)}.',
+        );
+      }
     } catch (_) {
       if (mounted) _snackError('No se pudo actualizar el recordatorio.');
     }
@@ -199,25 +214,18 @@ class _RecordatoriosScreenState extends ConsumerState<RecordatoriosScreen> {
     if (confirmar != true || !mounted) return;
     try {
       await _controlador.eliminar(paciente.id, r.id);
-      if (mounted) _snackExito('Recordatorio eliminado');
+      if (mounted) _snackExito('El recordatorio fue eliminado.');
     } catch (_) {
       if (mounted) _snackError('No se pudo eliminar. Intenta de nuevo.');
     }
   }
 
   void _snackExito(String mensaje) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(mensaje, style: const TextStyle(color: Colors.white)),
-        backgroundColor: Paleta.doradoPrincipal,
-      ),
-    );
+    AvisoApp.info(context, mensaje);
   }
 
   void _snackError(String mensaje) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(mensaje), backgroundColor: Paleta.error),
-    );
+    AvisoApp.alerta(context, mensaje);
   }
 
   String _nombreCorto(Paciente? paciente) {
@@ -229,13 +237,10 @@ class _RecordatoriosScreenState extends ConsumerState<RecordatoriosScreen> {
     final paciente = ref.read(pacienteActivoProvider).value;
     if (paciente == null) return;
     if (_silenciadasTodas) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Todos los avisos están silenciados. Actívalos en Mi perfil › '
-            'Configuración de la app.',
-          ),
-        ),
+      AvisoApp.info(
+        context,
+        'Todos los avisos están silenciados. Actívalos en Mi perfil › '
+        'Configuración de la app.',
       );
       return;
     }
@@ -243,14 +248,11 @@ class _RecordatoriosScreenState extends ConsumerState<RecordatoriosScreen> {
     setState(() => _silenciadoPaciente = silenciar);
     await _controlador.fijarSilencioPaciente(paciente.id, silenciar);
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            silenciar
-                ? 'Avisos de ${_nombreCorto(paciente)} silenciados'
-                : 'Avisos de ${_nombreCorto(paciente)} reactivados',
-          ),
-        ),
+      AvisoApp.info(
+        context,
+        silenciar
+            ? 'Los avisos de ${_nombreCorto(paciente)} fueron silenciados.'
+            : 'Los avisos de ${_nombreCorto(paciente)} fueron reactivados.',
       );
     }
   }
@@ -280,8 +282,8 @@ class _RecordatoriosScreenState extends ConsumerState<RecordatoriosScreen> {
       if (mounted) {
         _snackExito(
           existente == null
-              ? 'Recordatorio agregado'
-              : 'Recordatorio actualizado',
+              ? 'El recordatorio se agregó correctamente.'
+              : 'El recordatorio se actualizó correctamente.',
         );
       }
     } on ClaveNoDisponibleSinConexion catch (e) {

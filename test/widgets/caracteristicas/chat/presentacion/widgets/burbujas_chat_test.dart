@@ -128,7 +128,7 @@ void main() {
     await tester.pump();
 
     expect(copiado, 'Texto a copiar');
-    expect(find.text('Mensaje copiado'), findsOneWidget);
+    expect(find.text('Mensaje copiado al portapapeles.'), findsOneWidget);
   });
 
   testWidgets('el separador nombra el día', (tester) async {

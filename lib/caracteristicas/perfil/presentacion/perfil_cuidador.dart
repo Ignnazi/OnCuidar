@@ -10,6 +10,7 @@ import 'package:oncuidar/caracteristicas/perfil/presentacion/widgets/mensaje_err
 import 'package:oncuidar/caracteristicas/perfil/presentacion/widgets/pie_version.dart';
 import 'package:oncuidar/caracteristicas/perfil/presentacion/widgets/tarjeta_configuracion.dart';
 import 'package:oncuidar/caracteristicas/perfil/presentacion/widgets/tarjeta_perfil_cuidador.dart';
+import 'package:oncuidar/compartido/widgets/aviso_app.dart';
 import 'package:oncuidar/compartido/widgets/aviso_sin_conexion.dart';
 import 'package:oncuidar/nucleo/proveedores.dart';
 import 'package:oncuidar/nucleo/sesion/servicio_sesion.dart';
@@ -70,19 +71,26 @@ class _PerfilCuidadorState extends ConsumerState<PerfilCuidador> {
       mostrarAvisoSinConexion(context, TextosSinConexion.verificacion);
       return;
     }
-    final mensajero = ScaffoldMessenger.of(context);
+    var exito = true;
     String texto;
     try {
       await ref.read(repositorioCuidadorProvider).reenviarVerificacion();
       texto = 'Te enviamos un enlace para verificar tu correo.';
     } on ExcepcionSesion catch (e) {
+      exito = false;
       texto = e.codigo == CodigoErrorSesion.demasiadosIntentos
           ? 'Espera un minuto antes de pedir otro enlace.'
           : 'No se pudo enviar el enlace. Intenta de nuevo.';
     } catch (_) {
+      exito = false;
       texto = 'No se pudo enviar el enlace. Intenta de nuevo.';
     }
-    mensajero.showSnackBar(SnackBar(content: Text(texto)));
+    if (!mounted) return;
+    if (exito) {
+      AvisoApp.info(context, texto);
+    } else {
+      AvisoApp.alerta(context, texto);
+    }
   }
 
   @override
