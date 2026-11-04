@@ -33,12 +33,15 @@ services:
   web:
     image: docker.io/library/nginx:alpine
     restart: unless-stopped
+    environment:
+      NGINX_ENTRYPOINT_LOCAL_RESOLVERS: "1"
     volumes:
       - ./web:/usr/share/nginx/html:ro,Z
+      - ./monitoreo/nginx/default.conf.template:/etc/nginx/templates/default.conf.template:ro,Z
     ports:
       - "${PUERTO_WEB:-8015}:80"
 
-  # Monitoreo: revisa los servicios desde dentro y avisa por correo
+  # Monitoreo: solo Grafana queda accesible, a través de la web en /grafana/
   prometheus:
     image: docker.io/prom/prometheus:v3.15.1
     restart: unless-stopped
@@ -71,8 +74,29 @@ services:
       - ./monitoreo/alertmanager/iniciar.sh:/etc/alertmanager/iniciar.sh:ro,Z
       - datos_alertmanager:/alertmanager
 
+  grafana:
+    image: docker.io/grafana/grafana:13.3.0
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_USUARIO:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_CLAVE:?definir GRAFANA_CLAVE en .env}
+      GF_SERVER_ROOT_URL: ${URL_GRAFANA:-http://localhost:8015/grafana/}
+      GF_SERVER_SERVE_FROM_SUB_PATH: "true"
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/paneles/servicios.json
+      GF_DATE_FORMATS_DEFAULT_TIMEZONE: America/Santiago
+    volumes:
+      - ./monitoreo/grafana/provisioning:/etc/grafana/provisioning:ro,Z
+      - ./monitoreo/grafana/paneles:/var/lib/grafana/paneles:ro,Z
+      - datos_grafana:/var/lib/grafana
 
 volumes:
   datos_postgres:
   datos_prometheus:
   datos_alertmanager:
+  datos_grafana:
