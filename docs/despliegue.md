@@ -48,6 +48,18 @@ scp app-release.apk <usuario>@parra.chillan.ubiobio.cl:~/oncuidar/web/OnCuidar.a
 
 La URL de la API se fija al compilar con la variable de repositorio `API_URL` (Settings > Secrets and variables > Actions > Variables), por ejemplo `http://parra.chillan.ubiobio.cl:8014/api`. Sin ella el job falla.
 
+## Versiones
+
+Cada versión publicada sube `version` en `pubspec.yaml`: el número antes del `+` es la versión visible y el de después debe aumentar siempre, porque Android lo usa para reconocer una actualización. Una vez integrada en `main`, se crea la etiqueta con el mismo número:
+
+```bash
+git switch main && git pull
+git tag -a v1.0.1 -m "OnCuidar v1.0.1"
+git push origin v1.0.1
+```
+
+`.github/workflows/release.yml` comprueba que la etiqueta coincida con `pubspec.yaml` y apunte a un commit de `main`, corre las pruebas, compila el APK y lo publica en la pestaña Releases como `OnCuidar-v1.0.1.apk`, con las notas generadas a partir de los pull requests.
+
 ## Respaldos
 
 `scripts/respaldar_bd.sh` guarda un volcado comprimido en `~/respaldos-oncuidar` y elimina los de más de 14 días. Para ejecutarlo todos los días a las 03:00, copiar el script al servidor y agregar con `crontab -e`:
@@ -73,3 +85,5 @@ podman-compose start api
 - App: formato, `flutter analyze` y `flutter test`.
 - Backend: pruebas de integración contra PostgreSQL 15.
 - APK: solo en `main`, después de que pasen las pruebas de la app.
+
+Dependabot (`.github/dependabot.yml`) abre pull requests hacia `desarrollo` los lunes con las dependencias de Flutter y del backend, y una vez al mes con la imagen de Docker y las acciones de GitHub. Las actualizaciones menores llegan agrupadas en un solo pull request.
