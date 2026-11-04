@@ -23,6 +23,26 @@ void main() {
     expect(find.byType(LinearProgressIndicator), findsOneWidget);
   });
 
+  testWidgets('indica cuántos archivos ya quedaron disponibles', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: TarjetaDescargaContenido(
+            fase: FaseDescarga.descargando,
+            porcentaje: 45,
+            completadas: 2,
+            total: 5,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('2 de 5 archivos listos'), findsOneWidget);
+  });
+
   testWidgets('pausada muestra el texto de pausa', (tester) async {
     await tester.pumpWidget(_app(FaseDescarga.pausada, 45));
     await tester.pumpAndSettle();
