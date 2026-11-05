@@ -26,36 +26,44 @@ En local, el proyecto también se llama `oncuidar`. Quien lo haya levantado ante
 
 ## Despliegue automático
 
-Cada push a `main` (o sea, cada pull request integrado) despliega solo, después de que pasen las pruebas. El workflow `.github/workflows/ci.yml` lo hace en dos jobs:
+Cada push a `main` (o sea, cada pull request integrado) se despliega solo, después de que pasen las pruebas. El firewall de la universidad no deja entrar conexiones SSH desde GitHub, así que el despliegue funciona al revés: GitHub publica y el servidor sale a buscar.
+
+En `.github/workflows/ci.yml`:
 
 1. **Imagen**: construye la imagen de la API y la publica en GitHub Container Registry como `ghcr.io/ignnazi/oncuidar-api:<commit>`.
-2. **Despliegue**: copia al servidor por SSH el `docker-compose.yml`, `monitoreo/`, la página, `database/init.sql`, `scripts/` y el APK recién compilado, y ejecuta `scripts/desplegar.sh`.
+2. **Paquete de despliegue**: publica `ghcr.io/ignnazi/oncuidar-despliegue` con el `docker-compose.yml`, `monitoreo/`, la página, `database/init.sql`, `scripts/`, el APK recién compilado y el nombre de la imagen de la API. La etiqueta `:main` apunta siempre al último commit de `main` que pasó todo.
+
+En el servidor, cron ejecuta `scripts/actualizar.sh` cada 15 minutos:
+
+- revisa si la etiqueta `:main` del paquete cambió; si no, termina sin hacer nada;
+- si cambió, extrae el paquete en `~/oncuidar/.despliegue` y ejecuta `scripts/desplegar.sh` con la imagen nueva;
+- anota la versión desplegada en `.paquete-desplegado`; si el despliegue falla, la anota en `.paquete-fallido` y no la reintenta hasta que llegue otra;
+- deja lo que hizo en `~/oncuidar/actualizar.log`, que se recorta a 1000 líneas cuando pasa de 2000; si nada cambió, no escribe.
 
 `scripts/desplegar.sh`:
 
+- descarga la imagen nueva antes de tocar nada; si no puede, no cambia nada;
 - copia solo los archivos que cambiaron y reinicia solo los servicios afectados; la base de datos nunca se reinicia;
-- descarga la imagen nueva, la deja en `IMAGEN_API` del `.env` y recrea la API;
+- deja la imagen en `IMAGEN_API` del `.env` y recrea la API;
 - espera a que respondan `/api/salud` y la página; si no responden, restaura los archivos y la imagen anteriores;
 - conserva las 3 imágenes más recientes de la API y borra las demás.
 
-La salida de `podman-compose` incluye variables del `.env`, así que no se muestra en Actions (el repositorio es público): queda en `~/oncuidar/despliegue.log`, que se reemplaza en cada despliegue.
+La salida de `podman-compose` incluye variables del `.env`, así que queda solo en `~/oncuidar/despliegue.log`, que se reemplaza en cada despliegue.
 
-Al final el job comprueba la API y la página desde fuera, por HTTPS. Sus pruebas están en `test/despliegue/desplegar_test.sh` y corren en el job Backend.
+Las imágenes son públicas (el repositorio también lo es), así que el servidor no guarda ninguna credencial de GitHub. Las pruebas de los dos scripts están en `test/despliegue/` y corren en el job Backend.
 
-Configuración en GitHub (Settings > Environments > `produccion`):
+Puesta en marcha (una sola vez):
 
-| Secreto | Contenido |
-| --- | --- |
-| `PARRA_HOST` | `parra.chillan.ubiobio.cl` |
-| `PARRA_USUARIO` | usuario del servidor |
-| `PARRA_SSH_KEY` | llave privada exclusiva del despliegue |
-| `PARRA_HOST_KEY` | línea de `known_hosts` del servidor |
+1. Después de la primera ejecución del CI en `main`, en GitHub > Packages > `oncuidar-despliegue` > Package settings, dejar la visibilidad en **Public**. Si queda privado, el servidor no lo puede descargar y `actualizar.log` muestra "No se pudo consultar el paquete de despliegue".
+2. Copiar `scripts/actualizar.sh` al servidor en `~/oncuidar/scripts/` (después se actualiza solo con cada despliegue) e instalar la revisión periódica:
 
-La llave pública correspondiente está en `~/.ssh/authorized_keys` del servidor con la opción `restrict`.
+```bash
+(crontab -l 2>/dev/null; echo "*/15 * * * * bash \$HOME/oncuidar/scripts/actualizar.sh") | crontab -
+```
 
 ### Desplegar a mano
 
-Si GitHub no puede llegar al servidor, se puede volver a ejecutar el workflow desde la pestaña Actions o desplegar desde el servidor:
+Para forzar una revisión sin esperar a cron, ejecutar `bash ~/oncuidar/scripts/actualizar.sh` y mirar `actualizar.log`. Si GitHub no está disponible, se puede desplegar desde el servidor:
 
 ```bash
 cd ~/oncuidar
@@ -132,7 +140,8 @@ podman-compose start api
 `.github/workflows/ci.yml` corre en cada pull request y push a `main` y `desarrollo`:
 
 - App: formato, `flutter analyze` y `flutter test`.
-- Backend: pruebas de integración contra PostgreSQL 15.
+- Backend: pruebas de integración contra PostgreSQL 15 y pruebas de los scripts de despliegue.
 - APK: solo en `main`, después de que pasen las pruebas de la app.
+- Imagen y Paquete de despliegue: solo en `main`; ver [Despliegue automático](#despliegue-automático).
 
-Dependabot (`.github/dependabot.yml`) abre pull requests hacia `desarrollo` los lunes con las dependencias de Flutter y del backend, y una vez al mes con la imagen de Docker y las acciones de GitHub. Las actualizaciones menores llegan agrupadas en un solo pull request.
+Dependabot (`.github/dependabot.yml`) abre pull requests hacia `desarrollo` los lunes con las dependencias de Flutter y del backend, y una vez al mes con la imagen de Docker y las acciones de GitHub. Solo propone actualizaciones menores, agrupadas en un solo pull request; las versiones mayores pueden romper la app y se actualizan a mano.
