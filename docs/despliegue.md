@@ -144,4 +144,4 @@ podman-compose start api
 - APK: solo en `main`, después de que pasen las pruebas de la app.
 - Imagen y Paquete de despliegue: solo en `main`; ver [Despliegue automático](#despliegue-automático).
 
-Dependabot (`.github/dependabot.yml`) abre pull requests hacia `desarrollo` los lunes con las dependencias de Flutter y del backend, y una vez al mes con la imagen de Docker y las acciones de GitHub. Las actualizaciones menores llegan agrupadas en un solo pull request.
+Dependabot (`.github/dependabot.yml`) abre pull requests hacia `desarrollo` los lunes con las dependencias de Flutter y del backend, y una vez al mes con la imagen de Docker y las acciones de GitHub. Solo propone actualizaciones menores, agrupadas en un solo pull request; las versiones mayores pueden romper la app y se actualizan a mano.
