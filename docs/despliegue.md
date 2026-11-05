@@ -162,4 +162,13 @@ En un uso real con pacientes, los respaldos serían obligatorios. Se harían cif
 | Imagen | solo en `main` | Publica la imagen de la API |
 | Paquete de despliegue | solo en `main` | Publica el paquete que descarga el servidor |
 
-Dependabot (`.github/dependabot.yml`) abre pull requests hacia `desarrollo`. Los lunes revisa las dependencias de Flutter y del backend, y una vez al mes la imagen de Docker y las acciones de GitHub. Solo propone actualizaciones menores y las agrupa en un pull request. Las versiones mayores pueden romper la app, así que se actualizan a mano.
+## Dependencias
+
+Las dependencias se actualizan a mano, revisando cada cambio. Para ver qué hay disponible:
+
+```
+flutter pub outdated
+cd backend && npm outdated
+```
+
+GitHub revisa las dependencias con las alertas de Dependabot y avisa en la pestaña Security si alguna tiene una vulnerabilidad conocida. También bloquea los push que incluyen contraseñas o claves.
