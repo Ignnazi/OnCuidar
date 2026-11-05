@@ -2,7 +2,7 @@
 
 ## Servidor
 
-La API, la base de datos y la página de descarga corren en `parra.chillan.ubiobio.cl` con podman y `podman-compose`, en la carpeta `~/oncuidar`.
+La API, la base de datos y la página de descarga corren en `parra.chillan.ubiobio.cl` con podman y `podman-compose`, en la carpeta `~/oncuidar`. El proxy HTTPS de la universidad publica la API en `https://parra.chillan.ubiobio.cl/oncuidar-backend/` y la web en `https://parra.chillan.ubiobio.cl/oncuidar/`; los puertos 8014 y 8015 solo responden por HTTP.
 
 | Servicio | Puerto | Contenido |
 | --- | --- | --- |
@@ -48,7 +48,7 @@ El workflow de CI compila el APK en cada integración a `main` y lo deja como ar
 scp app-release.apk <usuario>@parra.chillan.ubiobio.cl:~/oncuidar/web/OnCuidar.apk
 ```
 
-La URL de la API se fija al compilar con la variable de repositorio `API_URL` (Settings > Secrets and variables > Actions > Variables), por ejemplo `http://parra.chillan.ubiobio.cl:8014/api`. Sin ella el job falla.
+La URL de la API se fija al compilar con la variable de repositorio `API_URL` (Settings > Secrets and variables > Actions > Variables), por ejemplo `https://parra.chillan.ubiobio.cl/oncuidar-backend/api`. Sin ella el job falla.
 
 ## Versiones
 
@@ -69,13 +69,13 @@ Los servicios se revisan desde dentro del servidor, así que el firewall de la u
 - `blackbox` consulta `http://api:3000/api/salud` (que también comprueba la base de datos) y la página web.
 - `prometheus` guarda los resultados cada 30 segundos durante 30 días y evalúa las reglas de `monitoreo/prometheus/alertas.yml`: servicio caído por más de 2 minutos, respuesta de más de 3 segundos durante 5 minutos y monitoreo sin datos.
 - `alertmanager` envía las alertas y su resolución por correo.
-- `grafana` muestra el panel "OnCuidar - Servicios" en `http://parra.chillan.ubiobio.cl:8015/grafana/`. Solo Grafana queda accesible desde fuera, a través del nginx de la web.
+- `grafana` muestra el panel "OnCuidar - Servicios" en `https://parra.chillan.ubiobio.cl/oncuidar/grafana/`. Solo Grafana queda accesible desde fuera, a través del nginx de la web, que le pasa las rutas sin el prefijo `/grafana`.
 
 Variables del `.env`:
 
 ```
 GRAFANA_CLAVE=<contraseña del usuario admin de Grafana>
-URL_GRAFANA=http://parra.chillan.ubiobio.cl:8015/grafana/
+URL_GRAFANA=https://parra.chillan.ubiobio.cl/oncuidar/grafana/
 ALERTAS_CORREO=oncuidar1@gmail.com
 ALERTAS_CLAVE=<contraseña de aplicación de Gmail>
 ```

@@ -83,7 +83,7 @@ services:
       GF_SECURITY_ADMIN_USER: ${GRAFANA_USUARIO:-admin}
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_CLAVE:?definir GRAFANA_CLAVE en .env}
       GF_SERVER_ROOT_URL: ${URL_GRAFANA:-http://localhost:8015/grafana/}
-      GF_SERVER_SERVE_FROM_SUB_PATH: "true"
+      GF_SERVER_SERVE_FROM_SUB_PATH: "false"
       GF_USERS_ALLOW_SIGN_UP: "false"
       GF_AUTH_ANONYMOUS_ENABLED: "false"
       GF_ANALYTICS_REPORTING_ENABLED: "false"

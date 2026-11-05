@@ -12,6 +12,8 @@ server {
 
     location /grafana/ {
         set $grafana http://grafana:3000;
+        # Grafana recibe la ruta sin /grafana; su URL pública va en URL_GRAFANA
+        rewrite ^/grafana/(.*)$ /$1 break;
         proxy_pass $grafana;
         proxy_set_header Host $http_host;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
