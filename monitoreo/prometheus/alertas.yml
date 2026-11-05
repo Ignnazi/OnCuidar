@@ -1,0 +1,29 @@
+groups:
+  - name: oncuidar
+    rules:
+      - alert: ServicioCaido
+        expr: probe_success{job="servicios"} == 0
+        for: 2m
+        labels:
+          severidad: critica
+        annotations:
+          resumen: "{{ $labels.servicio }} no responde"
+          detalle: "{{ $labels.instance }} lleva más de 2 minutos sin responder correctamente."
+
+      - alert: ServicioLento
+        expr: probe_duration_seconds{job="servicios"} > 3
+        for: 5m
+        labels:
+          severidad: advertencia
+        annotations:
+          resumen: "{{ $labels.servicio }} responde lento"
+          detalle: "{{ $labels.instance }} tarda {{ $value | humanizeDuration }} en responder."
+
+      - alert: MonitoreoSinDatos
+        expr: up{job="blackbox"} == 0
+        for: 5m
+        labels:
+          severidad: critica
+        annotations:
+          resumen: "El monitoreo dejó de revisar los servicios"
+          detalle: "Blackbox no responde, así que no se sabe si la API y la web están arriba."

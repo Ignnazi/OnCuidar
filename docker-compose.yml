@@ -1,5 +1,5 @@
-# Nombre fijo del proyecto
-name: oncuidar-docker
+# Nombre fijo del proyecto: es el mismo en el servidor, donde los contenedores y volúmenes se llaman oncuidar_*
+name: oncuidar
 
 services:
   db:
@@ -19,6 +19,8 @@ services:
       retries: 10
 
   api:
+    # En el servidor es la imagen que publica el CI (la fija scripts/desplegar.sh); en local se construye
+    image: ${IMAGEN_API:-oncuidar-api:local}
     build: ./backend
     restart: unless-stopped
     # Node no corre como PID 1, asi recibe las senales y Docker lo reinicia si se cae
@@ -27,16 +29,79 @@ services:
       db:
         condition: service_healthy
     env_file: .env
+    volumes:
+      # Los videos no se versionan en git, así que no van dentro de la imagen
+      - ./backend/archivos/videos:/app/archivos/videos:ro,Z
     ports:
       - "${PUERTO_API:-8080}:3000"
 
   web:
     image: docker.io/library/nginx:alpine
     restart: unless-stopped
+    environment:
+      NGINX_ENTRYPOINT_LOCAL_RESOLVERS: "1"
     volumes:
       - ./web:/usr/share/nginx/html:ro,Z
+      - ./monitoreo/nginx/default.conf.template:/etc/nginx/templates/default.conf.template:ro,Z
     ports:
       - "${PUERTO_WEB:-8015}:80"
 
+  # Monitoreo: solo Grafana queda accesible, a través de la web en /grafana/
+  prometheus:
+    image: docker.io/prom/prometheus:v3.15.1
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=30d
+      - --storage.tsdb.retention.size=1GB
+    volumes:
+      - ./monitoreo/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro,Z
+      - ./monitoreo/prometheus/alertas.yml:/etc/prometheus/alertas.yml:ro,Z
+      - datos_prometheus:/prometheus
+
+  blackbox:
+    image: docker.io/prom/blackbox-exporter:v0.29.1
+    restart: unless-stopped
+    command: --config.file=/etc/blackbox/blackbox.yml
+    volumes:
+      - ./monitoreo/blackbox/blackbox.yml:/etc/blackbox/blackbox.yml:ro,Z
+
+  alertmanager:
+    image: docker.io/prom/alertmanager:v0.34.2
+    restart: unless-stopped
+    entrypoint: ["/bin/sh", "/etc/alertmanager/iniciar.sh"]
+    environment:
+      ALERTAS_CORREO: ${ALERTAS_CORREO:-}
+      ALERTAS_CLAVE: ${ALERTAS_CLAVE:-}
+    volumes:
+      - ./monitoreo/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro,Z
+      - ./monitoreo/alertmanager/iniciar.sh:/etc/alertmanager/iniciar.sh:ro,Z
+      - datos_alertmanager:/alertmanager
+
+  grafana:
+    image: docker.io/grafana/grafana:13.3.0
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_USUARIO:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_CLAVE:?definir GRAFANA_CLAVE en .env}
+      GF_SERVER_ROOT_URL: ${URL_GRAFANA:-http://localhost:8015/grafana/}
+      GF_SERVER_SERVE_FROM_SUB_PATH: "false"
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/paneles/servicios.json
+      GF_DATE_FORMATS_DEFAULT_TIMEZONE: America/Santiago
+    volumes:
+      - ./monitoreo/grafana/provisioning:/etc/grafana/provisioning:ro,Z
+      - ./monitoreo/grafana/paneles:/var/lib/grafana/paneles:ro,Z
+      - datos_grafana:/var/lib/grafana
+
 volumes:
   datos_postgres:
+  datos_prometheus:
+  datos_alertmanager:
+  datos_grafana:

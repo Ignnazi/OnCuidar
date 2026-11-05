@@ -1,0 +1,30 @@
+# Los valores __ALERTAS_*__ se reemplazan al iniciar el contenedor con las variables del .env
+global:
+  smtp_smarthost: smtp.gmail.com:587
+  smtp_from: OnCuidar Monitoreo <__ALERTAS_CORREO__>
+  smtp_auth_username: __ALERTAS_CORREO__
+  smtp_auth_password: __ALERTAS_CLAVE__
+  smtp_require_tls: true
+  resolve_timeout: 5m
+
+route:
+  receiver: correo
+  group_by: [alertname, servicio]
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 6h
+
+receivers:
+  - name: correo
+    email_configs:
+      - to: __ALERTAS_CORREO__
+        send_resolved: true
+        headers:
+          Subject: '[OnCuidar] {{ if eq .Status "firing" }}Alerta{{ else }}Resuelto{{ end }}: {{ .CommonAnnotations.resumen }}'
+        html: |
+          {{ range .Alerts }}
+          <p><strong>{{ if eq .Status "firing" }}Alerta{{ else }}Resuelto{{ end }}:</strong> {{ .Annotations.resumen }}</p>
+          <p>{{ .Annotations.detalle }}</p>
+          <p>Desde: {{ .StartsAt.Local.Format "02/01/2006 15:04" }}</p>
+          <hr>
+          {{ end }}
