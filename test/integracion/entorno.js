@@ -5,3 +5,7 @@ process.env.CLAVE_MAESTRA = Buffer.alloc(32, 7).toString('base64');
 process.env.HMAC_CORREO = 'hmac-de-pruebas';
 process.env.LIMITE_AUTH = '100000';
 process.env.URL_PUBLICA = 'http://localhost:8080';
+// Sin SMTP, aunque el .env lo tenga: las pruebas registran cuentas falsas y los envíos reales rebotarían
+process.env.SMTP_HOST = '';
+process.env.SMTP_USUARIO = '';
+process.env.SMTP_CLAVE = '';
