@@ -13,6 +13,10 @@ updates:
     groups:
       menores:
         update-types: [minor, patch]
+    # Las versiones mayores pueden romper la app: se actualizan a mano
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: npm
     directory: /backend
@@ -26,6 +30,10 @@ updates:
     groups:
       menores:
         update-types: [minor, patch]
+    # Las versiones mayores pueden romper la app: se actualizan a mano
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: docker
     directory: /backend
@@ -34,6 +42,10 @@ updates:
       interval: monthly
     commit-message:
       prefix: "chore(backend)"
+    # Las versiones mayores pueden romper la app: se actualizan a mano
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: github-actions
     directory: /
