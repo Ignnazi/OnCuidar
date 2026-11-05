@@ -16,6 +16,8 @@ main() {
   # cron arranca con un PATH mínimo. Las rutas van al final para no tapar las que ya existen
   export PATH="$PATH:$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin"
   export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+  local script
+  script="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
 
   cd "$carpeta"
 
@@ -24,7 +26,7 @@ main() {
   # aquí. Si pasara, los contenedores que quedan corriendo lo retendrían para siempre.
   if [ -z "${ACTUALIZAR_CON_CANDADO:-}" ]; then
     export ACTUALIZAR_CON_CANDADO=1
-    exec flock -n -E 0 -o "$carpeta/.actualizar.candado" bash "$0" "$@"
+    exec flock -n -E 0 -o "$carpeta/.actualizar.candado" bash "$script" "$@"
   fi
 
   # Registro propio: al pasar de 2000 líneas se deja en las últimas 1000

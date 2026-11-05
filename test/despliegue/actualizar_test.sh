@@ -60,7 +60,7 @@ EOF
 
 ejecutar() {
   (cd "$TMP" && PATH="$BIN:$PATH" CARPETA_ONCUIDAR="$CARPETA" PAQUETE_DESPLIEGUE=ghcr.io/ejemplo/paquete:main \
-    "$@" bash "$CARPETA/scripts/actualizar.sh" > "$TMP/salida.txt" 2>&1)
+    "$@" bash "${RUTA_SCRIPT:-$CARPETA/scripts/actualizar.sh}" > "$TMP/salida.txt" 2>&1)
   ESTADO=$?
   REGISTRO_TXT=$(cat "$CARPETA/actualizar.log" 2> /dev/null)
 }
@@ -90,6 +90,13 @@ comprobar "deja constancia en el registro" contiene <(echo "$REGISTRO_TXT") "Des
 comprobar "borra el contenedor temporal" contiene "$LLAMADAS" "podman rm contenedor1"
 comprobar "no escribe en la salida de cron" [ ! -s "$TMP/salida.txt" ]
 comprobar "el despliegue no hereda el candado" no_contiene "$LLAMADAS" "HEREDA_CANDADO"
+rm -rf "$TMP"
+
+echo "Se ejecuta con una ruta relativa desde otra carpeta"
+preparar
+RUTA_SCRIPT=oncuidar/scripts/actualizar.sh ejecutar env
+comprobar "termina sin error" [ "$ESTADO" -eq 0 ]
+comprobar "despliega la imagen que indica el paquete" contiene "$LLAMADAS" "desplegar $IMAGEN"
 rm -rf "$TMP"
 
 echo "La versión ya está desplegada"
