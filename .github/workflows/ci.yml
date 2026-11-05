@@ -9,7 +9,8 @@ on:
 
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  # En main no se cancela: cortaría un despliegue a medias
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   app:
@@ -120,3 +121,79 @@ jobs:
       - name: Pruebas
         run: npm test
         working-directory: backend
+
+      - name: Pruebas del script de despliegue
+        run: bash test/despliegue/desplegar_test.sh
+
+  imagen:
+    name: Imagen
+    needs: backend
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Construir y publicar la imagen de la API
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          imagen="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/oncuidar-api:${GITHUB_SHA}"
+          printf '%s' "$TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+          docker build --label "org.opencontainers.image.source=https://github.com/${GITHUB_REPOSITORY}" -t "$imagen" backend
+          docker push "$imagen"
+
+  despliegue:
+    name: Despliegue
+    needs: [app, apk, imagen]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: produccion
+      url: https://parra.chillan.ubiobio.cl/oncuidar/
+    # Nunca dos despliegues a la vez, y uno empezado no se cancela
+    concurrency:
+      group: despliegue
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: OnCuidar-${{ github.sha }}
+          path: apk
+
+      - name: Preparar la conexión SSH
+        env:
+          LLAVE: ${{ secrets.PARRA_SSH_KEY }}
+          HUELLA: ${{ secrets.PARRA_HOST_KEY }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$LLAVE" > ~/.ssh/parra
+          chmod 600 ~/.ssh/parra
+          printf '%s\n' "$HUELLA" > ~/.ssh/known_hosts
+
+      - name: Desplegar en parra
+        env:
+          SERVIDOR: ${{ secrets.PARRA_USUARIO }}@${{ secrets.PARRA_HOST }}
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          parra() { ssh -i ~/.ssh/parra -o BatchMode=yes -o StrictHostKeyChecking=yes "$SERVIDOR" "$@"; }
+          imagen="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/oncuidar-api:${GITHUB_SHA}"
+          mkdir entrante
+          cp -r --parents docker-compose.yml database/init.sql monitoreo scripts web/index.html web/logo.png entrante/
+          cp apk/app-release.apk entrante/web/OnCuidar.apk
+          tar -C entrante -czf - . | parra 'rm -rf ~/oncuidar/.despliegue && mkdir ~/oncuidar/.despliegue && tar -xzf - -C ~/oncuidar/.despliegue'
+          printf '%s' "$TOKEN" | parra "bash ~/oncuidar/.despliegue/scripts/desplegar.sh '$imagen' '$GITHUB_ACTOR'"
+
+      - name: Comprobar desde fuera
+        run: |
+          curl -fsS --retry 5 --retry-delay 5 https://parra.chillan.ubiobio.cl/oncuidar-backend/api/salud
+          curl -fsS --retry 5 --retry-delay 5 -o /dev/null https://parra.chillan.ubiobio.cl/oncuidar/
