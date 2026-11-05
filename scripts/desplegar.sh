@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
-# Despliegue en el servidor. Lo ejecuta el job "Despliegue" del CI después de dejar
-# los archivos nuevos en ~/oncuidar/.despliegue.
+# Despliega una versión nueva en el servidor. Lo ejecuta scripts/actualizar.sh con los
+# archivos del paquete ya extraídos en ~/oncuidar/.despliegue.
 #
 # Uso: desplegar.sh <imagen-api> [usuario-registro]
-# El token del registro de imágenes llega por la entrada estándar.
+# Si el registro pide clave, el token se pasa por la entrada estándar.
 #
-# Descarga la imagen nueva antes de tocar nada; después copia los archivos que cambiaron,
-# reinicia solo los servicios afectados y cambia la imagen de la API. Si la API o la web
-# no responden, vuelve todo a como estaba. La base de datos nunca se reinicia.
+# Primero descarga la imagen. Después copia los archivos que cambiaron, reinicia los
+# servicios afectados y recrea la API. Si la API o la web no responden, deja todo como
+# estaba. La base de datos nunca se reinicia.
 set -euo pipefail
-# Si se corta la conexión SSH, el despliegue igual termina (o vuelve atrás)
+# Si se cierra la terminal que lo lanzó, el despliegue termina igual
 trap '' HUP
 
 IMAGEN="${1:?Falta la imagen de la API}"

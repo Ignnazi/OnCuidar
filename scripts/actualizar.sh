@@ -2,18 +2,18 @@
 # Revisa si hay una versión nueva publicada por el CI y, si la hay, la despliega.
 # Lo ejecuta cron en el servidor cada 15 minutos (ver docs/despliegue.md).
 #
-# El firewall de la universidad no deja entrar conexiones SSH desde GitHub, así que es
-# el servidor el que sale a buscar el paquete de despliegue al registro de imágenes.
-# El paquete trae la configuración, la página, el APK y el nombre de la imagen de la API.
+# El firewall de la universidad bloquea el SSH que viene de GitHub. Por eso es el servidor
+# el que va a buscar el paquete al registro de imágenes. El paquete trae la configuración,
+# la página, el APK y el nombre de la imagen de la API.
 #
-# Todo va dentro de main: un despliegue puede reemplazar este mismo archivo mientras corre,
-# y así bash ya lo leyó completo antes de empezar.
+# El código va dentro de main porque un despliegue puede reemplazar este archivo mientras
+# corre. Así bash lo lee completo antes de empezar.
 set -euo pipefail
 
 main() {
   local carpeta="${CARPETA_ONCUIDAR:-$HOME/oncuidar}"
   local paquete_imagen="${PAQUETE_DESPLIEGUE:-ghcr.io/ignnazi/oncuidar-despliegue:main}"
-  # cron arranca con un PATH mínimo; se agregan al final para no tapar lo que ya esté
+  # cron arranca con un PATH mínimo. Las rutas van al final para no tapar las que ya existen
   export PATH="$PATH:$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin"
   export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
 

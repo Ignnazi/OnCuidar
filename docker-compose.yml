@@ -19,7 +19,7 @@ services:
       retries: 10
 
   api:
-    # En el servidor es la imagen que publica el CI (la fija scripts/desplegar.sh); en local se construye
+    # En el servidor se usa la imagen que publica el CI. En local se construye con build
     image: ${IMAGEN_API:-oncuidar-api:local}
     build: ./backend
     restart: unless-stopped
