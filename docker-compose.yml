@@ -1,5 +1,5 @@
-# Nombre fijo del proyecto
-name: oncuidar-docker
+# Nombre fijo del proyecto: es el mismo en el servidor, donde los contenedores y volúmenes se llaman oncuidar_*
+name: oncuidar
 
 services:
   db:
@@ -19,6 +19,8 @@ services:
       retries: 10
 
   api:
+    # En el servidor es la imagen que publica el CI (la fija scripts/desplegar.sh); en local se construye
+    image: ${IMAGEN_API:-oncuidar-api:local}
     build: ./backend
     restart: unless-stopped
     # Node no corre como PID 1, asi recibe las senales y Docker lo reinicia si se cae
@@ -27,6 +29,9 @@ services:
       db:
         condition: service_healthy
     env_file: .env
+    volumes:
+      # Los videos no se versionan en git, así que no van dentro de la imagen
+      - ./backend/archivos/videos:/app/archivos/videos:ro,Z
     ports:
       - "${PUERTO_API:-8080}:3000"
 

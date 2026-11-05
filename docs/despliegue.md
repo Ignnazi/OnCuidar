@@ -12,43 +12,62 @@ La API, la base de datos y la página de descarga corren en `parra.chillan.ubiob
 | `grafana` | 8015 en `/grafana/` | Paneles de monitoreo |
 | `prometheus`, `blackbox`, `alertmanager` | interno | Revisión de servicios y alertas por correo |
 
-El archivo `~/oncuidar/.env` tiene las credenciales de producción y no se versiona. Las variables necesarias están en `.env.ejemplo`.
+El servidor usa el mismo `docker-compose.yml` del repositorio (proyecto `oncuidar`). El archivo `~/oncuidar/.env` tiene las credenciales de producción y no se versiona. Las variables necesarias están en `.env.ejemplo`; en el servidor además van:
 
-## Actualizar el backend
-
-1. Respaldar la base de datos (ver [Respaldos](#respaldos)).
-2. Copiar el backend sin `node_modules` ni `archivos`:
-
-   ```bash
-   rsync -av --exclude node_modules --exclude archivos backend/ <usuario>@parra.chillan.ubiobio.cl:~/oncuidar/backend/
-   ```
-
-3. Reconstruir y reiniciar solo la API:
-
-   ```bash
-   cd ~/oncuidar
-   podman-compose build api
-   podman-compose up -d --no-deps api
-   ```
-
-4. Verificar:
-
-   ```bash
-   curl -s http://localhost:8014/api/salud
-   podman logs --tail 50 oncuidar_api_1
-   ```
-
-Si algo falla, volver a copiar la versión anterior del backend y repetir el paso 3.
-
-## Publicar el APK
-
-El workflow de CI compila el APK en cada integración a `main` y lo deja como artefacto de la ejecución en la pestaña Actions. Para publicarlo:
-
-```bash
-scp app-release.apk <usuario>@parra.chillan.ubiobio.cl:~/oncuidar/web/OnCuidar.apk
+```
+PUERTO_API=8014
+PUERTO_WEB=8015
+IMAGEN_API=<la fija el despliegue>
 ```
 
-La URL de la API se fija al compilar con la variable de repositorio `API_URL` (Settings > Secrets and variables > Actions > Variables), por ejemplo `https://parra.chillan.ubiobio.cl/oncuidar-backend/api`. Sin ella el job falla.
+Los videos de `backend/archivos/videos` no están en git: viven en el servidor y se montan en la API.
+
+En local, el proyecto también se llama `oncuidar`. Quien lo haya levantado antes con el nombre `oncuidar-docker` debe bajarlo primero con `docker compose -p oncuidar-docker down`; sus datos quedan en los volúmenes `oncuidar-docker_*`.
+
+## Despliegue automático
+
+Cada push a `main` (o sea, cada pull request integrado) despliega solo, después de que pasen las pruebas. El workflow `.github/workflows/ci.yml` lo hace en dos jobs:
+
+1. **Imagen**: construye la imagen de la API y la publica en GitHub Container Registry como `ghcr.io/ignnazi/oncuidar-api:<commit>`.
+2. **Despliegue**: copia al servidor por SSH el `docker-compose.yml`, `monitoreo/`, la página, `database/init.sql`, `scripts/` y el APK recién compilado, y ejecuta `scripts/desplegar.sh`.
+
+`scripts/desplegar.sh`:
+
+- copia solo los archivos que cambiaron y reinicia solo los servicios afectados; la base de datos nunca se reinicia;
+- descarga la imagen nueva, la deja en `IMAGEN_API` del `.env` y recrea la API;
+- espera a que respondan `/api/salud` y la página; si no responden, restaura los archivos y la imagen anteriores;
+- conserva las 3 imágenes más recientes de la API y borra las demás.
+
+La salida de `podman-compose` incluye variables del `.env`, así que no se muestra en Actions (el repositorio es público): queda en `~/oncuidar/despliegue.log`, que se reemplaza en cada despliegue.
+
+Al final el job comprueba la API y la página desde fuera, por HTTPS. Sus pruebas están en `test/despliegue/desplegar_test.sh` y corren en el job Backend.
+
+Configuración en GitHub (Settings > Environments > `produccion`):
+
+| Secreto | Contenido |
+| --- | --- |
+| `PARRA_HOST` | `parra.chillan.ubiobio.cl` |
+| `PARRA_USUARIO` | usuario del servidor |
+| `PARRA_SSH_KEY` | llave privada exclusiva del despliegue |
+| `PARRA_HOST_KEY` | línea de `known_hosts` del servidor |
+
+La llave pública correspondiente está en `~/.ssh/authorized_keys` del servidor con la opción `restrict`.
+
+### Desplegar a mano
+
+Si GitHub no puede llegar al servidor, se puede volver a ejecutar el workflow desde la pestaña Actions o desplegar desde el servidor:
+
+```bash
+cd ~/oncuidar
+podman-compose build api
+podman-compose up -d --no-deps --force-recreate api
+curl -s http://localhost:8014/api/salud
+podman logs --tail 50 oncuidar_api_1
+```
+
+Antes de construir a mano, quitar `IMAGEN_API` del `.env` para que se use la imagen local. El APK se publica copiándolo a `~/oncuidar/web/OnCuidar.apk`.
+
+La URL de la API se fija al compilar el APK con la variable de repositorio `API_URL` (Settings > Secrets and variables > Actions > Variables), por ejemplo `https://parra.chillan.ubiobio.cl/oncuidar-backend/api`. Sin ella el job falla.
 
 ## Versiones
 
@@ -81,8 +100,6 @@ ALERTAS_CLAVE=<contraseña de aplicación de Gmail>
 ```
 
 `GRAFANA_CLAVE` es obligatoria. La contraseña de aplicación se crea en la cuenta de Google, en Seguridad > Verificación en dos pasos > Contraseñas de aplicaciones; no sirve la contraseña normal. Sin `ALERTAS_CORREO` o `ALERTAS_CLAVE`, Alertmanager no arranca, pero el resto de los servicios sigue funcionando.
-
-El `docker-compose.yml` del servidor no es el del repositorio: usa `name: oncuidar` y los puertos 8014 y 8015 fijos. Copiar el del repositorio crearía otro proyecto con una base de datos vacía, así que solo se le agregan los servicios nuevos y se copia la carpeta `monitoreo/`.
 
 Para levantarlo por primera vez o después de cambiar la configuración (la primera vez Grafana tarda unos minutos en responder):
 
