@@ -169,7 +169,7 @@ jobs:
           path: apk
 
       # El firewall de la universidad no deja entrar a GitHub por SSH: el servidor revisa
-      # cada 5 minutos la etiqueta :main de este paquete y se despliega solo (scripts/actualizar.sh)
+      # cada 15 minutos la etiqueta :main de este paquete y se despliega solo (scripts/actualizar.sh)
       - name: Publicar el paquete que descarga el servidor
         env:
           TOKEN: ${{ secrets.GITHUB_TOKEN }}

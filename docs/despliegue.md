@@ -33,7 +33,7 @@ En `.github/workflows/ci.yml`:
 1. **Imagen**: construye la imagen de la API y la publica en GitHub Container Registry como `ghcr.io/ignnazi/oncuidar-api:<commit>`.
 2. **Paquete de despliegue**: publica `ghcr.io/ignnazi/oncuidar-despliegue` con el `docker-compose.yml`, `monitoreo/`, la página, `database/init.sql`, `scripts/`, el APK recién compilado y el nombre de la imagen de la API. La etiqueta `:main` apunta siempre al último commit de `main` que pasó todo.
 
-En el servidor, cron ejecuta `scripts/actualizar.sh` cada 5 minutos:
+En el servidor, cron ejecuta `scripts/actualizar.sh` cada 15 minutos:
 
 - revisa si la etiqueta `:main` del paquete cambió; si no, termina sin hacer nada;
 - si cambió, extrae el paquete en `~/oncuidar/.despliegue` y ejecuta `scripts/desplegar.sh` con la imagen nueva;
@@ -58,7 +58,7 @@ Puesta en marcha (una sola vez):
 2. Copiar `scripts/actualizar.sh` al servidor en `~/oncuidar/scripts/` (después se actualiza solo con cada despliegue) e instalar la revisión periódica:
 
 ```bash
-(crontab -l 2>/dev/null; echo "*/5 * * * * bash \$HOME/oncuidar/scripts/actualizar.sh") | crontab -
+(crontab -l 2>/dev/null; echo "*/15 * * * * bash \$HOME/oncuidar/scripts/actualizar.sh") | crontab -
 ```
 
 ### Desplegar a mano

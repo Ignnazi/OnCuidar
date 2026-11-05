@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Revisa si hay una versión nueva publicada por el CI y, si la hay, la despliega.
-# Lo ejecuta cron en el servidor cada 5 minutos (ver docs/despliegue.md).
+# Lo ejecuta cron en el servidor cada 15 minutos (ver docs/despliegue.md).
 #
 # El firewall de la universidad no deja entrar conexiones SSH desde GitHub, así que es
 # el servidor el que sale a buscar el paquete de despliegue al registro de imágenes.
@@ -19,7 +19,7 @@ main() {
 
   cd "$carpeta"
 
-  # Nunca dos revisiones a la vez (un despliegue puede tardar más de 5 minutos)
+  # Nunca dos revisiones a la vez (un despliegue puede tardar más de 15 minutos)
   exec 9> .actualizar.lock
   flock -n 9 || return 0
 
