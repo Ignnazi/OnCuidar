@@ -1,4 +1,4 @@
-FROM node:22-alpine
+FROM node:26-alpine
 WORKDIR /app
 # ffmpeg saca la miniatura de cada video al cargar el catalogo
 RUN apk add --no-cache ffmpeg
