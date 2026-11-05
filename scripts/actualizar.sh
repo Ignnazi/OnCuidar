@@ -13,7 +13,8 @@ set -euo pipefail
 main() {
   local carpeta="${CARPETA_ONCUIDAR:-$HOME/oncuidar}"
   local paquete_imagen="${PAQUETE_DESPLIEGUE:-ghcr.io/ignnazi/oncuidar-despliegue:main}"
-  export PATH="$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin:$PATH"
+  # cron arranca con un PATH mínimo; se agregan al final para no tapar lo que ya esté
+  export PATH="$PATH:$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin"
   export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
 
   cd "$carpeta"
