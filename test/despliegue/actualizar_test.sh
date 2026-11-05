@@ -20,6 +20,8 @@ preparar() {
   # desplegar.sh simulado: anota con qué se llamó y falla si FALLA_DESPLIEGUE está definida
   cat > "$PAQUETE/despliegue/scripts/desplegar.sh" << EOF
 echo "desplegar \$* IMAGEN_API_en_paquete=\$([ -e .despliegue/IMAGEN_API ] && echo si || echo no)" >> "$LLAMADAS"
+# En Linux revisa si este proceso recibió abierto el archivo del candado
+if ls -l /proc/\$\$/fd 2> /dev/null | grep -q -E "actualizar.(candado|lock)"; then echo "HEREDA_CANDADO" >> "$LLAMADAS"; fi
 # Simula un despliegue que trae una versión nueva de actualizar.sh, de otro largo
 if [ -n "\${SOBRESCRIBE:-}" ]; then
   for i in \$(seq 1 300); do echo "echo BASURA_\$i >> $LLAMADAS"; done > scripts/actualizar.sh
@@ -37,7 +39,19 @@ case "\$1" in
   cp) [ -z "\${FALLA_CP:-}" ] || exit 1; cp -r "$PAQUETE/despliegue/." "\$3" ;;
 esac
 EOF
-  printf '#!/usr/bin/env bash\nexit 0\n' > "$BIN/flock"
+  # Se usa el flock real si existe (Linux). Si no, uno simulado que ejecuta el comando
+  if ! command -v flock > /dev/null; then
+    cat > "$BIN/flock" << 'EOF'
+#!/usr/bin/env bash
+while [ "${1#-}" != "$1" ]; do
+  [ "$1" = "-E" ] && shift
+  shift
+done
+[ -n "${CANDADO_OCUPADO:-}" ] && exit 0
+shift
+exec "$@"
+EOF
+  fi
   chmod +x "$BIN"/*
   # Se ejecuta una copia, como en el servidor, para que un despliegue pueda reemplazarla
   mkdir -p "$CARPETA/scripts"
@@ -75,6 +89,7 @@ comprobar "anota la versión desplegada" contiene "$CARPETA/.paquete-desplegado"
 comprobar "deja constancia en el registro" contiene <(echo "$REGISTRO_TXT") "Desplegando $IMAGEN"
 comprobar "borra el contenedor temporal" contiene "$LLAMADAS" "podman rm contenedor1"
 comprobar "no escribe en la salida de cron" [ ! -s "$TMP/salida.txt" ]
+comprobar "el despliegue no hereda el candado" no_contiene "$LLAMADAS" "HEREDA_CANDADO"
 rm -rf "$TMP"
 
 echo "La versión ya está desplegada"
@@ -126,6 +141,20 @@ comprobar "borra el contenedor temporal" contiene "$LLAMADAS" "podman rm contene
 comprobar "no despliega" no_contiene "$LLAMADAS" "desplegar"
 comprobar "no la marca como fallida (se reintenta)" [ ! -e "$CARPETA/.paquete-fallido" ]
 comprobar "lo deja en el registro" contiene <(echo "$REGISTRO_TXT") "No se pudo extraer el paquete"
+rm -rf "$TMP"
+
+echo "Otra revisión tiene el candado"
+preparar
+if command -v flock > /dev/null; then
+  flock "$CARPETA/.actualizar.candado" sleep 5 &
+  sleep 1
+  ejecutar env
+  wait
+else
+  ejecutar env CANDADO_OCUPADO=1
+fi
+comprobar "termina sin error para cron" [ "$ESTADO" -eq 0 ]
+comprobar "no despliega" no_contiene "$LLAMADAS" "desplegar"
 rm -rf "$TMP"
 
 echo "El registro crece demasiado"

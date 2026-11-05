@@ -19,9 +19,13 @@ main() {
 
   cd "$carpeta"
 
-  # Nunca dos revisiones a la vez (un despliegue puede tardar más de 15 minutos)
-  exec 9> .actualizar.lock
-  flock -n 9 || return 0
+  # Nunca dos revisiones a la vez (un despliegue puede tardar más de 15 minutos).
+  # El candado lo guarda el proceso flock y no pasa a los programas que se lanzan desde
+  # aquí. Si pasara, los contenedores que quedan corriendo lo retendrían para siempre.
+  if [ -z "${ACTUALIZAR_CON_CANDADO:-}" ]; then
+    export ACTUALIZAR_CON_CANDADO=1
+    exec flock -n -E 0 -o "$carpeta/.actualizar.candado" bash "$0" "$@"
+  fi
 
   # Registro propio: al pasar de 2000 líneas se deja en las últimas 1000
   local registro="$carpeta/actualizar.log"
