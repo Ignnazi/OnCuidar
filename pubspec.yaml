@@ -22,7 +22,7 @@ dependencies:
 
   # Encriptación
   cryptography: ^2.7.0
-  flutter_secure_storage: ^9.2.4
+  flutter_secure_storage: ^10.3.4
   uuid: ^4.6.0
   pdf: ^3.12.0
   excel: ^4.0.6
