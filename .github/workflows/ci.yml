@@ -177,7 +177,7 @@ jobs:
           duenio="${GITHUB_REPOSITORY_OWNER,,}"
           paquete="ghcr.io/$duenio/oncuidar-despliegue"
           mkdir entrante
-          cp -r --parents docker-compose.yml database/init.sql monitoreo scripts web/index.html web/logo.png entrante/
+          cp -r --parents docker-compose.yml database/init.sql monitoreo scripts web/index.html web/logo.png web/pantalla-inicio.jpg entrante/
           cp apk/app-release.apk entrante/web/OnCuidar.apk
           echo "ghcr.io/$duenio/oncuidar-api:${GITHUB_SHA}" > entrante/IMAGEN_API
           printf 'FROM scratch\nCOPY . /despliegue\n' > "$RUNNER_TEMP/Dockerfile.despliegue"
