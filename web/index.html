@@ -77,15 +77,14 @@ summary::-webkit-details-marker{display:none}
 summary::after{content:"+";font-size:1.3rem;line-height:1;color:var(--dorado)}
 details[open] summary::after{content:"−"}
 details p{margin:10px 0 0;color:var(--suave)}
-.cierre{background:linear-gradient(135deg,#FF8A2B,#D99A16);color:#2C1A00;border-radius:28px;padding:44px 32px;display:grid;gap:28px;align-items:center;margin:0 20px}
-@media (min-width:880px){.cierre{grid-template-columns:1fr auto;max-width:1040px;margin:0 auto;padding:48px 56px}}
-.cierre h2{margin-bottom:8px}
-.cierre p{margin:0 0 22px;font-size:1.05rem}
-.cierre .android{background:#2C1A00;color:#FFF0C2;box-shadow:none}
-.qr{display:none;text-align:center;background:#fff;border-radius:20px;padding:16px}
-.qr svg{width:150px;height:150px;display:block}
-.qr small{display:block;margin-top:6px;color:#6B5A3A;font-weight:700}
-@media (min-width:880px) and (hover:hover){.qr{display:block}}
+.faq{display:grid;gap:28px;max-width:980px;margin:0 auto;align-items:start}
+.faq .preguntas{max-width:none;margin:0}
+.faq details:last-child{margin-bottom:0}
+.qr{display:none;height:214px;align-items:center;gap:16px;width:330px;background:linear-gradient(135deg,#FF8A2B,#D99A16);color:#2C1A00;border-radius:20px;padding:16px 20px;box-shadow:var(--sombra)}
+.qr svg{flex:none;width:118px;height:118px;display:block;background:#fff;border-radius:10px;padding:6px}
+.qr strong{display:block;font-size:1.05rem;line-height:1.3}
+.qr small{display:block;margin-top:6px;font-size:.9rem;line-height:1.4}
+@media (min-width:880px) and (hover:hover){.faq{grid-template-columns:1fr auto}.qr{display:flex}}
 footer{text-align:center;color:var(--suave);font-size:.85rem;padding:40px 20px 32px}
 </style>
 </head>
@@ -146,18 +145,14 @@ iPhone · Próximamente</span>
 <section>
 <div class="ancho">
 <div class="titulo"><h2>Preguntas frecuentes</h2></div>
+<div class="faq">
 <div class="preguntas">
 <details><summary>¿Necesito internet para usarla?</summary><p>Solo para crear tu cuenta y sincronizar. Puedes registrar síntomas y revisar el material descargado sin conexión.</p></details>
 <details><summary>¿Mi información está protegida?</summary><p>Tus datos se guardan en tu cuenta y viajan cifrados entre la app y el servidor.</p></details>
 <details><summary>¿Cuándo estará para iPhone?</summary><p>Estamos trabajando en la versión para iPhone. La publicaremos en esta misma página.</p></details>
 </div>
+<aside class="qr"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 31 31" shape-rendering="crispEdges" role="img" aria-label="Código QR de la página de OnCuidar"><path fill="#FFFFFF" d="M0 0h31v31H0z"/><path stroke="#2C1A00" d="M1 1.5h7m1 0h2m1 0h2m1 0h1m1 0h1m2 0h2m1 0h7M1 2.5h1m5 0h1m1 0h2m6 0h3m1 0h1m1 0h1m5 0h1M1 3.5h1m1 0h3m1 0h1m6 0h4m1 0h1m1 0h1m1 0h1m1 0h3m1 0h1M1 4.5h1m1 0h3m1 0h1m1 0h1m1 0h6m1 0h1m1 0h1m2 0h1m1 0h3m1 0h1M1 5.5h1m1 0h3m1 0h1m3 0h8m1 0h2m1 0h1m1 0h3m1 0h1M1 6.5h1m5 0h1m2 0h2m2 0h1m2 0h2m1 0h1m2 0h1m5 0h1M1 7.5h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7M9 8.5h2m1 0h1m3 0h3m1 0h1M1 9.5h1m1 0h2m1 0h3m1 0h1m1 0h2m1 0h5m3 0h1m2 0h1m1 0h2M4 10.5h3m3 0h2m5 0h9m3 0h1M2 11.5h1m2 0h4m1 0h1m6 0h2m5 0h2m1 0h2M3 12.5h1m2 0h1m1 0h4m1 0h2m1 0h1m2 0h2m1 0h2m5 0h1M4 13.5h1m2 0h1m2 0h2m2 0h2m2 0h1m3 0h1m1 0h1m1 0h2M1 14.5h2m2 0h2m2 0h2m2 0h1m1 0h3m2 0h1m2 0h1m3 0h3M3 15.5h2m2 0h3m2 0h3m3 0h3m1 0h1m2 0h1m1 0h3M2 16.5h1m2 0h1m2 0h2m5 0h1m1 0h1m3 0h3m1 0h1m2 0h1M2 17.5h1m1 0h4m1 0h1m4 0h1m1 0h1m2 0h4m2 0h2m1 0h1M2 18.5h2m4 0h2m1 0h7m3 0h1m2 0h1m1 0h3M1 19.5h1m1 0h1m2 0h2m2 0h1m3 0h1m1 0h1m1 0h2m2 0h1m1 0h2m1 0h1M4 20.5h2m4 0h1m1 0h2m1 0h1m1 0h2m3 0h3m2 0h1M2 21.5h4m1 0h1m8 0h4m1 0h7M9 22.5h1m1 0h4m2 0h3m1 0h1m3 0h5M1 23.5h7m1 0h3m1 0h2m2 0h2m1 0h2m1 0h1m1 0h2m1 0h1M1 24.5h1m5 0h1m1 0h1m2 0h1m1 0h4m1 0h1m1 0h1m3 0h2M1 25.5h1m1 0h3m1 0h1m2 0h4m2 0h1m1 0h1m2 0h5m1 0h3M1 26.5h1m1 0h3m1 0h1m1 0h1m1 0h3m1 0h3m2 0h3m1 0h3m2 0h1M1 27.5h1m1 0h3m1 0h1m1 0h4m4 0h5m2 0h1m2 0h1m1 0h1M1 28.5h1m5 0h1m4 0h2m3 0h1m3 0h3m1 0h2m1 0h1M1 29.5h7m1 0h2m2 0h1m1 0h2m3 0h2m2 0h1m1 0h1m1 0h1"/></svg><div><strong>¿Estás en el computador?</strong><small>Escanea el código con tu celular para abrir esta página.</small></div></aside>
 </div>
-</section>
-
-<section style="padding-top:0">
-<div class="cierre">
-<div><h2>Lleva OnCuidar contigo</h2><p>Descárgala en tu celular y empieza hoy.</p><a class="boton android" href="OnCuidar.apk" download>Descargar para Android</a></div>
-<div class="qr"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 31 31" shape-rendering="crispEdges" role="img" aria-label="Código QR de la página de OnCuidar"><path fill="#FFFFFF" d="M0 0h31v31H0z"/><path stroke="#2C1A00" d="M1 1.5h7m1 0h2m1 0h2m1 0h1m1 0h1m2 0h2m1 0h7M1 2.5h1m5 0h1m1 0h2m6 0h3m1 0h1m1 0h1m5 0h1M1 3.5h1m1 0h3m1 0h1m6 0h4m1 0h1m1 0h1m1 0h1m1 0h3m1 0h1M1 4.5h1m1 0h3m1 0h1m1 0h1m1 0h6m1 0h1m1 0h1m2 0h1m1 0h3m1 0h1M1 5.5h1m1 0h3m1 0h1m3 0h8m1 0h2m1 0h1m1 0h3m1 0h1M1 6.5h1m5 0h1m2 0h2m2 0h1m2 0h2m1 0h1m2 0h1m5 0h1M1 7.5h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7M9 8.5h2m1 0h1m3 0h3m1 0h1M1 9.5h1m1 0h2m1 0h3m1 0h1m1 0h2m1 0h5m3 0h1m2 0h1m1 0h2M4 10.5h3m3 0h2m5 0h9m3 0h1M2 11.5h1m2 0h4m1 0h1m6 0h2m5 0h2m1 0h2M3 12.5h1m2 0h1m1 0h4m1 0h2m1 0h1m2 0h2m1 0h2m5 0h1M4 13.5h1m2 0h1m2 0h2m2 0h2m2 0h1m3 0h1m1 0h1m1 0h2M1 14.5h2m2 0h2m2 0h2m2 0h1m1 0h3m2 0h1m2 0h1m3 0h3M3 15.5h2m2 0h3m2 0h3m3 0h3m1 0h1m2 0h1m1 0h3M2 16.5h1m2 0h1m2 0h2m5 0h1m1 0h1m3 0h3m1 0h1m2 0h1M2 17.5h1m1 0h4m1 0h1m4 0h1m1 0h1m2 0h4m2 0h2m1 0h1M2 18.5h2m4 0h2m1 0h7m3 0h1m2 0h1m1 0h3M1 19.5h1m1 0h1m2 0h2m2 0h1m3 0h1m1 0h1m1 0h2m2 0h1m1 0h2m1 0h1M4 20.5h2m4 0h1m1 0h2m1 0h1m1 0h2m3 0h3m2 0h1M2 21.5h4m1 0h1m8 0h4m1 0h7M9 22.5h1m1 0h4m2 0h3m1 0h1m3 0h5M1 23.5h7m1 0h3m1 0h2m2 0h2m1 0h2m1 0h1m1 0h2m1 0h1M1 24.5h1m5 0h1m1 0h1m2 0h1m1 0h4m1 0h1m1 0h1m3 0h2M1 25.5h1m1 0h3m1 0h1m2 0h4m2 0h1m1 0h1m2 0h5m1 0h3M1 26.5h1m1 0h3m1 0h1m1 0h1m1 0h3m1 0h3m2 0h3m1 0h3m2 0h1M1 27.5h1m1 0h3m1 0h1m1 0h4m4 0h5m2 0h1m2 0h1m1 0h1M1 28.5h1m5 0h1m4 0h2m3 0h1m3 0h3m1 0h2m1 0h1M1 29.5h7m1 0h2m2 0h1m1 0h2m3 0h2m2 0h1m1 0h1m1 0h1"/></svg><small>Escanéalo con tu celular</small></div>
 </div>
 </section>
 
