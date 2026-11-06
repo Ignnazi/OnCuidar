@@ -35,19 +35,23 @@ function urlSegura(valor) {
   return u.href;
 }
 
-function correoHtml({ asunto, previa = '', titulo, parrafos = [], boton, aviso, pie } = {}) {
+function correoHtml({ asunto, previa = '', icono = '', titulo, parrafos = [], boton, aviso, pie } = {}) {
   const url = boton ? urlSegura(boton.url) : null;
   const parrafosHtml = parrafos
-    .map((p) => `<p class="texto" style="margin:0 0 14px;font-size:16px;line-height:1.55;color:${C.texto};font-family:${FUENTE};">${esc(p)}</p>`)
+    .map((p) => `<p class="texto" style="margin:0 0 14px;font-size:16px;line-height:1.6;color:${C.texto};font-family:${FUENTE};text-align:center;">${esc(p)}</p>`)
     .join('');
+  const iconoHtml = icono ? `
+<table role="presentation" align="center" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto 16px;"><tr>
+<td class="insignia" align="center" valign="middle" width="64" height="64" bgcolor="${C.claro}" style="width:64px;height:64px;border-radius:32px;background-color:${C.claro};font-size:30px;line-height:64px;text-align:center;">${esc(icono)}</td>
+</tr></table>` : '';
   const botonHtml = boton ? `
-<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:22px 0 8px;"><tr><td align="center">
-<!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${esc(url)}" style="height:50px;v-text-anchor:middle;width:280px;" arcsize="24%" stroke="f" fillcolor="${C.dorado}"><w:anchorlock/><center style="color:${C.texto};font-family:Arial,sans-serif;font-size:16px;font-weight:bold;">${esc(boton.texto)}</center></v:roundrect><![endif]-->
-<!--[if !mso]><!-- --><a class="boton" href="${esc(url)}" target="_blank" style="display:inline-block;background-color:${C.dorado};color:${C.texto};font-family:${FUENTE};font-size:16px;font-weight:bold;line-height:50px;height:50px;min-width:240px;padding:0 28px;text-align:center;text-decoration:none;border-radius:12px;">${esc(boton.texto)}</a><!--<![endif]-->
+<table role="presentation" align="center" cellpadding="0" cellspacing="0" border="0" style="margin:26px auto 10px;"><tr><td align="center" bgcolor="${C.dorado}" style="border-radius:14px;background-color:${C.dorado};box-shadow:0 6px 16px rgba(217,154,22,0.35);">
+<!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${esc(url)}" style="height:54px;v-text-anchor:middle;width:300px;" arcsize="26%" stroke="f" fillcolor="${C.dorado}"><w:anchorlock/><center style="color:${C.texto};font-family:Arial,sans-serif;font-size:17px;font-weight:bold;">${esc(boton.texto)}</center></v:roundrect><![endif]-->
+<!--[if !mso]><!-- --><a class="boton" href="${esc(url)}" target="_blank" style="display:inline-block;background-color:${C.dorado};color:${C.texto};font-family:${FUENTE};font-size:17px;font-weight:bold;line-height:54px;height:54px;min-width:260px;padding:0 32px;text-align:center;text-decoration:none;border-radius:14px;">${esc(boton.texto)}</a><!--<![endif]-->
 </td></tr></table>
-<p class="suave" style="margin:14px 0 0;font-size:13px;line-height:1.5;color:${C.suave};font-family:${FUENTE};">Si el botón no funciona, copia y pega este enlace en tu navegador:<br><a class="enlace" href="${esc(url)}" target="_blank" style="color:#8A5A00;word-break:break-all;">${esc(url)}</a></p>` : '';
+<p class="suave" style="margin:16px 0 0;font-size:13px;line-height:1.5;color:${C.suave};font-family:${FUENTE};text-align:center;">Si el botón no funciona, copia y pega este enlace en tu navegador:<br><a class="enlace" href="${esc(url)}" target="_blank" style="color:#8A5A00;word-break:break-all;">${esc(url)}</a></p>` : '';
   const avisoHtml = aviso ? `
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:22px;"><tr><td class="aviso" style="background-color:${C.claro};border-radius:10px;padding:12px 16px;font-size:14px;line-height:1.5;color:${C.texto};font-family:${FUENTE};">${esc(aviso)}</td></tr></table>` : '';
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:26px;"><tr><td class="aviso" style="background-color:${C.crema};border-left:4px solid ${C.dorado};border-radius:10px;padding:14px 18px;font-size:14px;line-height:1.55;color:${C.texto};font-family:${FUENTE};">${esc(aviso)}</td></tr></table>` : '';
   const pieAyuda = pie ?? PIE_AYUDA;
 
   return `<!doctype html>
@@ -63,15 +67,16 @@ function correoHtml({ asunto, previa = '', titulo, parrafos = [], boton, aviso, 
 @media (prefers-color-scheme: dark) {
   body, .fondo { background-color: #1B1200 !important; }
   .tarjeta { background-color: #2A1D06 !important; box-shadow: none !important; }
-  .texto, .marca { color: #FFF0C2 !important; }
+  .texto { color: #FFF0C2 !important; }
   .suave, .pie { color: #D9C79A !important; }
   .enlace { color: #F5C451 !important; }
   .aviso { background-color: #3A2A0A !important; color: #FFF0C2 !important; }
+  .insignia { background-color: #3A2A0A !important; }
   .boton { background-color: #F5C451 !important; color: #2C1A00 !important; }
 }
 @media only screen and (max-width: 620px) {
   .contenedor { width: 100% !important; }
-  .relleno { padding: 24px 20px !important; }
+  .relleno { padding: 28px 22px !important; }
   .boton { display: block !important; min-width: 0 !important; }
 }
 </style>
@@ -82,26 +87,22 @@ function correoHtml({ asunto, previa = '', titulo, parrafos = [], boton, aviso, 
 <tr><td align="center" style="padding:28px 12px;">
 <table role="presentation" class="contenedor" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;">
 <tr><td>
-<table role="presentation" class="tarjeta" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#FFFFFF;border-radius:16px;box-shadow:0 2px 12px rgba(44,26,0,0.10);overflow:hidden;">
-<tr><td>
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
-<td width="40%" height="6" bgcolor="${C.naranja}" style="height:6px;line-height:6px;font-size:0;">&nbsp;</td>
-<td width="30%" height="6" bgcolor="${C.amarillo}" style="height:6px;line-height:6px;font-size:0;">&nbsp;</td>
-<td width="30%" height="6" bgcolor="${C.dorado}" style="height:6px;line-height:6px;font-size:0;">&nbsp;</td>
+<table role="presentation" class="tarjeta" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#FFFFFF;border-radius:20px;box-shadow:0 6px 24px rgba(44,26,0,0.12);overflow:hidden;">
+<tr><td class="cabecera" align="center" bgcolor="${C.dorado}" style="background-color:${C.dorado};background-image:linear-gradient(160deg,#C08808 0%,${C.dorado} 55%,#F0C566 100%);padding:34px 24px 30px;">
+<table role="presentation" align="center" cellpadding="0" cellspacing="0" border="0"><tr>
+<td align="center" valign="middle" width="88" height="88" bgcolor="#FFFFFF" style="width:88px;height:88px;border-radius:44px;background-color:#FFFFFF;box-shadow:0 6px 16px rgba(44,26,0,0.18);"><img src="cid:${CID_LOGO}" width="62" height="62" alt="OnCuidar" style="display:block;border:0;width:62px;height:62px;margin:0 auto;"></td>
 </tr></table>
+<div style="font-family:${FUENTE};font-size:26px;font-weight:bold;line-height:1.2;color:#2C1A00;margin-top:14px;">OnCuidar</div>
+<div style="font-family:${FUENTE};font-size:14px;font-weight:bold;line-height:1.4;color:#4A3000;margin-top:4px;">${esc(LEMA)}</div>
 </td></tr>
-<tr><td class="relleno" style="padding:28px 36px 32px;">
-<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:22px;"><tr>
-<td style="padding-right:12px;"><img src="cid:${CID_LOGO}" width="56" height="56" alt="OnCuidar" style="display:block;border:0;width:56px;height:56px;"></td>
-<td><div class="marca" style="font-family:${FUENTE};font-size:22px;font-weight:bold;line-height:1.2;color:${C.texto};">OnCuidar</div>
-<div class="suave" style="font-family:${FUENTE};font-size:13px;line-height:1.4;color:${C.suave};">${esc(LEMA)}</div></td>
-</tr></table>
-<h1 class="texto" style="margin:0 0 16px;font-size:24px;line-height:1.3;color:${C.texto};font-family:${FUENTE};">${esc(titulo)}</h1>
+<tr><td class="relleno" style="padding:34px 40px 36px;">
+${iconoHtml}
+<h1 class="texto" style="margin:0 0 18px;font-size:24px;line-height:1.3;color:${C.texto};font-family:${FUENTE};text-align:center;">${esc(titulo)}</h1>
 ${parrafosHtml}${botonHtml}${avisoHtml}
 </td></tr>
 </table>
 </td></tr>
-<tr><td class="pie" align="center" style="padding:20px 24px 4px;font-family:${FUENTE};font-size:12px;line-height:1.6;color:${C.suave};">
+<tr><td class="pie" align="center" style="padding:22px 24px 4px;font-family:${FUENTE};font-size:12px;line-height:1.6;color:${C.suave};">
 ${esc(PIE_AUTOMATICO)}<br>${esc(pieAyuda)}
 </td></tr>
 </table>
@@ -131,12 +132,12 @@ const ESTILOS_PAGINA = `
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 body{margin:0;min-height:100vh;display:flex;flex-direction:column;align-items:center;background:var(--fondo);color:var(--texto);font-family:${FUENTE};line-height:1.55}
-.franja{width:100%;height:6px;background:linear-gradient(90deg,${C.naranja} 0 40%,${C.amarillo} 40% 70%,${C.dorado} 70% 100%)}
-header{display:flex;align-items:center;gap:12px;padding:24px 16px 8px}
-header img{width:56px;height:56px}
-.marca{font-size:1.4rem;font-weight:700;line-height:1.2}
-.lema{font-size:.85rem;color:var(--suave)}
-main{width:100%;max-width:440px;padding:12px 16px 24px;flex:1}
+header{width:100%;display:flex;flex-direction:column;align-items:center;padding:32px 16px 64px;background:linear-gradient(160deg,#C08808 0%,${C.dorado} 55%,#F0C566 100%);color:#2C1A00;text-align:center}
+.circulo{display:flex;align-items:center;justify-content:center;width:84px;height:84px;border-radius:50%;background:#FFFFFF;box-shadow:0 6px 16px rgba(44,26,0,.18)}
+.circulo img{width:60px;height:60px}
+.marca{font-size:1.6rem;font-weight:800;line-height:1.2;margin-top:12px}
+.lema{font-size:.9rem;font-weight:700;color:#4A3000}
+main{width:100%;max-width:440px;padding:0 16px 24px;margin-top:-44px;flex:1}
 .tarjeta{background:var(--tarjeta);border-radius:16px;box-shadow:0 2px 14px rgba(44,26,0,.12);padding:28px 24px;text-align:center}
 .icono{display:flex;justify-content:center;margin-bottom:12px}
 h1{font-size:1.5rem;line-height:1.3;margin:0 0 10px}
@@ -168,10 +169,10 @@ function paginaHtml({ titulo, icono = 'info', mensaje = '', cuerpoExtra = '', sc
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="light dark">
 <title>${esc(titulo)} - OnCuidar</title>
+<link rel="icon" type="image/png" href="${LOGO_DATA_URI}">
 <style${n}>${ESTILOS_PAGINA}</style></head>
 <body>
-<div class="franja"></div>
-<header><img src="${LOGO_DATA_URI}" alt="OnCuidar" width="56" height="56"><div><div class="marca">OnCuidar</div><div class="lema">${esc(LEMA)}</div></div></header>
+<header><span class="circulo"><img src="${LOGO_DATA_URI}" alt="OnCuidar" width="60" height="60"></span><div class="marca">OnCuidar</div><div class="lema">${esc(LEMA)}</div></header>
 <main><section class="tarjeta">
 <div class="icono" id="icono">${ICONOS[icono] ?? ICONOS.info}</div>
 <h1 id="titulo">${esc(titulo)}</h1>
@@ -309,6 +310,7 @@ const SEGURIDAD = 'Si no fuiste tú, ignora este mensaje: tu cuenta sigue segura
 
 const CORREOS = {
   restablecer: {
+    icono: '🔑',
     asunto: 'Restablece tu contraseña de OnCuidar',
     previa: 'Crea una contraseña nueva para entrar a OnCuidar.',
     titulo: 'Restablece tu contraseña',
@@ -316,6 +318,7 @@ const CORREOS = {
     boton: 'Crear contraseña nueva',
   },
   verificar: {
+    icono: '👋',
     asunto: 'Confirma tu correo en OnCuidar',
     previa: 'Un último paso para dejar tu cuenta lista.',
     titulo: 'Te damos la bienvenida a OnCuidar',
@@ -323,6 +326,7 @@ const CORREOS = {
     boton: 'Confirmar mi correo',
   },
   cambio: {
+    icono: '✉️',
     asunto: 'Confirma tu nuevo correo en OnCuidar',
     previa: 'Confirma que este será tu correo principal.',
     titulo: 'Confirma tu nuevo correo',
@@ -330,6 +334,7 @@ const CORREOS = {
     boton: 'Confirmar nuevo correo',
   },
   respaldo: {
+    icono: '🛟',
     asunto: 'Confirma tu correo de respaldo en OnCuidar',
     previa: 'Te ayudará a recuperar tu cuenta si la necesitas.',
     titulo: 'Confirma tu correo de respaldo',
@@ -345,6 +350,7 @@ function armarCorreo(tipo, enlace) {
   const datos = {
     asunto: base.asunto,
     previa: base.previa,
+    icono: base.icono,
     titulo: base.titulo,
     parrafos: base.parrafos,
     boton: { texto: base.boton, url: enlace },

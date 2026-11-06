@@ -26,6 +26,10 @@ describe('correos', () => {
     expect(c.texto).toContain('Si no fuiste tú');
   });
 
+  test.each([['restablecer', '🔑'], ['verificar', '👋'], ['cambio', '✉️'], ['respaldo', '🛟']])('plantilla %s: lleva su ícono', (tipo, icono) => {
+    expect(plantillas.armarCorreo(tipo, ENLACE).html).toContain(`>${icono}</td>`);
+  });
+
   test('tipo desconocido falla', () => {
     expect(() => plantillas.armarCorreo('otro', ENLACE)).toThrow('Plantilla de correo desconocida');
   });
@@ -58,6 +62,11 @@ describe('paginas web', () => {
     expect(h).toContain('&lt;b&gt;x&lt;/b&gt;');
     expect(h).toContain('data:image/png;base64,');
     expect(h).toContain('<svg');
+  });
+
+  test('paginaHtml muestra el logo en la pestaña del navegador', () => {
+    const h = plantillas.paginaHtml({ titulo: 'Prueba' });
+    expect(h).toContain(`<link rel="icon" type="image/png" href="${plantillas.LOGO_DATA_URI}">`);
   });
 
   test('GET restablecer valido: 200, titulo, logo, formulario y CSP con nonce', async () => {
