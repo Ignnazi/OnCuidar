@@ -26,6 +26,10 @@ describe('correos', () => {
     expect(c.texto).toContain('Si no fuiste tú');
   });
 
+  test.each([['restablecer', '🔑'], ['verificar', '👋'], ['cambio', '✉️'], ['respaldo', '🛟']])('plantilla %s: lleva su ícono', (tipo, icono) => {
+    expect(plantillas.armarCorreo(tipo, ENLACE).html).toContain(`>${icono}</td>`);
+  });
+
   test('tipo desconocido falla', () => {
     expect(() => plantillas.armarCorreo('otro', ENLACE)).toThrow('Plantilla de correo desconocida');
   });
