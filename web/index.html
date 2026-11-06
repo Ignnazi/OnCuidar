@@ -3,20 +3,170 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
 <title>OnCuidar</title>
+<meta name="description" content="App para cuidadores de niños, niñas y adolescentes con cáncer: registro de síntomas, recordatorios y material educativo, incluso sin conexión.">
+<link rel="icon" type="image/png" href="logo.png">
+<link rel="apple-touch-icon" href="logo.png">
+<meta name="theme-color" content="#D99A16">
+<meta property="og:type" content="website">
+<meta property="og:title" content="OnCuidar · Acompañando a quienes cuidan">
+<meta property="og:description" content="App para cuidadores de niños, niñas y adolescentes con cáncer.">
+<meta property="og:url" content="https://parra.chillan.ubiobio.cl/oncuidar/">
+<meta property="og:image" content="https://parra.chillan.ubiobio.cl/oncuidar/logo.png">
 <style>
-body{font-family:system-ui,sans-serif;background:#fbf6ea;color:#3b2f1a;display:flex;min-height:100vh;margin:0;align-items:center;justify-content:center;text-align:center}
-main{padding:24px;max-width:420px}
-img{width:96px;height:96px}
-a{display:inline-block;margin-top:16px;padding:14px 28px;background:#b8860b;color:#fff;border-radius:12px;text-decoration:none;font-weight:600}
+:root{--fondo:#FFFBF5;--fondo2:#FFF4DC;--tarjeta:#FFFFFF;--texto:#2C1A00;--suave:#6B5A3A;--borde:#EFE3C6;--dorado:#D99A16;--naranja:#FF6B0B;--amarillo:#FFD000;--sombra:0 10px 30px rgba(44,26,0,.10)}
+@media (prefers-color-scheme:dark){:root{--fondo:#1B1200;--fondo2:#241803;--tarjeta:#2A1D06;--texto:#FFF0C2;--suave:#D9C79A;--borde:#4A3912;--sombra:0 10px 30px rgba(0,0,0,.35)}}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--fondo);color:var(--texto);font-family:'Nunito','Segoe UI',Arial,sans-serif;line-height:1.6}
+a{color:inherit}
+.franja{height:6px;background:linear-gradient(90deg,var(--naranja) 0 40%,var(--amarillo) 40% 70%,var(--dorado) 70% 100%)}
+.ancho{max-width:1080px;margin:0 auto;padding:0 20px}
+nav.ancho{display:flex;align-items:center;padding-top:36px;padding-bottom:4px}
+.marca{display:flex;align-items:center;gap:12px;font-weight:800;font-size:1.75rem;text-decoration:none}
+.marca img{width:64px;height:64px}
+.portada{position:relative;overflow:hidden;padding:0 0 64px}
+.portada::before,.portada::after{content:"";position:absolute;border-radius:50%;filter:blur(60px);opacity:.35;z-index:-1}
+.portada::before{width:420px;height:420px;background:var(--amarillo);top:-120px;right:-80px}
+.portada::after{width:360px;height:360px;background:var(--naranja);bottom:-160px;left:-120px;opacity:.2}
+.contenido{display:grid;gap:40px;align-items:start;padding-top:4px}
+@media (min-width:880px){.contenido{grid-template-columns:1.1fr .9fr}.contenido > div:first-child{padding-top:28px}}
+h1{font-size:clamp(2.1rem,5vw,3.4rem);line-height:1.1;margin:0 0 18px;letter-spacing:-.02em}
+h1 span{background:linear-gradient(90deg,var(--naranja),var(--dorado));-webkit-background-clip:text;background-clip:text;color:transparent}
+.bajada{font-size:1.15rem;color:var(--suave);margin:0 0 28px;max-width:34em}
+.botones{display:flex;flex-wrap:wrap;gap:12px}
+.boton{display:inline-flex;align-items:center;gap:10px;padding:15px 24px;border-radius:14px;font-weight:800;font-size:1rem;text-decoration:none}
+.boton svg{width:22px;height:22px;flex:none}
+.android{background:var(--dorado);color:#2C1A00;box-shadow:0 8px 20px rgba(217,154,22,.35);transition:transform .15s}
+.android:hover{transform:translateY(-2px)}
+.iphone{color:var(--suave);border:2px dashed var(--borde);cursor:not-allowed}
+.detalle{font-size:.85rem;color:var(--suave);margin:12px 0 0;min-height:1.4em}
+.telefono{position:relative;justify-self:center;width:270px;aspect-ratio:9/19;border-radius:42px;background:#1A1206;padding:11px;box-shadow:0 30px 60px rgba(44,26,0,.28)}
+@media (min-width:880px){.telefono{width:240px}}
+.pantalla{width:100%;height:100%;border-radius:32px;overflow:hidden;background:#D99A16}
+.pantalla img{display:block;width:100%;height:100%;object-fit:cover}
+.burbuja{position:absolute;display:flex;align-items:center;gap:10px;background:var(--tarjeta);color:var(--texto);border-radius:16px;padding:10px 14px;box-shadow:var(--sombra);font-size:.85rem;font-weight:700;white-space:nowrap}
+.burbuja i{display:grid;place-items:center;width:32px;height:32px;border-radius:10px;font-style:normal;font-size:1rem}
+.b1{top:5%;left:-76px}.b1 i{background:#FFE3D1}
+.b2{top:15%;right:-82px}.b2 i{background:#E3F4E7}
+.b3{bottom:19%;left:-90px}.b3 i{background:#FFF0C2}
+.b4{bottom:5%;right:-70px}.b4 i{background:#E0ECFF}
+@media (max-width:480px){.b1,.b3{left:-34px}.b2,.b4{right:-30px}}
+section{padding:64px 0}
+.titulo{text-align:center;max-width:600px;margin:0 auto 40px}
+h2{font-size:clamp(1.6rem,3.5vw,2.2rem);line-height:1.2;margin:0 0 10px}
+.titulo p{color:var(--suave);margin:0}
+.funciones{display:grid;gap:18px;grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+.funcion{background:var(--tarjeta);border:1px solid var(--borde);border-radius:20px;padding:24px;box-shadow:var(--sombra)}
+.funcion .icono{display:grid;place-items:center;width:48px;height:48px;border-radius:14px;margin-bottom:14px}
+.funcion .icono svg{width:26px;height:26px}
+.funcion h3{margin:0 0 6px;font-size:1.1rem}
+.funcion p{margin:0;color:var(--suave);font-size:.95rem}
+.suave-fondo{background:var(--fondo2)}
+.pasos{display:grid;gap:18px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));counter-reset:paso}
+.paso{position:relative;background:var(--tarjeta);border-radius:20px;padding:28px 22px 22px;box-shadow:var(--sombra)}
+.paso::before{counter-increment:paso;content:counter(paso);display:grid;place-items:center;width:40px;height:40px;border-radius:50%;background:var(--dorado);color:#2C1A00;font-weight:800;margin-bottom:12px}
+.paso h3{margin:0 0 6px;font-size:1.05rem}
+.paso p{margin:0;color:var(--suave);font-size:.95rem}
+.nota{text-align:center;color:var(--suave);font-size:.9rem;margin:24px 0 0}
+.preguntas{max-width:720px;margin:0 auto}
+details{background:var(--tarjeta);border:1px solid var(--borde);border-radius:16px;padding:18px 22px;margin-bottom:12px}
+summary{font-weight:800;cursor:pointer;list-style:none;display:flex;justify-content:space-between;gap:12px}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";font-size:1.3rem;line-height:1;color:var(--dorado)}
+details[open] summary::after{content:"−"}
+details p{margin:10px 0 0;color:var(--suave)}
+.faq{display:grid;gap:28px;max-width:980px;margin:0 auto;align-items:start}
+.faq .preguntas{max-width:none;margin:0}
+.faq details:last-child{margin-bottom:0}
+.qr{display:none;height:214px;align-items:center;gap:16px;width:330px;background:linear-gradient(135deg,#FF8A2B,#D99A16);color:#2C1A00;border-radius:20px;padding:16px 20px;box-shadow:var(--sombra)}
+.qr svg{flex:none;width:118px;height:118px;display:block;background:#fff;border-radius:10px;padding:6px}
+.qr strong{display:block;font-size:1.05rem;line-height:1.3}
+.qr small{display:block;margin-top:6px;font-size:.9rem;line-height:1.4}
+@media (min-width:880px) and (hover:hover){.faq{grid-template-columns:1fr auto}.qr{display:flex}}
+footer{text-align:center;color:var(--suave);font-size:.85rem;padding:40px 20px 32px}
 </style>
 </head>
 <body>
-<main>
-<img src="logo.png" alt="OnCuidar">
-<h1>OnCuidar</h1>
-<p>Apoyo para cuidadores de niños, niñas y adolescentes con cáncer.</p>
-<a href="OnCuidar.apk" download>Descargar para Android</a>
-</main>
+<div class="franja"></div>
+<header class="portada">
+<nav class="ancho"><a class="marca" href="#"><img src="logo.png" alt="" width="64" height="64">OnCuidar</a></nav>
+<div class="ancho contenido">
+<div>
+<h1>Acompañando a <span>quienes cuidan</span></h1>
+<p class="bajada">OnCuidar ayuda a cuidadores de niños, niñas y adolescentes con cáncer a registrar síntomas, recordar medicamentos y resolver dudas, incluso sin conexión.</p>
+<div class="botones">
+<a class="boton android" href="OnCuidar.apk" download>
+<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M6 18c0 .55.45 1 1 1h1v3.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V19h2v3.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V19h1c.55 0 1-.45 1-1V8H6v10zM3.5 8C2.67 8 2 8.67 2 9.5v7c0 .83.67 1.5 1.5 1.5S5 17.33 5 16.5v-7C5 8.67 4.33 8 3.5 8zm17 0c-.83 0-1.5.67-1.5 1.5v7c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5v-7c0-.83-.67-1.5-1.5-1.5zm-4.97-5.84l1.3-1.3c.2-.2.2-.51 0-.71-.2-.2-.51-.2-.71 0l-1.48 1.48A5.84 5.84 0 0 0 12 1c-.96 0-1.86.23-2.66.63L7.85.15c-.2-.2-.51-.2-.71 0-.2.2-.2.51 0 .71l1.31 1.31A5.98 5.98 0 0 0 6 7h12c0-1.99-.97-3.75-2.47-4.84zM10 5H9V4h1v1zm5 0h-1V4h1v1z"/></svg>
+Descargar para Android</a>
+<span class="boton iphone" role="link" aria-disabled="true">
+<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M16.37 12.73c-.03-2.6 2.12-3.85 2.22-3.91-1.21-1.77-3.09-2.01-3.76-2.04-1.6-.16-3.12.94-3.93.94-.81 0-2.06-.92-3.39-.89-1.74.03-3.35 1.01-4.25 2.57-1.81 3.14-.46 7.79 1.3 10.34.86 1.25 1.89 2.65 3.24 2.6 1.3-.05 1.79-.84 3.36-.84 1.57 0 2.01.84 3.38.81 1.4-.02 2.29-1.27 3.14-2.53.99-1.45 1.4-2.86 1.42-2.93-.03-.01-2.72-1.04-2.73-4.12zM13.8 5.1c.71-.87 1.2-2.07 1.06-3.27-1.03.04-2.28.69-3.02 1.55-.66.76-1.24 1.99-1.09 3.16 1.15.09 2.33-.58 3.05-1.44z"/></svg>
+iPhone · Próximamente</span>
+</div>
+<p class="detalle" id="detalle"></p>
+</div>
+<div class="telefono" aria-hidden="true">
+<div class="pantalla"><img src="pantalla-inicio.jpg" alt="" width="720" height="1473"></div>
+<div class="burbuja b1"><i>💊</i>Recordatorios</div>
+<div class="burbuja b2"><i>🌡️</i>Registro de síntomas</div>
+<div class="burbuja b3"><i>📚</i>Biblioteca educativa</div>
+<div class="burbuja b4"><i>💬</i>Chat de orientación</div>
+</div>
+</div>
+</header>
+
+<section>
+<div class="ancho">
+<div class="titulo"><h2>Todo lo que necesitas en un solo lugar</h2><p>Hecha para acompañar el día a día del tratamiento.</p></div>
+<div class="funciones">
+<article class="funcion"><div class="icono" style="background:#FFE3D1;color:#C2410C"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div><h3>Registro de síntomas</h3><p>Anota temperatura, signos vitales y síntomas. La app te avisa cuando un valor necesita atención.</p></article>
+<article class="funcion"><div class="icono" style="background:#FFF0C2;color:#8A5A00"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div><h3>Recordatorios</h3><p>Programa medicamentos, mediciones y citas médicas para que nada se te pase.</p></article>
+<article class="funcion"><div class="icono" style="background:#E3F4E7;color:#1E7B3A"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/></svg></div><h3>Material educativo</h3><p>Infografías, guías y videos sobre quimioterapia, alimentación, catéter y bienestar.</p></article>
+<article class="funcion"><div class="icono" style="background:#E0ECFF;color:#1B5FC7"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div><h3>Chat de orientación</h3><p>Resuelve tus dudas y vuelve a tus conversaciones cuando las necesites.</p></article>
+<article class="funcion"><div class="icono" style="background:#F3E5FF;color:#7B2CBF"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div><h3>Varios pacientes</h3><p>Si cuidas a más de un niño, lleva el registro de cada uno por separado.</p></article>
+<article class="funcion"><div class="icono" style="background:#FFE9E9;color:#B3261E"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 1l22 22"/><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/><path d="M10.71 5.05A16 16 0 0 1 22.58 9"/><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><path d="M12 20h.01"/></svg></div><h3>Funciona sin conexión</h3><p>Registra y consulta aunque no tengas internet. Se sincroniza cuando vuelve la señal.</p></article>
+</div>
+</div>
+</section>
+
+<section class="suave-fondo">
+<div class="ancho">
+<div class="titulo"><h2>Instálala en 3 pasos</h2><p>Por ahora OnCuidar se descarga desde esta página.</p></div>
+<div class="pasos">
+<div class="paso"><h3>Descárgala</h3><p>Toca <strong>Descargar para Android</strong> desde tu celular.</p></div>
+<div class="paso"><h3>Abre el archivo</h3><p>Cuando termine, abre <strong>OnCuidar.apk</strong> desde las notificaciones o la carpeta Descargas.</p></div>
+<div class="paso"><h3>Permite e instala</h3><p>Si el teléfono lo pide, permite instalar apps de esta fuente y toca <strong>Instalar</strong>.</p></div>
+</div>
+<p class="nota">Para actualizarla, descarga el archivo otra vez e instálalo encima.</p>
+</div>
+</section>
+
+<section>
+<div class="ancho">
+<div class="titulo"><h2>Preguntas frecuentes</h2></div>
+<div class="faq">
+<div class="preguntas">
+<details><summary>¿Necesito internet para usarla?</summary><p>Solo para crear tu cuenta y sincronizar. Puedes registrar síntomas y revisar el material descargado sin conexión.</p></details>
+<details><summary>¿Mi información está protegida?</summary><p>Tus datos se guardan en tu cuenta y viajan cifrados entre la app y el servidor.</p></details>
+<details><summary>¿Cuándo estará para iPhone?</summary><p>Estamos trabajando en la versión para iPhone. La publicaremos en esta misma página.</p></details>
+</div>
+<aside class="qr"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 31 31" shape-rendering="crispEdges" role="img" aria-label="Código QR de la página de OnCuidar"><path fill="#FFFFFF" d="M0 0h31v31H0z"/><path stroke="#2C1A00" d="M1 1.5h7m1 0h2m1 0h2m1 0h1m1 0h1m2 0h2m1 0h7M1 2.5h1m5 0h1m1 0h2m6 0h3m1 0h1m1 0h1m5 0h1M1 3.5h1m1 0h3m1 0h1m6 0h4m1 0h1m1 0h1m1 0h1m1 0h3m1 0h1M1 4.5h1m1 0h3m1 0h1m1 0h1m1 0h6m1 0h1m1 0h1m2 0h1m1 0h3m1 0h1M1 5.5h1m1 0h3m1 0h1m3 0h8m1 0h2m1 0h1m1 0h3m1 0h1M1 6.5h1m5 0h1m2 0h2m2 0h1m2 0h2m1 0h1m2 0h1m5 0h1M1 7.5h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7M9 8.5h2m1 0h1m3 0h3m1 0h1M1 9.5h1m1 0h2m1 0h3m1 0h1m1 0h2m1 0h5m3 0h1m2 0h1m1 0h2M4 10.5h3m3 0h2m5 0h9m3 0h1M2 11.5h1m2 0h4m1 0h1m6 0h2m5 0h2m1 0h2M3 12.5h1m2 0h1m1 0h4m1 0h2m1 0h1m2 0h2m1 0h2m5 0h1M4 13.5h1m2 0h1m2 0h2m2 0h2m2 0h1m3 0h1m1 0h1m1 0h2M1 14.5h2m2 0h2m2 0h2m2 0h1m1 0h3m2 0h1m2 0h1m3 0h3M3 15.5h2m2 0h3m2 0h3m3 0h3m1 0h1m2 0h1m1 0h3M2 16.5h1m2 0h1m2 0h2m5 0h1m1 0h1m3 0h3m1 0h1m2 0h1M2 17.5h1m1 0h4m1 0h1m4 0h1m1 0h1m2 0h4m2 0h2m1 0h1M2 18.5h2m4 0h2m1 0h7m3 0h1m2 0h1m1 0h3M1 19.5h1m1 0h1m2 0h2m2 0h1m3 0h1m1 0h1m1 0h2m2 0h1m1 0h2m1 0h1M4 20.5h2m4 0h1m1 0h2m1 0h1m1 0h2m3 0h3m2 0h1M2 21.5h4m1 0h1m8 0h4m1 0h7M9 22.5h1m1 0h4m2 0h3m1 0h1m3 0h5M1 23.5h7m1 0h3m1 0h2m2 0h2m1 0h2m1 0h1m1 0h2m1 0h1M1 24.5h1m5 0h1m1 0h1m2 0h1m1 0h4m1 0h1m1 0h1m3 0h2M1 25.5h1m1 0h3m1 0h1m2 0h4m2 0h1m1 0h1m2 0h5m1 0h3M1 26.5h1m1 0h3m1 0h1m1 0h1m1 0h3m1 0h3m2 0h3m1 0h3m2 0h1M1 27.5h1m1 0h3m1 0h1m1 0h4m4 0h5m2 0h1m2 0h1m1 0h1M1 28.5h1m5 0h1m4 0h2m3 0h1m3 0h3m1 0h2m1 0h1M1 29.5h7m1 0h2m2 0h1m1 0h2m3 0h2m2 0h1m1 0h1m1 0h1"/></svg><div><strong>¿Estás en el computador?</strong><small>Escanea el código con tu celular para abrir esta página.</small></div></aside>
+</div>
+</div>
+</section>
+
+<footer>OnCuidar · Acompañando a quienes cuidan</footer>
+<script>
+fetch('OnCuidar.apk', { method: 'HEAD' }).then(function (r) {
+  if (!r.ok) return;
+  var partes = [];
+  var bytes = Number(r.headers.get('Content-Length'));
+  if (bytes) partes.push(Math.round(bytes / 1048576) + ' MB');
+  var fecha = new Date(r.headers.get('Last-Modified'));
+  if (!isNaN(fecha)) partes.push('actualizada el ' + fecha.toLocaleDateString('es-CL', { day: 'numeric', month: 'long', year: 'numeric' }));
+  document.getElementById('detalle').textContent = partes.join(' · ');
+}).catch(function () {});
+</script>
 </body>
 </html>
