@@ -168,6 +168,7 @@ function paginaHtml({ titulo, icono = 'info', mensaje = '', cuerpoExtra = '', sc
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="light dark">
 <title>${esc(titulo)} - OnCuidar</title>
+<link rel="icon" type="image/png" href="${LOGO_DATA_URI}">
 <style${n}>${ESTILOS_PAGINA}</style></head>
 <body>
 <div class="franja"></div>

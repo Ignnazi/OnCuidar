@@ -60,6 +60,11 @@ describe('paginas web', () => {
     expect(h).toContain('<svg');
   });
 
+  test('paginaHtml muestra el logo en la pestaña del navegador', () => {
+    const h = plantillas.paginaHtml({ titulo: 'Prueba' });
+    expect(h).toContain(`<link rel="icon" type="image/png" href="${plantillas.LOGO_DATA_URI}">`);
+  });
+
   test('GET restablecer valido: 200, titulo, logo, formulario y CSP con nonce', async () => {
     const r = await request(app).get(`/api/auth/restablecer?token=${'a'.repeat(64)}`);
     expect(r.status).toBe(200);
