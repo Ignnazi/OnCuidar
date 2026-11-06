@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
-<title>OnCuidar · Acompañando a quienes cuidan</title>
+<title>OnCuidar</title>
 <meta name="description" content="App para cuidadores de niños, niñas y adolescentes con cáncer: registro de síntomas, recordatorios y material educativo, incluso sin conexión.">
 <link rel="icon" type="image/png" href="logo.png">
 <link rel="apple-touch-icon" href="logo.png">
@@ -23,15 +23,15 @@ body{margin:0;background:var(--fondo);color:var(--texto);font-family:'Nunito','S
 a{color:inherit}
 .franja{height:6px;background:linear-gradient(90deg,var(--naranja) 0 40%,var(--amarillo) 40% 70%,var(--dorado) 70% 100%)}
 .ancho{max-width:1080px;margin:0 auto;padding:0 20px}
-nav{display:flex;align-items:center;padding-top:28px;padding-bottom:12px}
-.marca{display:flex;align-items:center;gap:10px;font-weight:800;font-size:1.25rem;text-decoration:none}
-.marca img{width:44px;height:44px}
+nav.ancho{display:flex;align-items:center;padding-top:36px;padding-bottom:4px}
+.marca{display:flex;align-items:center;gap:12px;font-weight:800;font-size:1.75rem;text-decoration:none}
+.marca img{width:64px;height:64px}
 .portada{position:relative;overflow:hidden;padding:0 0 64px}
 .portada::before,.portada::after{content:"";position:absolute;border-radius:50%;filter:blur(60px);opacity:.35;z-index:-1}
 .portada::before{width:420px;height:420px;background:var(--amarillo);top:-120px;right:-80px}
 .portada::after{width:360px;height:360px;background:var(--naranja);bottom:-160px;left:-120px;opacity:.2}
-.contenido{display:grid;gap:40px;align-items:center;padding-top:8px}
-@media (min-width:880px){.contenido{grid-template-columns:1.1fr .9fr}}
+.contenido{display:grid;gap:40px;align-items:start;padding-top:4px}
+@media (min-width:880px){.contenido{grid-template-columns:1.1fr .9fr}.contenido > div:first-child{padding-top:28px}}
 h1{font-size:clamp(2.1rem,5vw,3.4rem);line-height:1.1;margin:0 0 18px;letter-spacing:-.02em}
 h1 span{background:linear-gradient(90deg,var(--naranja),var(--dorado));-webkit-background-clip:text;background-clip:text;color:transparent}
 .bajada{font-size:1.15rem;color:var(--suave);margin:0 0 28px;max-width:34em}
@@ -92,7 +92,7 @@ footer{text-align:center;color:var(--suave);font-size:.85rem;padding:40px 20px 3
 <body>
 <div class="franja"></div>
 <header class="portada">
-<nav class="ancho"><a class="marca" href="#"><img src="logo.png" alt="" width="44" height="44">OnCuidar</a></nav>
+<nav class="ancho"><a class="marca" href="#"><img src="logo.png" alt="" width="64" height="64">OnCuidar</a></nav>
 <div class="ancho contenido">
 <div>
 <h1>Acompañando a <span>quienes cuidan</span></h1>
