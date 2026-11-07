@@ -86,92 +86,147 @@ const List<EsasSintoma> catalogoEsasR = [
 ];
 
 class SintomaPediatrico {
-  const SintomaPediatrico({required this.nombre, required this.patologias});
+  const SintomaPediatrico({required this.nombre, required this.grupo});
 
   final String nombre;
-  final List<String> patologias;
+  final String grupo;
 
   @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    if (other is! SintomaPediatrico || other.nombre != nombre) return false;
-    if (other.patologias.length != patologias.length) return false;
-    for (var i = 0; i < patologias.length; i++) {
-      if (other.patologias[i] != patologias[i]) return false;
-    }
-    return true;
-  }
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SintomaPediatrico &&
+          other.nombre == nombre &&
+          other.grupo == grupo;
 
   @override
-  int get hashCode => Object.hash(nombre, Object.hashAll(patologias));
+  int get hashCode => Object.hash(nombre, grupo);
 }
 
+const List<String> gruposSintomas = [
+  'Síntomas generales y sistémicos',
+  'Cabeza, piel y mucosas',
+  'Sistema digestivo y nutrición',
+  'Dolor y sistema músculo esquelético',
+  'Sistema nervioso y neurosensorial',
+  'Vasculares y renales',
+];
+
 const List<SintomaPediatrico> catalogoSintomasPediatricos = [
+  SintomaPediatrico(nombre: 'Fatiga', grupo: 'Síntomas generales y sistémicos'),
   SintomaPediatrico(
-    nombre: 'Dolor',
-    patologias: ['Generales', 'LLA', 'Tumor de Wilms', 'Neuroblastoma'],
+    nombre: 'Sudoración',
+    grupo: 'Síntomas generales y sistémicos',
   ),
   SintomaPediatrico(
-    nombre: 'Dolor de huesos y articulaciones',
-    patologias: ['LLA'],
+    nombre: 'Somnolencia',
+    grupo: 'Síntomas generales y sistémicos',
   ),
   SintomaPediatrico(
-    nombre: 'Fiebre',
-    patologias: ['LLA', 'Tumor de Wilms', 'Linfoma'],
+    nombre: 'Pérdida de peso',
+    grupo: 'Síntomas generales y sistémicos',
   ),
   SintomaPediatrico(
-    nombre: 'Fatiga o cansancio',
-    patologias: ['LLA', 'Generales'],
-  ),
-  SintomaPediatrico(nombre: 'Debilidad', patologias: ['LLA', 'Linfoma']),
-  SintomaPediatrico(nombre: 'Sangrado', patologias: ['LLA']),
-  SintomaPediatrico(nombre: 'Pérdida de peso', patologias: ['LLA', 'Linfoma']),
-  SintomaPediatrico(
-    nombre: 'Falta de apetito (anorexia)',
-    patologias: ['Tumor de Wilms', 'Generales'],
-  ),
-  SintomaPediatrico(nombre: 'Náuseas', patologias: ['Tumor de Wilms']),
-  SintomaPediatrico(nombre: 'Vómitos', patologias: ['Tumores SNC']),
-  SintomaPediatrico(
-    nombre: 'Diarrea',
-    patologias: ['Neuroblastoma', 'Generales'],
-  ),
-  SintomaPediatrico(nombre: 'Mareos', patologias: ['Tumores SNC']),
-  SintomaPediatrico(
-    nombre: 'Problemas de equilibrio',
-    patologias: ['Tumores SNC'],
+    nombre:
+        'Edema (retención de líquidos en piernas, brazos, cara u otras zonas)',
+    grupo: 'Síntomas generales y sistémicos',
   ),
   SintomaPediatrico(
-    nombre: 'Problemas de visión, audición o habla',
-    patologias: ['Tumores SNC'],
+    nombre: 'Alopecia (pérdida de cabello)',
+    grupo: 'Cabeza, piel y mucosas',
   ),
   SintomaPediatrico(
-    nombre: 'Dolor de cabeza (cefalea)',
-    patologias: ['Tumores SNC'],
-  ),
-  SintomaPediatrico(nombre: 'Mucositis', patologias: ['Generales']),
-  SintomaPediatrico(nombre: 'Caída de cabello', patologias: ['Generales']),
-  SintomaPediatrico(nombre: 'Sudoración nocturna', patologias: ['Linfoma']),
-  SintomaPediatrico(
-    nombre: 'Ganglios linfáticos inflamados',
-    patologias: ['Linfoma'],
+    nombre:
+        'Eritema (enrojecimiento o inflamación de la zona donde se administra la terapia)',
+    grupo: 'Cabeza, piel y mucosas',
   ),
   SintomaPediatrico(
-    nombre: 'Dificultad para caminar',
-    patologias: ['Neuroblastoma'],
+    nombre: 'Xerosis (sequedad de la piel)',
+    grupo: 'Cabeza, piel y mucosas',
   ),
   SintomaPediatrico(
-    nombre: 'Cambios en los ojos (abultados, ojeras, párpados caídos)',
-    patologias: ['Neuroblastoma'],
+    nombre: 'Xerostomía (boca seca)',
+    grupo: 'Cabeza, piel y mucosas',
   ),
   SintomaPediatrico(
-    nombre: 'Hinchazón o bulto en el vientre',
-    patologias: ['Tumor de Wilms'],
+    nombre:
+        'Mucositis (inflamación dolorosa de las mucosas del tracto digestivo)',
+    grupo: 'Cabeza, piel y mucosas',
   ),
   SintomaPediatrico(
-    nombre: 'Presión sanguínea elevada',
-    patologias: ['Neuroblastoma'],
+    nombre: 'Epistaxis (sangrado nasal)',
+    grupo: 'Cabeza, piel y mucosas',
   ),
+  SintomaPediatrico(
+    nombre: 'Disfagia (dificultad para tragar)',
+    grupo: 'Cabeza, piel y mucosas',
+  ),
+  SintomaPediatrico(
+    nombre: 'Anorexia (falta de apetito)',
+    grupo: 'Sistema digestivo y nutrición',
+  ),
+  SintomaPediatrico(
+    nombre: 'Vómitos/náuseas',
+    grupo: 'Sistema digestivo y nutrición',
+  ),
+  SintomaPediatrico(nombre: 'Diarrea', grupo: 'Sistema digestivo y nutrición'),
+  SintomaPediatrico(
+    nombre: 'Estreñimiento',
+    grupo: 'Sistema digestivo y nutrición',
+  ),
+  SintomaPediatrico(
+    nombre: 'Dolor general',
+    grupo: 'Dolor y sistema músculo esquelético',
+  ),
+  SintomaPediatrico(
+    nombre: 'Cefalea (dolor de cabeza)',
+    grupo: 'Dolor y sistema músculo esquelético',
+  ),
+  SintomaPediatrico(
+    nombre: 'Mialgia (dolor muscular)',
+    grupo: 'Dolor y sistema músculo esquelético',
+  ),
+  SintomaPediatrico(
+    nombre: 'Artralgia (dolor de las articulaciones)',
+    grupo: 'Dolor y sistema músculo esquelético',
+  ),
+  SintomaPediatrico(
+    nombre: 'Ostealgia (dolor óseo)',
+    grupo: 'Dolor y sistema músculo esquelético',
+  ),
+  SintomaPediatrico(
+    nombre: 'Mareo',
+    grupo: 'Sistema nervioso y neurosensorial',
+  ),
+  SintomaPediatrico(
+    nombre:
+        'Neuropatía periférica (hormigueo, entumecimiento o sensación de quemazón en manos y pies)',
+    grupo: 'Sistema nervioso y neurosensorial',
+  ),
+  SintomaPediatrico(
+    nombre: 'Insomnio',
+    grupo: 'Sistema nervioso y neurosensorial',
+  ),
+  SintomaPediatrico(
+    nombre: 'Dificultad para concentrarse',
+    grupo: 'Sistema nervioso y neurosensorial',
+  ),
+  SintomaPediatrico(
+    nombre: 'Disnea (falta de aire)',
+    grupo: 'Sistema nervioso y neurosensorial',
+  ),
+  SintomaPediatrico(
+    nombre: 'Hematomas (moretones inusuales)',
+    grupo: 'Vasculares y renales',
+  ),
+  SintomaPediatrico(
+    nombre: 'Disuria (dolor al orinar)',
+    grupo: 'Vasculares y renales',
+  ),
+];
+
+List<String> sintomasDelGrupo(String grupo) => [
+  for (final item in catalogoSintomasPediatricos)
+    if (item.grupo == grupo) item.nombre,
 ];
 
 class SintomaSeleccionable {
@@ -180,14 +235,14 @@ class SintomaSeleccionable {
     this.etiqueta0 = '',
     this.etiqueta10 = '',
     this.esOtro = false,
-    this.patologias = const [],
+    this.grupo,
   });
 
   final String nombre;
   final String etiqueta0;
   final String etiqueta10;
   final bool esOtro;
-  final List<String> patologias;
+  final String? grupo;
 
   @override
   bool operator ==(Object other) =>
@@ -215,17 +270,8 @@ final List<SintomaSeleccionable> catalogoUnificado = [
       SintomaSeleccionable(
         nombre: item.nombre,
         etiqueta10: '',
-        patologias: item.patologias,
+        grupo: item.grupo,
       ),
 ];
 
-const List<String> patologiasFiltro = [
-  'Todos',
-  'Generales',
-  'Escala',
-  'LLA',
-  'Tumores SNC',
-  'Neuroblastoma',
-  'Tumor de Wilms',
-  'Linfoma',
-];
+const List<String> filtrosSintomas = ['Todos', 'Escala', ...gruposSintomas];

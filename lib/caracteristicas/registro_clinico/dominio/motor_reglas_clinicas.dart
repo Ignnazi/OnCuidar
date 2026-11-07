@@ -1,3 +1,4 @@
+import 'package:oncuidar/caracteristicas/registro_clinico/dominio/rangos_signos_vitales.dart';
 import 'package:oncuidar/caracteristicas/registro_clinico/dominio/registro_clinico.dart';
 
 class EvaluacionAlerta {
@@ -7,125 +8,128 @@ class EvaluacionAlerta {
   final List<String> mensajes;
 }
 
+/// Reglas de aviso según el material de enfermería. Lo que ese material no
+/// define (saturación y urgencia por frecuencia respiratoria) sigue la tabla
+/// NICE NG143 y la guía de oxigenoterapia infantil de la OMS.
 class MotorReglasClinicas {
   MotorReglasClinicas._();
 
+  static const recomendacionesModerado = [
+    'Revisa si el equipo médico indicó alguna medicación de rescate para '
+        'este síntoma.',
+    'Vuelve a registrar el síntoma entre 1 y 3 horas.',
+    'Si el síntoma no cede o se acompaña de otros malestares, llévalo al '
+        'centro médico que haya sido notificado por el servicio de oncología '
+        'pediátrica.',
+  ];
+
+  static const indicacionSeveridadAlta =
+      'Este nivel de malestar requiere evaluación médica. Acude a urgencias '
+      'de manera inmediata.';
+
   static EvaluacionAlerta evaluar(
     SignosVitales? signos,
-    List<EntradaSintoma> sintomas,
-  ) {
+    List<EntradaSintoma> sintomas, {
+    int? edad,
+  }) {
     var nivel = NivelAlerta.normal;
     final mensajes = <String>[];
 
+    void avisar(NivelAlerta nuevo, String mensaje) {
+      if (nuevo.index > nivel.index) nivel = nuevo;
+      mensajes.add(mensaje);
+    }
+
     final temperatura = signos?.temperatura;
     if (temperatura != null) {
-      if (temperatura > 39.5) {
-        nivel = NivelAlerta.critico;
-        mensajes.add('Fiebre alta (${_numero(temperatura)}°C)');
-      } else if (temperatura > 38.5 && nivel != NivelAlerta.critico) {
-        nivel = NivelAlerta.alerta;
-        mensajes.add('Fiebre moderada (${_numero(temperatura)}°C)');
+      final t = _numero(temperatura);
+      if (temperatura >= 38) {
+        avisar(
+          NivelAlerta.critico,
+          'Febril ($t°C): la fiebre siempre es una urgencia',
+        );
+      } else if (temperatura >= 37.5) {
+        avisar(NivelAlerta.alerta, 'Subfebril ($t°C)');
       } else if (temperatura < 35) {
-        nivel = NivelAlerta.critico;
-        mensajes.add('Hipotermia (${_numero(temperatura)}°C)');
-      } else if (temperatura < 36.5 && nivel != NivelAlerta.critico) {
-        nivel = NivelAlerta.alerta;
-        mensajes.add('Temperatura baja (${_numero(temperatura)}°C)');
+        avisar(NivelAlerta.critico, 'Hipotermia ($t°C)');
+      } else if (temperatura < 35.5 && edad != null && edad < 2) {
+        avisar(NivelAlerta.critico, 'Hipotermia en menor de 2 años ($t°C)');
+      } else if (temperatura < 36) {
+        avisar(NivelAlerta.alerta, 'Hipotermia leve ($t°C)');
       }
     }
 
+    final grupo = edad == null ? null : GrupoEdad.desdeEdad(edad);
+
     final fc = signos?.frecuenciaCardiaca;
-    if (fc != null) {
-      if (fc > 130) {
-        nivel = NivelAlerta.critico;
-        mensajes.add('Taquicardia ($fc lpm)');
-      } else if (fc > 100 && nivel != NivelAlerta.critico) {
-        nivel = NivelAlerta.alerta;
-        mensajes.add('Frecuencia cardíaca alta ($fc lpm)');
-      } else if (fc < 40) {
-        nivel = NivelAlerta.critico;
-        mensajes.add('Bradicardia ($fc lpm)');
-      } else if (fc < 50 && nivel != NivelAlerta.critico) {
-        nivel = NivelAlerta.alerta;
-        mensajes.add('Frecuencia cardíaca baja ($fc lpm)');
+    if (fc != null && grupo != null) {
+      final rango = grupo.frecuenciaCardiaca;
+      if (!rango.contiene(fc)) {
+        final sentido = fc > rango.maximo ? 'alta' : 'baja';
+        avisar(
+          NivelAlerta.alerta,
+          'Frecuencia cardíaca $sentido para su edad ($fc lpm, normal $rango)',
+        );
+      }
+    }
+
+    final fr = signos?.frecuenciaRespiratoria;
+    if (fr != null) {
+      if (fr > 60) {
+        avisar(NivelAlerta.critico, 'Respiración muy rápida ($fr rpm)');
+      } else if (grupo != null && !grupo.frecuenciaRespiratoria.contiene(fr)) {
+        final rango = grupo.frecuenciaRespiratoria;
+        final sentido = fr > rango.maximo ? 'alta' : 'baja';
+        avisar(
+          NivelAlerta.alerta,
+          'Frecuencia respiratoria $sentido para su edad '
+          '($fr rpm, normal $rango)',
+        );
       }
     }
 
     final o2 = signos?.saturacionOxigeno;
     if (o2 != null) {
       if (o2 < 90) {
-        nivel = NivelAlerta.critico;
-        mensajes.add('Saturación de O₂ muy baja ($o2%)');
-      } else if (o2 < 92 && nivel != NivelAlerta.critico) {
-        nivel = NivelAlerta.alerta;
-        mensajes.add('Saturación de O₂ baja ($o2%)');
-      }
-    }
-
-    final fr = signos?.frecuenciaRespiratoria;
-    if (fr != null) {
-      if (fr > 28) {
-        nivel = NivelAlerta.critico;
-        mensajes.add('Taquipnea ($fr rpm)');
-      } else if (fr > 20 && nivel != NivelAlerta.critico) {
-        nivel = NivelAlerta.alerta;
-        mensajes.add('Frecuencia respiratoria alta ($fr rpm)');
-      } else if (fr < 8) {
-        nivel = NivelAlerta.critico;
-        mensajes.add('Bradipnea ($fr rpm)');
-      } else if (fr < 12 && nivel != NivelAlerta.critico) {
-        nivel = NivelAlerta.alerta;
-        mensajes.add('Frecuencia respiratoria baja ($fr rpm)');
+        avisar(NivelAlerta.critico, 'Saturación de O₂ muy baja ($o2%)');
+      } else if (o2 <= 95) {
+        avisar(NivelAlerta.alerta, 'Saturación de O₂ baja ($o2%)');
       }
     }
 
     final activos = sintomas.where((s) => s.intensidad >= 1).toList();
-    final insoportables = activos.where((s) => s.intensidad == 10).length;
-    final intensos = activos
-        .where((s) => s.intensidad >= 7 && s.intensidad <= 9)
-        .length;
+    final severos = activos.where((s) => s.intensidad >= 7).toList();
     final moderados = activos
         .where((s) => s.intensidad >= 4 && s.intensidad <= 6)
-        .length;
-    final leves = activos
-        .where((s) => s.intensidad >= 1 && s.intensidad <= 3)
-        .length;
-    final total = activos.length;
+        .toList();
 
-    if (insoportables >= 1) {
-      nivel = NivelAlerta.critico;
-      mensajes.add(
-        insoportables == 1
-            ? '1 síntoma insoportable'
-            : '$insoportables síntomas insoportables',
+    for (final s in severos) {
+      final grado = s.intensidad == 10 ? 'insoportable' : 'severo';
+      avisar(
+        NivelAlerta.critico,
+        'Alerta de Severidad alta: el síntoma ${s.nombre} se ha marcado con '
+        'intensidad ${s.intensidad}/10 ($grado).',
       );
-    } else if (intensos >= 2) {
-      nivel = NivelAlerta.critico;
-      mensajes.add('$intensos síntomas severos');
-    } else if (intensos == 1) {
-      if (nivel != NivelAlerta.critico) {
-        nivel = NivelAlerta.alerta;
-        mensajes.add('1 síntoma severo');
-      }
-    } else if (moderados >= 3) {
-      if (nivel != NivelAlerta.critico) {
-        nivel = NivelAlerta.alerta;
-        mensajes.add('$moderados síntomas moderados');
-      }
-    } else if (total > 0 && nivel == NivelAlerta.normal) {
-      if (leves == total) {
-        mensajes.add(
-          total == 1
-              ? '1 síntoma leve registrado'
-              : '$total síntomas leves registrados',
-        );
-      } else {
-        mensajes.add(
-          total == 1
-              ? '1 síntoma moderado registrado'
-              : '$total síntomas moderados registrados',
-        );
-      }
+    }
+    if (severos.isNotEmpty) mensajes.add(indicacionSeveridadAlta);
+
+    for (final s in moderados) {
+      avisar(
+        NivelAlerta.alerta,
+        'Atención: Síntoma moderado registrado. Has registrado ${s.nombre} '
+        'con una intensidad de ${s.intensidad}/10.',
+      );
+    }
+    if (moderados.isNotEmpty && severos.isEmpty) {
+      mensajes.addAll(recomendacionesModerado);
+    }
+
+    if (mensajes.isEmpty && activos.isNotEmpty) {
+      mensajes.add(
+        activos.length == 1
+            ? '1 síntoma leve registrado'
+            : '${activos.length} síntomas leves registrados',
+      );
     }
 
     if (mensajes.isEmpty) {

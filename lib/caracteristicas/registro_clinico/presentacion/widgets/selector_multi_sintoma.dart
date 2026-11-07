@@ -21,14 +21,10 @@ class SelectorMultiSintoma extends StatefulWidget {
 }
 
 class _SelectorMultiSintomaState extends State<SelectorMultiSintoma> {
-  static final Set<String> _nombresEsas = {
-    for (final item in catalogoEsasR) item.nombre,
-  };
-
   final _consultaController = TextEditingController();
   final _agregarController = TextEditingController();
   String _consulta = '';
-  String _filtro = 'Generales';
+  String _filtro = gruposSintomas.first;
 
   @override
   void dispose() {
@@ -48,11 +44,7 @@ class _SelectorMultiSintomaState extends State<SelectorMultiSintoma> {
     } else if (_filtro == 'Escala') {
       nombres = [for (final item in catalogoEsasR) item.nombre];
     } else {
-      nombres = catalogoSintomasPediatricos
-          .where((item) => item.patologias.contains(_filtro))
-          .where((item) => !_nombresEsas.contains(item.nombre))
-          .map((item) => item.nombre)
-          .toList();
+      nombres = sintomasDelGrupo(_filtro);
     }
     final nombresCatalogo = catalogoUnificado
         .map((item) => item.nombre)
@@ -104,13 +96,13 @@ class _SelectorMultiSintomaState extends State<SelectorMultiSintoma> {
     );
   }
 
-  Widget _chipPatologia(String patologia) {
-    final seleccionado = _filtro == patologia;
+  Widget _chipGrupo(String filtro) {
+    final seleccionado = _filtro == filtro;
     return ChoiceChip(
-      label: Text(patologia),
+      label: Text(filtro),
       selected: seleccionado,
       showCheckmark: false,
-      onSelected: (_) => setState(() => _filtro = patologia),
+      onSelected: (_) => setState(() => _filtro = filtro),
       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
       labelStyle: GoogleFonts.nunito(
         fontSize: 11.5,
@@ -202,8 +194,7 @@ class _SelectorMultiSintomaState extends State<SelectorMultiSintoma> {
               spacing: 6,
               runSpacing: 6,
               children: [
-                for (final patologia in patologiasFiltro)
-                  _chipPatologia(patologia),
+                for (final filtro in filtrosSintomas) _chipGrupo(filtro),
               ],
             ),
           ),
