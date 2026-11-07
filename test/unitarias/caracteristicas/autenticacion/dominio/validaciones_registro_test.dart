@@ -53,8 +53,12 @@ void main() {
   });
 
   group('Contraseña', () {
-    test('menos de 6 caracteres se rechaza', () {
-      expect(validarContrasena('12345'), 'Mínimo 6 caracteres');
+    test('menos de 8 caracteres se rechaza', () {
+      expect(validarContrasena('1234567'), 'Mínimo 8 caracteres');
+    });
+
+    test('8 caracteres se acepta', () {
+      expect(validarContrasena('12345678'), isNull);
     });
 
     test('la confirmación debe coincidir', () {

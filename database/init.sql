@@ -36,6 +36,14 @@ CREATE TABLE IF NOT EXISTS pacientes (
   PRIMARY KEY (usuario_id, id)
 );
 
+-- Un PUT que llega despues del borrado no revive al paciente
+CREATE TABLE IF NOT EXISTS pacientes_borrados (
+  usuario_id uuid NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+  id text NOT NULL,
+  borrado_en timestamptz DEFAULT now(),
+  PRIMARY KEY (usuario_id, id)
+);
+
 CREATE TABLE IF NOT EXISTS registros_clinicos (
   usuario_id uuid NOT NULL,
   paciente_id text NOT NULL,

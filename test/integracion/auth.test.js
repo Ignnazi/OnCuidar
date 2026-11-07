@@ -1,4 +1,5 @@
 const { app, request, db, unico, crearUsuario, con, cerrar, limpiar } = require('./ayudas');
+const bcrypt = require('bcryptjs');
 const correo = require('../../backend/src/correo');
 
 afterAll(async () => { await limpiar(); await cerrar(); });
@@ -57,10 +58,64 @@ describe('autenticacion', () => {
   test('borrar cuenta elimina todo en cascada', async () => {
     const u = await crearUsuario();
     await request(app).put('/api/pacientes/p1').set(con(u)).send({});
-    expect((await request(app).delete('/api/cuenta').set(con(u))).status).toBe(200);
+    expect((await request(app).delete('/api/cuenta').set(con(u)).send({ contrasena: u.contrasena })).status).toBe(200);
     const { rows } = await db.consulta('SELECT 1 FROM pacientes WHERE usuario_id = $1', [u.uid]);
     expect(rows).toHaveLength(0);
     expect((await request(app).post('/api/auth/login').send({ correo: u.correo, contrasena: u.contrasena })).status).toBe(401);
+  });
+});
+
+describe('borrar cuenta exige la contrasena', () => {
+  test('sin contrasena responde 401 y la cuenta sigue', async () => {
+    const u = await crearUsuario();
+    const r = await request(app).delete('/api/cuenta').set(con(u));
+    expect(r.status).toBe(401);
+    expect(r.body.error).toBe('Contraseña incorrecta');
+    expect((await request(app).post('/api/auth/login').send({ correo: u.correo, contrasena: u.contrasena })).status).toBe(200);
+  });
+
+  test('con contrasena incorrecta responde 401 y la cuenta sigue', async () => {
+    const u = await crearUsuario();
+    const r = await request(app).delete('/api/cuenta').set(con(u)).send({ contrasena: 'otra-clave' });
+    expect(r.status).toBe(401);
+    expect(r.body.error).toBe('Contraseña incorrecta');
+    const { rows } = await db.consulta('SELECT 1 FROM usuarios WHERE id = $1', [u.uid]);
+    expect(rows).toHaveLength(1);
+  });
+
+  test('con la contrasena correcta borra la cuenta', async () => {
+    const u = await crearUsuario();
+    expect((await request(app).delete('/api/cuenta').set(con(u)).send({ contrasena: u.contrasena })).body).toEqual({ ok: true });
+    const { rows } = await db.consulta('SELECT 1 FROM usuarios WHERE id = $1', [u.uid]);
+    expect(rows).toHaveLength(0);
+  });
+});
+
+describe('largo minimo de la contrasena', () => {
+  test('registro con 7 caracteres responde 400 y con 8 se acepta', async () => {
+    const corta = await request(app).post('/api/auth/registro').send({ correo: `m-${unico()}@prueba.cl`, contrasena: '1234567' });
+    expect(corta.status).toBe(400);
+    expect(corta.body.error).toContain('al menos 8 caracteres');
+    const justa = await request(app).post('/api/auth/registro').send({ correo: `m-${unico()}@prueba.cl`, contrasena: '12345678' });
+    expect(justa.status).toBe(201);
+  });
+
+  test('una cuenta antigua con contrasena de 6 caracteres sigue entrando', async () => {
+    const c = `vieja-${unico()}@prueba.cl`;
+    await db.consulta('INSERT INTO usuarios (correo, contrasena_hash) VALUES ($1, $2)', [c, await bcrypt.hash('abc123', 10)]);
+    expect((await request(app).post('/api/auth/login').send({ correo: c, contrasena: 'abc123' })).status).toBe(200);
+  });
+
+  test('restablecer con menos de 8 caracteres responde 400', async () => {
+    const r = await request(app).post('/api/auth/restablecer-contrasena').send({ token: 'a'.repeat(64), contrasena: 'corta12' });
+    expect(r.status).toBe(400);
+    expect(r.body.error).toContain('al menos 8 caracteres');
+  });
+
+  test('la pagina para restablecer pide 8 caracteres', async () => {
+    const pagina = await request(app).get(`/api/auth/restablecer?token=${'b'.repeat(64)}`);
+    expect(pagina.text).toContain('Usa al menos 8 caracteres.');
+    expect(pagina.text).toContain('var MIN = 8;');
   });
 });
 

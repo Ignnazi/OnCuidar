@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:oncuidar/caracteristicas/autenticacion/dominio/validaciones_registro.dart';
 import 'package:oncuidar/caracteristicas/pacientes/datos/repositorio_pacientes.dart';
 import 'package:oncuidar/caracteristicas/pacientes/dominio/paciente.dart';
 import 'package:oncuidar/caracteristicas/perfil/datos/repositorio_cuidador.dart';
@@ -95,7 +96,7 @@ class ServicioRegistro {
         await _repositorioPacientes.crearPaciente(datos.paciente);
       } catch (_) {
         try {
-          await _sesion.eliminarCuenta();
+          await _sesion.eliminarCuenta(datos.contrasena);
         } catch (_) {}
         rethrow;
       }
@@ -115,7 +116,7 @@ class ServicioRegistro {
       case CodigoErrorSesion.correoInvalido:
         return 'El correo electrónico no es válido.';
       case CodigoErrorSesion.contrasenaDebil:
-        return 'La contraseña es muy débil. Usa al menos 6 caracteres.';
+        return 'La contraseña es muy débil. Usa al menos $minimoContrasena caracteres.';
       default:
         return 'Error al crear la cuenta. Intenta de nuevo.';
     }

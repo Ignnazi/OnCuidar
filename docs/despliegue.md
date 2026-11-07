@@ -9,7 +9,7 @@ El proxy HTTPS de la universidad publica:
 - la API en `https://parra.chillan.ubiobio.cl/oncuidar-backend/`
 - la página de descarga en `https://parra.chillan.ubiobio.cl/oncuidar/`
 
-Los puertos 8014 y 8015 solo responden por HTTP y no se usan desde fuera.
+Los puertos 8014 y 8015 solo responden por HTTP y no se usan desde fuera. La API escucha solo en `127.0.0.1`: se llega a ella a través del Apache de la U, que agrega la IP real del cliente (la API confía en ese único salto para el límite de intentos).
 
 | Servicio | Puerto | Contenido |
 | --- | --- | --- |
@@ -134,19 +134,30 @@ Los servicios se revisan desde dentro del servidor, así que el firewall no afec
 Variables del `.env`:
 
 ```
-GRAFANA_CLAVE=<contraseña del usuario admin de Grafana>
+GRAFANA_USUARIO=<usuario administrador de Grafana, que no sea admin>
+GRAFANA_CLAVE=<contraseña de ese usuario>
 URL_GRAFANA=https://parra.chillan.ubiobio.cl/oncuidar/grafana/
 ALERTAS_CORREO=oncuidar1@gmail.com
 ALERTAS_CLAVE=<contraseña de aplicación de Gmail>
 ```
 
-`GRAFANA_CLAVE` es obligatoria. `ALERTAS_CLAVE` es una contraseña de aplicación de Google, que se crea en Seguridad > Verificación en dos pasos > Contraseñas de aplicaciones. La contraseña normal de la cuenta no sirve. Sin `ALERTAS_CORREO` o `ALERTAS_CLAVE`, Alertmanager no arranca, pero el resto de los servicios funciona igual.
+`GRAFANA_USUARIO` y `GRAFANA_CLAVE` son obligatorias y no tienen valor por defecto. Si falta una, `podman-compose` no arranca ningún servicio.
+
+En parra hay que agregar `GRAFANA_USUARIO` al `.env` antes de desplegar esta versión. Si no, el despliegue falla y vuelve a la versión anterior. Grafana solo usa esta variable la primera vez que crea su base. Si ya existía el usuario `admin`, hay que cambiarle el nombre en Grafana > Administración > Usuarios al mismo valor.
+
+`ALERTAS_CLAVE` es una contraseña de aplicación de Google, que se crea en Seguridad > Verificación en dos pasos > Contraseñas de aplicaciones. La contraseña normal de la cuenta no sirve. Sin `ALERTAS_CORREO` o `ALERTAS_CLAVE`, Alertmanager no arranca, pero el resto de los servicios funciona igual.
 
 ## Datos de pacientes
 
 La base de datos no se respalda. OnCuidar es un prototipo sin pacientes reales y los datos de prueba se recrean con `database/init.sql`. Copiar datos de salud fuera del servidor institucional, por ejemplo a un equipo personal, no sería adecuado.
 
 Los datos del paciente, como nombre, RUT, edad, diagnóstico y registros clínicos, se cifran en el teléfono con AES-GCM de 256 bits antes de enviarse. El servidor solo guarda la versión cifrada. El correo del cuidador queda sin cifrar porque se usa para iniciar sesión.
+
+El registro responde 409 si el correo ya tiene cuenta. Es a propósito, para que la persona sepa que debe iniciar sesión. El límite de intentos por IP hace lento probar muchos correos.
+
+Al borrar un paciente queda su id en `pacientes_borrados`. Si después llega un cambio de ese paciente, por ejemplo desde otro teléfono sin conexión, la API responde 410 y no lo vuelve a crear. La API crea esa tabla al arrancar, porque `database/init.sql` solo corre en una base nueva.
+
+Borrar la cuenta pide la contraseña. Las contraseñas nuevas deben tener al menos 8 caracteres. Las cuentas creadas antes con 6 siguen entrando.
 
 En un uso real con pacientes, los respaldos serían obligatorios. Se harían cifrados, en otro servidor de la institución y con acceso restringido.
 

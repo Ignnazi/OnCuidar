@@ -40,10 +40,29 @@ const recordatorioAJson = (r) => ({
   cifrados: r.cifrados ?? {},
 });
 
-async function exigirPaciente(uid, pid) {
+const MENSAJE_BORRADO = 'El paciente fue eliminado';
+
+async function fueBorrado(uid, pid) {
+  const { rows } = await db.consulta('SELECT 1 FROM pacientes_borrados WHERE usuario_id = $1 AND id = $2', [uid, pid]);
+  return Boolean(rows[0]);
+}
+
+async function exigirPaciente(uid, pid, { avisarBorrado = false } = {}) {
   validarId(pid, 'pacienteId');
   const { rows } = await db.consulta('SELECT 1 FROM pacientes WHERE usuario_id = $1 AND id = $2', [uid, pid]);
-  if (!rows[0]) throw new ErrorHttp(404, 'Paciente no encontrado');
+  if (rows[0]) return;
+  if (avisarBorrado && await fueBorrado(uid, pid)) throw new ErrorHttp(410, MENSAJE_BORRADO);
+  throw new ErrorHttp(404, 'Paciente no encontrado');
+}
+
+// El paciente pudo borrarse entre la revisión y el guardado
+async function guardarDelPaciente(datos) {
+  try {
+    return await upsert(datos);
+  } catch (e) {
+    if (e.code === '23503') throw new ErrorHttp(410, MENSAJE_BORRADO);
+    throw e;
+  }
 }
 
 router.get('/pacientes', async (req, res) => {
@@ -63,6 +82,7 @@ router.put('/pacientes/:id', async (req, res) => {
   const id = validarId(req.params.id);
   const cuerpo = cuerpoObjeto(req);
   rechazarEnClaro(cuerpo, 'pacientes');
+  if (await fueBorrado(req.uid, id)) throw new ErrorHttp(410, MENSAJE_BORRADO);
   const fila = await upsert({
     tabla: 'pacientes',
     claves: { usuario_id: req.uid, id },
@@ -75,13 +95,22 @@ router.put('/pacientes/:id', async (req, res) => {
     },
     cifrados: leerCifrados(cuerpo),
   });
+  // Si un DELETE termino mientras tanto, se deshace lo recien creado
+  if (await fueBorrado(req.uid, id)) {
+    await db.consulta('DELETE FROM pacientes WHERE usuario_id = $1 AND id = $2', [req.uid, id]);
+    throw new ErrorHttp(410, MENSAJE_BORRADO);
+  }
   res.json(pacienteAJson(fila));
 });
 
 router.delete('/pacientes/:id', async (req, res) => {
-  const { rowCount } = await db.consulta('DELETE FROM pacientes WHERE usuario_id = $1 AND id = $2',
-    [req.uid, validarId(req.params.id)]);
-  if (!rowCount) throw new ErrorHttp(404, 'Paciente no encontrado');
+  const id = validarId(req.params.id);
+  await db.transaccion(async (cl) => {
+    const { rowCount } = await cl.query('DELETE FROM pacientes WHERE usuario_id = $1 AND id = $2', [req.uid, id]);
+    if (!rowCount) throw new ErrorHttp(404, 'Paciente no encontrado');
+    await cl.query(
+      'INSERT INTO pacientes_borrados (usuario_id, id) VALUES ($1, $2) ON CONFLICT DO NOTHING', [req.uid, id]);
+  });
   res.json({ ok: true });
 });
 
@@ -136,8 +165,8 @@ router.put('/pacientes/:pid/registros/:rid', async (req, res) => {
     nivel_alerta: textoOpcional(cuerpo.nivelAlerta, 'nivelAlerta', { nuloPermitido: true }),
     version_encriptacion: enteroOpcional(cuerpo.versionEncriptacion, 'versionEncriptacion'),
   };
-  await exigirPaciente(req.uid, req.params.pid);
-  const fila = await upsert({
+  await exigirPaciente(req.uid, req.params.pid, { avisarBorrado: true });
+  const fila = await guardarDelPaciente({
     tabla: 'registros_clinicos',
     claves: { usuario_id: req.uid, paciente_id: req.params.pid, id: rid },
     campos,
@@ -178,8 +207,8 @@ router.put('/pacientes/:pid/recordatorios/:rid', async (req, res) => {
     creado_en: fechaOpcional(cuerpo.creadoEn, 'creadoEn'),
     version_encriptacion: enteroOpcional(cuerpo.versionEncriptacion, 'versionEncriptacion'),
   };
-  await exigirPaciente(req.uid, req.params.pid);
-  const fila = await upsert({
+  await exigirPaciente(req.uid, req.params.pid, { avisarBorrado: true });
+  const fila = await guardarDelPaciente({
     tabla: 'recordatorios',
     claves: { usuario_id: req.uid, paciente_id: req.params.pid, id: rid },
     campos,
