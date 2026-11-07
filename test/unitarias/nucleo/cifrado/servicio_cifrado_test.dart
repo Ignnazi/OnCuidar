@@ -84,4 +84,18 @@ void main() {
       expect(await segundo.descifrar('u1', valor), 'dato');
     },
   );
+
+  test('olvidar la clave la quita de memoria y del teléfono', () async {
+    final almacen = AlmacenSecretoMemoria();
+    final servicio = _servicio(almacen: almacen);
+    await servicio.fijarClave('u1', _clave);
+    await servicio.fijarClave('u2', _clave);
+
+    await servicio.olvidarClave('u1');
+
+    expect(servicio.tieneClave('u1'), isFalse);
+    expect(await almacen.leer('oncuidar.data-key.u1'), isNull);
+    expect(await servicio.restaurarClave('u1'), isFalse);
+    expect(await almacen.leer('oncuidar.data-key.u2'), _clave);
+  });
 }
