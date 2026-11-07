@@ -7,11 +7,10 @@ import 'package:oncuidar/caracteristicas/biblioteca/presentacion/proveedores_bib
 import 'package:oncuidar/caracteristicas/preguntas_frecuentes/presentacion/pantalla_preguntas_frecuentes.dart';
 
 const _preguntaFiebre =
-    '¿Qué temperatura se considera fiebre y cuándo debo llamar al médico?';
-const _preguntaCateter =
-    '¿Cómo debo cuidar el catéter y qué hago si se moja o se sale?';
+    '¿En qué momento una fiebre se convierte en una emergencia?';
+const _preguntaCateter = '¿Qué cuidados se deben tener con el catéter central?';
 const _preguntaAlimentacion =
-    '¿Qué alimentos debo evitar y qué agua es segura?';
+    '¿Qué alimentos no se recomiendan en niños con cáncer?';
 
 Widget _pantalla({List<MaterialEducativo> catalogo = const []}) {
   final router = GoRouter(
@@ -47,7 +46,7 @@ Future<void> _montar(
   WidgetTester tester, {
   List<MaterialEducativo> catalogo = const [],
 }) async {
-  tester.view.physicalSize = const Size(800, 1600);
+  tester.view.physicalSize = const Size(1200, 4000);
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.resetPhysicalSize);
   addTearDown(tester.view.resetDevicePixelRatio);
@@ -65,13 +64,16 @@ void main() {
     expect(find.text(_preguntaCateter), findsOneWidget);
     expect(find.text(_preguntaAlimentacion), findsOneWidget);
     expect(find.byKey(const Key('chipCategoriaFaq_Todas')), findsOneWidget);
-    expect(find.byKey(const Key('chipCategoriaFaq_Fiebre')), findsOneWidget);
+    expect(
+      find.byKey(const Key('chipCategoriaFaq_Fiebre y urgencias')),
+      findsOneWidget,
+    );
     expect(find.byKey(const Key('chipCategoriaFaq_Catéter')), findsOneWidget);
     expect(
       find.byKey(const Key('chipCategoriaFaq_Alimentación')),
       findsOneWidget,
     );
-    expect(find.textContaining('Se considera fiebre'), findsNothing);
+    expect(find.textContaining('Siempre la fiebre es urgente'), findsNothing);
   });
 
   testWidgets(
@@ -82,12 +84,15 @@ void main() {
       await tester.tap(find.byKey(const Key('faq_fiebre')));
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('Se considera fiebre'), findsOneWidget);
+      expect(
+        find.textContaining('Siempre la fiebre es urgente'),
+        findsOneWidget,
+      );
 
       await tester.tap(find.byKey(const Key('faq_fiebre')));
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('Se considera fiebre'), findsNothing);
+      expect(find.textContaining('Siempre la fiebre es urgente'), findsNothing);
     },
   );
 
@@ -96,11 +101,14 @@ void main() {
 
     await tester.tap(find.byKey(const Key('faq_fiebre')));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('faq_cateter')));
+    await tester.tap(find.byKey(const Key('faq_cateter-cuidados')));
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('Se considera fiebre'), findsNothing);
-    expect(find.textContaining('Mantén el apósito seco'), findsOneWidget);
+    expect(find.textContaining('Siempre la fiebre es urgente'), findsNothing);
+    expect(
+      find.textContaining('Muchas quimioterapias irritan las venas'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('la búsqueda en vivo filtra, sin distinguir tildes', (
@@ -135,7 +143,9 @@ void main() {
   ) async {
     await _montar(tester);
 
-    await tester.tap(find.byKey(const Key('chipCategoriaFaq_Fiebre')));
+    await tester.tap(
+      find.byKey(const Key('chipCategoriaFaq_Fiebre y urgencias')),
+    );
     await tester.pumpAndSettle();
     expect(find.text(_preguntaAlimentacion), findsNothing);
 
@@ -166,11 +176,11 @@ void main() {
 
   group('Enlace al material relacionado (CA-14.3)', () {
     final video = MaterialEducativo(
-      id: 'videos-como-medir-la-fiebre',
-      titulo: 'Cómo medir la fiebre',
-      categoria: 'Videos',
-      tema: 'Fiebre',
-      cuerpo: 'Video paso a paso.',
+      id: 'guia-del-cateter-venoso-central-pediatrico',
+      titulo: 'Guía del catéter venoso central pediátrico',
+      categoria: 'Infografías',
+      tema: 'Catéter',
+      cuerpo: 'Cuidados del catéter.',
       creadoEn: DateTime.utc(2026, 1, 1),
     );
 
@@ -178,15 +188,15 @@ void main() {
       tester,
     ) async {
       await _montar(tester, catalogo: [video]);
-      await tester.tap(find.byKey(const Key('faq_fiebre')));
+      await tester.tap(find.byKey(const Key('faq_cateter-cuidados')));
       await tester.pumpAndSettle();
 
-      final enlace = find.byKey(const Key('verMaterial_fiebre'));
+      final enlace = find.byKey(const Key('verMaterial_cateter-cuidados'));
       expect(enlace, findsOneWidget);
       await tester.tap(enlace);
       await tester.pumpAndSettle();
       expect(
-        find.text('Biblioteca abre videos-como-medir-la-fiebre'),
+        find.text('Biblioteca abre guia-del-cateter-venoso-central-pediatrico'),
         findsOneWidget,
       );
     });
@@ -195,11 +205,17 @@ void main() {
       tester,
     ) async {
       await _montar(tester);
-      await tester.tap(find.byKey(const Key('faq_fiebre')));
+      await tester.tap(find.byKey(const Key('faq_cateter-cuidados')));
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('Se considera fiebre'), findsOneWidget);
-      expect(find.byKey(const Key('verMaterial_fiebre')), findsNothing);
+      expect(
+        find.textContaining('Muchas quimioterapias irritan las venas'),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('verMaterial_cateter-cuidados')),
+        findsNothing,
+      );
     });
   });
 }

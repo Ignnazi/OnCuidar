@@ -36,14 +36,14 @@
     "tamanoBytes": 21122002
   },
   {
-    "titulo": "Manual de Control de Síntomas",
+    "titulo": "Glosario de Rehabilitación Oncológica Pediátrica",
     "categoria": "Guías",
-    "tema": "Paliativos",
-    "cuerpo": "Guía práctica para el manejo de síntomas en cuidados paliativos oncológicos.\n\n# Dolor\nAdministra el analgésico según horario y registra la respuesta.\n\n# Náuseas\nOfrece comidas pequeñas y evita olores fuertes.\n\n# Dificultad respiratoria\nEleva la cabecera y mantén la calma; avisa al equipo.\n\n# Cuidados generales\nCambios de posición cada dos horas y buena hidratación.",
-    "urlArchivo": "/archivos/guias/manual-control-sintomas.pdf",
+    "tema": "Rehabilitación",
+    "cuerpo": "Glosario de términos de rehabilitación oncológica pediátrica elaborado por la Subcomisión de Rehabilitación del PINDA (2024-2025).\n\n# Para qué sirve\nExplica en palabras simples los términos que usan kinesiólogos, fonoaudiólogos, terapeutas ocupacionales y neuropsicólogos durante la rehabilitación del niño.\n\n# Qué incluye\nComunicación y lenguaje, audición, deglución y alimentación, movimiento y funciones cognitivas, ordenados de la A a la V.",
+    "urlArchivo": "/archivos/guias/glosario-rehabilitacion-oncologica-pediatrica.pdf",
     "tipoArchivo": "pdf",
-    "tamanoBytes": 861608,
-    "urlMiniatura": "/archivos/guias/miniatura-manual-sintomas.png"
+    "tamanoBytes": 130433,
+    "urlMiniatura": "/archivos/guias/miniatura-glosario.png"
   },
   {
     "titulo": "Alimentación durante la quimioterapia infantil",

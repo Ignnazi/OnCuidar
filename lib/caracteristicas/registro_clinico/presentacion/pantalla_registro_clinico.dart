@@ -149,8 +149,11 @@ class _RegistroClinicoScreenState extends ConsumerState<RegistroClinicoScreen> {
     );
   }
 
-  EvaluacionAlerta _evaluarAlerta() =>
-      MotorReglasClinicas.evaluar(_signosActuales(), _sintomas);
+  EvaluacionAlerta _evaluarAlerta() => MotorReglasClinicas.evaluar(
+    _signosActuales(),
+    _sintomas,
+    edad: ref.read(pacienteActivoProvider).value?.edad,
+  );
 
   int _registrosHoy(List<RegistroClinico> registros) =>
       contarProgramadosDelDia(registros, DateTime.now());
@@ -414,7 +417,10 @@ class _RegistroClinicoScreenState extends ConsumerState<RegistroClinicoScreen> {
                         },
                       ),
                     const SizedBox(height: 20),
-                    SeccionSignosVitales(controladores: _controladoresSignos),
+                    SeccionSignosVitales(
+                      controladores: _controladoresSignos,
+                      edad: ref.watch(pacienteActivoProvider).value?.edad,
+                    ),
                     const SizedBox(height: 20),
                     SeccionSintomas(
                       seleccionados: _seleccionados,
