@@ -59,8 +59,11 @@ class TarjetaPacienteActivo extends StatelessWidget {
                 Icons.badge_outlined,
                 'RUT: ${formatearRut(paciente.rut!)}',
               ),
-            if (paciente.edad != null)
-              ChipFranja(Icons.cake_outlined, 'Edad: ${paciente.edad} años'),
+            if (paciente.edadActual != null)
+              ChipFranja(
+                Icons.cake_outlined,
+                'Edad: ${paciente.edadActual} años',
+              ),
           ],
         ),
         Padding(

@@ -177,7 +177,7 @@ class _SplashState extends ConsumerState<Splash>
                       child: Column(
                         children: [
                           Text(
-                            'Oncuidar',
+                            'OnCuidar',
                             style: GoogleFonts.nunito(
                               fontSize: 32,
                               fontWeight: FontWeight.w800,

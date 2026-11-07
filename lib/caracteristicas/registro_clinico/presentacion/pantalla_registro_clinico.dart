@@ -152,7 +152,7 @@ class _RegistroClinicoScreenState extends ConsumerState<RegistroClinicoScreen> {
   EvaluacionAlerta _evaluarAlerta() => MotorReglasClinicas.evaluar(
     _signosActuales(),
     _sintomas,
-    edad: ref.read(pacienteActivoProvider).value?.edad,
+    edad: ref.read(pacienteActivoProvider).value?.edadActual,
   );
 
   int _registrosHoy(List<RegistroClinico> registros) =>
@@ -287,7 +287,7 @@ class _RegistroClinicoScreenState extends ConsumerState<RegistroClinicoScreen> {
           ? null
           : _observacionesController.text.trim(),
       nivelAlerta: alerta.nivel,
-      mensajeAlerta: alerta.mensajes.isEmpty ? null : alerta.mensajes.join(' '),
+      mensajeAlerta: mensajeAlertaParaGuardar(alerta.mensajes),
     );
     if (_guardando) return;
     setState(() => _guardando = true);
@@ -419,7 +419,7 @@ class _RegistroClinicoScreenState extends ConsumerState<RegistroClinicoScreen> {
                     const SizedBox(height: 20),
                     SeccionSignosVitales(
                       controladores: _controladoresSignos,
-                      edad: ref.watch(pacienteActivoProvider).value?.edad,
+                      edad: ref.watch(pacienteActivoProvider).value?.edadActual,
                     ),
                     const SizedBox(height: 20),
                     SeccionSintomas(

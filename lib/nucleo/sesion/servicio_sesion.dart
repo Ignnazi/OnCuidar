@@ -66,7 +66,11 @@ class ExcepcionSesion implements Exception {
 }
 
 class ServicioSesion {
-  ServicioSesion({required this._api, required this._almacen}) {
+  ServicioSesion({
+    required this._api,
+    required this._almacen,
+    this.esperaReintento = const Duration(seconds: 1),
+  }) {
     _api.alSesionVencida = _expirar;
   }
 
@@ -75,6 +79,8 @@ class ServicioSesion {
 
   final ClienteApi _api;
   final AlmacenSecreto _almacen;
+
+  final Duration esperaReintento;
   final _cambios = StreamController<SesionUsuario?>.broadcast();
   SesionUsuario? _actual;
   Future<void>? _inicializacion;
@@ -167,12 +173,20 @@ class ServicioSesion {
 
   Future<SesionUsuario> iniciarSesion(String correo, String contrasena) async {
     final normalizado = correo.trim().toLowerCase();
-    final json = await _traducir(
-      () => _api.post('/auth/login', {
-        'correo': normalizado,
-        'contrasena': contrasena,
-      }),
-    );
+    Future<dynamic> enviar() => _api.post('/auth/login', {
+      'correo': normalizado,
+      'contrasena': contrasena,
+    });
+    final json = await _traducir(() async {
+      try {
+        return await enviar();
+      } on ExcepcionApi catch (e) {
+        if (!e.esDeRed) rethrow;
+        // La primera petición tras abrir la app a veces falla aunque haya red.
+        await Future<void>.delayed(esperaReintento);
+        return enviar();
+      }
+    });
     final sesion = _desdeRespuesta(json, normalizado);
     await _fijar(sesion);
     return sesion;

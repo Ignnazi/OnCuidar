@@ -30,4 +30,39 @@ void main() {
       expect(categorias, hasLength(5));
     });
   });
+
+  group('mensajes guardados del registro', () {
+    RegistroClinico registro(String? mensaje) => RegistroClinico(
+      id: 'r1',
+      pacienteId: 'p1',
+      fecha: DateTime(2026, 11, 7),
+      creadoEn: DateTime(2026, 11, 7),
+      tipoRegistro: 'programado',
+      nivelAlerta: NivelAlerta.alerta,
+      mensajeAlerta: mensaje,
+    );
+
+    test('se muestran los avisos de ese momento, uno por línea', () {
+      expect(
+        registro('Subfebril (37.6°C)\nSaturación de O₂ baja (95%)').mensajes,
+        ['Subfebril (37.6°C)', 'Saturación de O₂ baja (95%)'],
+      );
+    });
+
+    test('un registro antiguo muestra su mensaje tal como se guardó', () {
+      expect(registro('Fiebre moderada (39.0°C) 1 síntoma severo').mensajes, [
+        'Fiebre moderada (39.0°C) 1 síntoma severo',
+      ]);
+    });
+
+    test('sin mensaje o sin nada preocupante no hay avisos', () {
+      expect(registro(null).mensajes, isEmpty);
+      expect(registro('Sin síntomas preocupantes').mensajes, isEmpty);
+    });
+
+    test('al guardar une los mensajes con saltos de línea', () {
+      expect(mensajeAlertaParaGuardar(['A', 'B']), 'A\nB');
+      expect(mensajeAlertaParaGuardar(const []), isNull);
+    });
+  });
 }

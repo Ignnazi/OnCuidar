@@ -68,10 +68,22 @@ jobs:
 
       - run: flutter pub get
 
+      - name: Llave de firma
+        env:
+          LLAVE: ${{ secrets.ANDROID_LLAVE }}
+          CLAVE: ${{ secrets.ANDROID_CLAVE_LLAVE }}
+        run: |
+          if [ -z "$LLAVE" ] || [ -z "$CLAVE" ]; then
+            echo "::warning::Sin ANDROID_LLAVE y ANDROID_CLAVE_LLAVE se firma con la llave de depuración"
+            exit 0
+          fi
+          echo "$LLAVE" | base64 -d > android/app/oncuidar.jks
+          printf 'storeFile=oncuidar.jks\nstorePassword=%s\nkeyAlias=oncuidar\nkeyPassword=%s\n' "$CLAVE" "$CLAVE" > android/key.properties
+
       - name: Compilar
         env:
           API_URL: ${{ vars.API_URL }}
-        run: flutter build apk --release --dart-define=API_URL="$API_URL"
+        run: flutter build apk --release --dart-define=API_URL="$API_URL" --build-number=${{ github.run_number }}
 
       - uses: actions/upload-artifact@v7
         with:
