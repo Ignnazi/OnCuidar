@@ -44,6 +44,16 @@ void main() {
     );
   });
 
+  test('no acepta el nivel de alerta en claro', () {
+    expect(
+      () => cola.encolar(
+        'u1',
+        escrituraDe(datos: {'paciente_id': 'p1', 'nivelAlerta': 'critico'}),
+      ),
+      throwsArgumentError,
+    );
+  });
+
   test('quitar saca solo la escritura indicada', () async {
     await cola.encolar('u1', escrituraDe(id: 'e1'));
     await cola.encolar('u1', escrituraDe(id: 'e2'));

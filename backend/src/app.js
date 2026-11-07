@@ -5,6 +5,8 @@ const helmet = require('helmet');
 const db = require('./db');
 
 const app = express();
+// Se confía solo en el Apache de parra para la IP real
+app.set('trust proxy', 1);
 app.use(helmet());
 app.use(cors());
 app.use(express.json({ limit: '1mb' }));

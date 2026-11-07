@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const { MIN_CONTRASENA } = require('./auth');
 
 const LOGO_PNG = fs.readFileSync(path.join(__dirname, 'recursos', 'logo-oncuidar.png'));
 const LOGO_DATA_URI = `data:image/png;base64,${LOGO_PNG.toString('base64')}`;
@@ -203,7 +204,7 @@ const SCRIPT_RESTABLECER = `
   var form = $('f'), c1 = $('c1'), c2 = $('c2'), err = $('error'), btn = $('guardar');
   var barras = $('barras'), fuerza = $('fuerza');
   var token = form.getAttribute('data-token');
-  var MIN = 6;
+  var MIN = ${MIN_CONTRASENA};
   function nivel(p) {
     if (p.length < MIN) return 1;
     var s = 0;
@@ -270,7 +271,7 @@ function paginaRestablecer(token, nonce) {
 <label for="c1">Nueva contraseña</label>
 <div class="campo"><input id="c1" type="password" autocomplete="new-password" required aria-describedby="fuerza"><button type="button" class="ver" data-campo="c1" aria-pressed="false" aria-label="Mostrar u ocultar la nueva contraseña">Mostrar</button></div>
 <div class="barras" id="barras" aria-hidden="true"><span></span><span></span><span></span></div>
-<p id="fuerza">Usa al menos 6 caracteres.</p>
+<p id="fuerza">Usa al menos ${MIN_CONTRASENA} caracteres.</p>
 <label for="c2">Repite la contraseña</label>
 <div class="campo"><input id="c2" type="password" autocomplete="new-password" required><button type="button" class="ver" data-campo="c2" aria-pressed="false" aria-label="Mostrar u ocultar la contraseña repetida">Mostrar</button></div>
 <p class="error" id="error" role="alert" aria-live="assertive"></p>

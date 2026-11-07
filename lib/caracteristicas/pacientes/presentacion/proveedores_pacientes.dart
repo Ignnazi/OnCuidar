@@ -59,6 +59,9 @@ final pacienteActivoProvider = StreamProvider.autoDispose<Paciente?>((
 ) async* {
   final pacientesAsync = ref.watch(pacientesProvider);
   if (pacientesAsync is AsyncLoading) return;
+  if (pacientesAsync is AsyncError && !pacientesAsync.hasValue) {
+    throw pacientesAsync.error!;
+  }
   final pacientes = pacientesAsync.value ?? const <Paciente>[];
   if (pacientes.isEmpty) {
     yield null;

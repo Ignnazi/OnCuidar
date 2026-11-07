@@ -44,19 +44,23 @@ class CicloDeVidaPaciente {
   Future<void> reagendarNotificaciones() async {
     try {
       if (!pacientes.bd.tieneIdentidad()) return;
-      await notificaciones.cancelarTodas();
       final activos = await pacientes.pacientesEnTiempoReal().first;
+      final porPaciente = [
+        for (final paciente in activos)
+          (
+            paciente,
+            await recordatorios.recordatoriosEnTiempoReal(paciente.id).first,
+          ),
+      ];
+      await notificaciones.cancelarTodas();
       final ahora = DateTime.now();
       var permisoPedido = false;
-      for (final paciente in activos) {
-        try {
-          final delPaciente = await recordatorios
-              .recordatoriosEnTiempoReal(paciente.id)
-              .first;
-          for (final r in delPaciente) {
-            if (!r.activo) continue;
-            if (r.titulo.isEmpty) continue;
-            if (!r.esRecurrente && r.fechaHora.isBefore(ahora)) continue;
+      for (final (paciente, delPaciente) in porPaciente) {
+        for (final r in delPaciente) {
+          if (!r.activo) continue;
+          if (r.titulo.isEmpty) continue;
+          if (!r.esRecurrente && r.fechaHora.isBefore(ahora)) continue;
+          try {
             if (!permisoPedido) {
               permisoPedido = true;
               await notificaciones.solicitarPermisoAvisos();
@@ -73,13 +77,13 @@ class CicloDeVidaPaciente {
               mensual: r.esMensual,
               idPaciente: paciente.id,
             );
+          } catch (_) {
+            // Si falla uno, se siguen programando los demás.
           }
-        } catch (_) {
-          // Si falla, se sigue igual.
         }
       }
     } catch (_) {
-      // Si falla, se sigue igual.
+      // Si falla una lectura, los avisos quedan como estaban.
     }
   }
 }

@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:oncuidar/app/proveedores_navegacion.dart';
 import 'package:oncuidar/app/tema/paleta.dart';
 import 'package:oncuidar/caracteristicas/biblioteca/presentacion/widgets/tarjeta_descarga_contenido.dart';
+import 'package:oncuidar/compartido/widgets/aviso_cambios_fallidos.dart';
 import 'package:oncuidar/compartido/widgets/banner_conexion.dart';
 
 class NavegacionPrincipal extends ConsumerStatefulWidget {
@@ -75,6 +76,7 @@ class _NavegacionPrincipalState extends ConsumerState<NavegacionPrincipal> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 const AvisoDescargaContenido(),
+                const AvisoCambiosFallidos(),
                 const BannerConexion(),
                 _barraNavegacion(),
               ],

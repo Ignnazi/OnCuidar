@@ -84,4 +84,24 @@ void main() {
     );
     expect(llamadas, 1);
   });
+
+  test('borrar la cuenta envía la contraseña', () async {
+    late http.Request enviada;
+    final servicio = _servicio(
+      MockClient((peticion) async {
+        enviada = peticion;
+        return http.Response(
+          jsonEncode({'ok': true}),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }),
+    );
+
+    await servicio.eliminarCuenta('secreta1');
+
+    expect(enviada.method, 'DELETE');
+    expect(enviada.url.path, '/api/cuenta');
+    expect(jsonDecode(enviada.body), {'contrasena': 'secreta1'});
+  });
 }

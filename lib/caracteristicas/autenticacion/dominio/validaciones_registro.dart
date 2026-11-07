@@ -22,9 +22,11 @@ String? validarCorreo(String? v, {bool opcional = false}) {
   return regexCorreo.hasMatch(valor) ? null : 'Ingresa un correo válido';
 }
 
+const minimoContrasena = 8;
+
 String? validarContrasena(String? v) {
   if (v == null || v.isEmpty) return 'Ingresa una contraseña';
-  if (v.length < 6) return 'Mínimo 6 caracteres';
+  if (v.length < minimoContrasena) return 'Mínimo $minimoContrasena caracteres';
   return null;
 }
 

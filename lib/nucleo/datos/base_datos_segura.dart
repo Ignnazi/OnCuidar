@@ -52,6 +52,15 @@ class BaseDatosSegura {
 
   String _prefijoCache(String uid) => 'oncuidar.flujo.$uid.';
 
+  // La cola no se borra, se envía al volver a entrar
+  Future<void> borrarCacheLocal(String uid) async {
+    final prefs = await SharedPreferences.getInstance();
+    final prefijo = _prefijoCache(uid);
+    for (final clave in prefs.getKeys().toList()) {
+      if (clave.startsWith(prefijo)) await prefs.remove(clave);
+    }
+  }
+
   Stream<T> flujo<T>(
     String ruta, {
     required Future<T> Function(dynamic json) convertir,
@@ -70,6 +79,8 @@ class BaseDatosSegura {
         return texto == null ? null : jsonDecode(texto);
       },
       guardarCache: (json) async {
+        // Tras cerrar sesión la respuesta ya no se guarda
+        if (!tieneIdentidad() || uid != dueno) return;
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString(claveCache, jsonEncode(json));
       },
@@ -109,10 +120,12 @@ class BaseDatosSegura {
     dynamic json;
     try {
       json = await api.get(ruta);
-      try {
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString(clave, jsonEncode(json));
-      } catch (_) {}
+      if (tieneIdentidad() && uid == dueno) {
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString(clave, jsonEncode(json));
+        } catch (_) {}
+      }
     } on ExcepcionApi catch (e) {
       if (!e.esDeRed) rethrow;
       final prefs = await SharedPreferences.getInstance();

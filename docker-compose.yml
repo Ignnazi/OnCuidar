@@ -33,7 +33,7 @@ services:
       # Los videos no se versionan en git, así que no van dentro de la imagen
       - ./backend/archivos/videos:/app/archivos/videos:ro,Z
     ports:
-      - "${PUERTO_API:-8080}:3000"
+      - "127.0.0.1:${PUERTO_API:-8080}:3000"
 
   web:
     image: docker.io/library/nginx:alpine
@@ -85,7 +85,7 @@ services:
     depends_on:
       - prometheus
     environment:
-      GF_SECURITY_ADMIN_USER: ${GRAFANA_USUARIO:-admin}
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_USUARIO:?definir GRAFANA_USUARIO en .env}
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_CLAVE:?definir GRAFANA_CLAVE en .env}
       GF_SERVER_ROOT_URL: ${URL_GRAFANA:-http://localhost:8015/grafana/}
       GF_SERVER_SERVE_FROM_SUB_PATH: "false"

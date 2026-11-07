@@ -182,6 +182,7 @@ class BotonesDialogo extends StatelessWidget {
                   child: Text(textoConfirmar),
                 )
               : ElevatedButton.icon(
+                  key: keyConfirmar,
                   onPressed: alConfirmar,
                   icon: Icon(icono, size: 18),
                   label: Text(textoConfirmar),

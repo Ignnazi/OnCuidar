@@ -34,7 +34,7 @@ class ExcepcionApi implements Exception {
   final bool esTokenInvalido;
   final bool esTiempoAgotado;
 
-  static const _permanentes = {400, 401, 403, 404, 409, 422};
+  static const _permanentes = {400, 401, 403, 404, 409, 410, 422};
 
   bool get esPermanente => !esDeRed && _permanentes.contains(codigoHttp);
 
@@ -73,8 +73,8 @@ class ClienteApi {
   Future<dynamic> post(String ruta, [Object? cuerpo, Duration? limite]) =>
       _enviar('POST', ruta, cuerpo: cuerpo ?? const {}, limite: limite);
 
-  Future<dynamic> delete(String ruta, {Duration? limite}) =>
-      _enviar('DELETE', ruta, limite: limite);
+  Future<dynamic> delete(String ruta, {Object? cuerpo, Duration? limite}) =>
+      _enviar('DELETE', ruta, cuerpo: cuerpo, limite: limite);
 
   Future<dynamic> _enviar(
     String metodo,

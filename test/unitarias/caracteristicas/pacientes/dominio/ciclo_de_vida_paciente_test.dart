@@ -32,6 +32,7 @@ class PacientesFalsos extends RepositorioPacientes {
   PacientesFalsos() : super(_bd);
 
   List<Paciente> activos = [];
+  Object? fallo;
 
   @override
   Future<void> archivarPaciente(String idPaciente) async =>
@@ -46,13 +47,15 @@ class PacientesFalsos extends RepositorioPacientes {
       _pasos.add('eliminar $idPaciente');
 
   @override
-  Stream<List<Paciente>> pacientesEnTiempoReal() => Stream.value(activos);
+  Stream<List<Paciente>> pacientesEnTiempoReal() =>
+      fallo == null ? Stream.value(activos) : Stream.error(fallo!);
 }
 
 class RecordatoriosFalsos extends RepositorioRecordatorios {
   RecordatoriosFalsos() : super(_bd);
 
   List<Recordatorio> lista = [];
+  Object? fallo;
 
   @override
   Future<void> cancelarNotificacionesPaciente(
@@ -62,7 +65,7 @@ class RecordatoriosFalsos extends RepositorioRecordatorios {
 
   @override
   Stream<List<Recordatorio>> recordatoriosEnTiempoReal(String idPaciente) =>
-      Stream.value(lista);
+      fallo == null ? Stream.value(lista) : Stream.error(fallo!);
 }
 
 class NotificacionesFalsas implements ServicioNotificaciones {
@@ -75,8 +78,13 @@ class NotificacionesFalsas implements ServicioNotificaciones {
     return true;
   }
 
+  var cancelaciones = 0;
+
   @override
-  Future<void> cancelarTodas() async => programados.clear();
+  Future<void> cancelarTodas() async {
+    cancelaciones++;
+    programados.clear();
+  }
 
   @override
   Future<void> programar({
@@ -195,5 +203,48 @@ void main() {
 
     await ciclo.reagendarNotificaciones();
     expect(notificaciones.orden, isEmpty);
+  });
+
+  group('reagendar avisos', () {
+    final futuro = DateTime.now().add(const Duration(days: 1));
+
+    setUp(() {
+      pacientes.activos = [
+        Paciente(id: 'p1', nombreCompleto: 'Tomás', creadoEn: DateTime(2026)),
+      ];
+      recordatorios.lista = [_recordatorio('Nuevo', fechaHora: futuro)];
+      notificaciones.programados.add('Anterior');
+    });
+
+    test('si falla leer los pacientes deja los avisos como estaban', () async {
+      pacientes.fallo = const ExcepcionApi(500, 'Fallo');
+
+      await ciclo.reagendarNotificaciones();
+
+      expect(notificaciones.cancelaciones, 0);
+      expect(notificaciones.programados, ['Anterior']);
+      expect(notificaciones.orden, isEmpty);
+    });
+
+    test(
+      'si falla leer los recordatorios deja los avisos como estaban',
+      () async {
+        recordatorios.fallo = const ExcepcionApi(500, 'Fallo');
+
+        await ciclo.reagendarNotificaciones();
+
+        expect(notificaciones.cancelaciones, 0);
+        expect(notificaciones.programados, ['Anterior']);
+        expect(notificaciones.orden, isEmpty);
+      },
+    );
+
+    test('si las lecturas salen bien cancela y vuelve a programar', () async {
+      await ciclo.reagendarNotificaciones();
+
+      expect(notificaciones.cancelaciones, 1);
+      expect(notificaciones.programados, ['Nuevo']);
+      expect(notificaciones.orden, ['permiso', 'programar Nuevo']);
+    });
   });
 }

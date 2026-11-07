@@ -9,11 +9,13 @@ import 'package:oncuidar/app/tema/paleta.dart';
 import 'package:oncuidar/app/tema/repintar.dart';
 import 'package:oncuidar/app/tema/tema.dart';
 import 'package:oncuidar/caracteristicas/configuracion/presentacion/proveedores_configuracion.dart';
+import 'package:oncuidar/caracteristicas/historial/datos/archivo_exportacion.dart';
 import 'package:oncuidar/nucleo/almacen/almacen_secreto_seguro.dart';
 import 'package:oncuidar/nucleo/notificaciones/silencio_avisos.dart';
 import 'package:oncuidar/nucleo/proveedores.dart';
 import 'package:oncuidar/nucleo/red/cliente_api.dart';
 import 'package:oncuidar/nucleo/red/config_api.dart';
+import 'package:oncuidar/nucleo/sesion/escucha_sesion.dart';
 import 'package:oncuidar/nucleo/sesion/servicio_sesion.dart';
 
 Future<void> main() async {
@@ -26,6 +28,7 @@ Future<void> main() async {
   sesion = ServicioSesion(api: api, almacen: const AlmacenSecretoSeguro());
   await sesion.inicializar();
   SilencioAvisos.usuario = sesion.actual?.uid;
+  unawaited(limpiarExportacionesViejas());
   runApp(
     ProviderScope(
       overrides: [
@@ -51,11 +54,11 @@ class _OncuidarAppState extends ConsumerState<OncuidarApp>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _escucharAvisos();
-    var sesionPrevia = false;
-    ref.read(servicioSesionProvider).cambios.listen((usuario) {
-      SilencioAvisos.usuario = usuario?.uid;
-      if (usuario == null) {
-        if (!sesionPrevia) return;
+    escucharSesion(
+      ref.read(servicioSesionProvider).cambios,
+      cifrado: () => ref.read(servicioCifradoProvider),
+      base: () => ref.read(baseDatosSeguraProvider),
+      alSalir: () {
         EstadoArranque.reiniciar();
         unawaited(ref.read(servicioNotificacionesProvider).cancelarTodas());
         ref.read(servicioCifradoProvider).bloquear();
@@ -68,11 +71,10 @@ class _OncuidarAppState extends ConsumerState<OncuidarApp>
           '/recuperar-acceso',
         };
         if (!publicas.contains(router.state.uri.path)) router.go('/bienvenida');
-      } else {
-        sesionPrevia = true;
-        unawaited(ref.read(orquestadorSincronizacionProvider).drenar());
-      }
-    });
+      },
+      alEntrar: () =>
+          unawaited(ref.read(orquestadorSincronizacionProvider).drenar()),
+    );
   }
 
   @override

@@ -214,8 +214,10 @@ class ServicioSesion {
   Future<void> reenviarVerificacion() =>
       _traducir(() => _api.post('/auth/reenviar-verificacion', {}));
 
-  Future<void> eliminarCuenta() async {
-    await _traducir(() => _api.delete('/cuenta'));
+  Future<void> eliminarCuenta(String contrasena) async {
+    await _traducir(
+      () => _api.delete('/cuenta', cuerpo: {'contrasena': contrasena}),
+    );
     await _fijar(null);
   }
 

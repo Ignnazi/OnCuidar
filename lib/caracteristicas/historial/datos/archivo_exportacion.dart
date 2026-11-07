@@ -5,17 +5,40 @@ import 'package:flutter_file_dialog/flutter_file_dialog.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
+const _prefijoExportacion = 'historial_oncuidar_';
+
 String nombreArchivoExportacion(DateTime ahora, String extension) {
   final mes = ahora.month.toString().padLeft(2, '0');
   final dia = ahora.day.toString().padLeft(2, '0');
   final fecha = '${ahora.year}-$mes-$dia';
   final hora =
       '${ahora.hour.toString().padLeft(2, '0')}${ahora.minute.toString().padLeft(2, '0')}';
-  return 'historial_oncuidar_${fecha}_$hora.$extension';
+  return '$_prefijoExportacion${fecha}_$hora.$extension';
 }
 
-Future<File> escribirArchivoTemporal(Uint8List bytes, String extension) async {
-  final dir = await getTemporaryDirectory();
+Future<void> limpiarExportacionesViejas({Directory? directorio}) async {
+  try {
+    final dir = directorio ?? await getTemporaryDirectory();
+    if (!await dir.exists()) return;
+    await for (final entrada in dir.list()) {
+      final nombre = entrada.uri.pathSegments.last;
+      if (entrada is! File || !nombre.startsWith(_prefijoExportacion)) {
+        continue;
+      }
+      try {
+        await entrada.delete();
+      } catch (_) {}
+    }
+  } catch (_) {}
+}
+
+Future<File> escribirArchivoTemporal(
+  Uint8List bytes,
+  String extension, {
+  Directory? directorio,
+}) async {
+  final dir = directorio ?? await getTemporaryDirectory();
+  await limpiarExportacionesViejas(directorio: dir);
   final archivo = File(
     '${dir.path}${Platform.pathSeparator}'
     '${nombreArchivoExportacion(DateTime.now(), extension)}',

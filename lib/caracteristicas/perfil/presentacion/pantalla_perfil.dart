@@ -4,9 +4,11 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:oncuidar/app/tema/paleta.dart';
 import 'package:oncuidar/caracteristicas/pacientes/presentacion/gestion_pacientes.dart';
+import 'package:oncuidar/caracteristicas/pacientes/presentacion/proveedores_pacientes.dart';
 import 'package:oncuidar/caracteristicas/perfil/presentacion/cerrar_sesion.dart';
 import 'package:oncuidar/caracteristicas/perfil/presentacion/perfil_cuidador.dart';
 import 'package:oncuidar/caracteristicas/perfil/presentacion/widgets/boton_salir.dart';
+import 'package:oncuidar/caracteristicas/perfil/presentacion/widgets/mensaje_error_datos.dart';
 import 'package:oncuidar/compartido/widgets/encabezado_gradiente.dart';
 
 class Perfil extends ConsumerStatefulWidget {
@@ -104,7 +106,7 @@ class _PerfilState extends ConsumerState<Perfil> {
                     children: const [
                       SingleChildScrollView(
                         padding: EdgeInsets.fromLTRB(20, 0, 20, 24),
-                        child: GestionPacientes(),
+                        child: _PacientesOError(),
                       ),
                       SingleChildScrollView(
                         padding: EdgeInsets.fromLTRB(20, 0, 20, 24),
@@ -143,5 +145,20 @@ class _PerfilState extends ConsumerState<Perfil> {
         ],
       ),
     );
+  }
+}
+
+class _PacientesOError extends ConsumerWidget {
+  const _PacientesOError();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final pacientes = ref.watch(pacientesProvider);
+    if (pacientes.hasError && !pacientes.hasValue) {
+      return MensajeErrorDatos(
+        alReintentar: () => ref.invalidate(pacientesProvider),
+      );
+    }
+    return const GestionPacientes();
   }
 }

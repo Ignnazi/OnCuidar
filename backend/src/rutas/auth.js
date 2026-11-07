@@ -6,7 +6,7 @@ const config = require('../config');
 const correo = require('../correo');
 const plantillas = require('../plantillas');
 const sellado = require('../sellado');
-const { firmarToken, requiereToken, limitarIntentos } = require('../auth');
+const { firmarToken, requiereToken, limitarIntentos, MIN_CONTRASENA } = require('../auth');
 const { ErrorHttp, cuerpoObjeto, correoValido, normalizarCorreo } = require('../validacion');
 
 const router = express.Router();
@@ -14,8 +14,8 @@ const sha256 = (t) => crypto.createHash('sha256').update(t).digest('hex');
 const HASH_FALSO = bcrypt.hashSync('contraseña-inexistente', 10);
 
 function exigirContrasena(valor, nombre = 'contrasena') {
-  if (typeof valor !== 'string' || valor.length < 6) {
-    throw new ErrorHttp(400, `La contraseña debe tener al menos 6 caracteres (${nombre})`);
+  if (typeof valor !== 'string' || valor.length < MIN_CONTRASENA) {
+    throw new ErrorHttp(400, `La contraseña debe tener al menos ${MIN_CONTRASENA} caracteres (${nombre})`);
   }
   return valor;
 }
@@ -126,6 +126,8 @@ router.post('/auth/cambiar-correo', requiereToken, async (req, res) => {
 });
 
 router.delete('/cuenta', requiereToken, async (req, res) => {
+  const { contrasena } = cuerpoObjeto(req);
+  if (!(await verificarContrasena(req.uid, contrasena))) throw new ErrorHttp(401, 'Contraseña incorrecta');
   await db.consulta('DELETE FROM usuarios WHERE id = $1', [req.uid]);
   res.json({ ok: true });
 });

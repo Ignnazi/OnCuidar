@@ -89,6 +89,14 @@ class ServicioCifrado {
     _uidActivo = null;
   }
 
+  // Al entrar de nuevo la clave se pide al servidor
+  Future<void> olvidarClave(String uid) async {
+    bloquear();
+    try {
+      await _almacen.borrar('oncuidar.data-key.$uid');
+    } catch (_) {}
+  }
+
   Future<String> cifrar(String uid, String texto) async {
     final caja = await _cifrador.encrypt(
       utf8.encode(texto),
