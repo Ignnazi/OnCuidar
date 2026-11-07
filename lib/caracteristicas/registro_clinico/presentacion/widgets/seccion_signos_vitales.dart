@@ -1,15 +1,23 @@
 import 'package:flutter/material.dart';
 
+import 'package:oncuidar/caracteristicas/registro_clinico/dominio/rangos_signos_vitales.dart';
 import 'package:oncuidar/caracteristicas/registro_clinico/presentacion/widgets/tarjeta_signo.dart';
 import 'package:oncuidar/caracteristicas/registro_clinico/presentacion/widgets/titulo_seccion_registro.dart';
 
 class SeccionSignosVitales extends StatelessWidget {
-  const SeccionSignosVitales({super.key, required this.controladores});
+  const SeccionSignosVitales({
+    super.key,
+    required this.controladores,
+    this.edad,
+  });
 
   final List<TextEditingController> controladores;
 
+  final int? edad;
+
   @override
   Widget build(BuildContext context) {
+    final grupo = edad == null ? null : GrupoEdad.desdeEdad(edad!);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -27,7 +35,7 @@ class SeccionSignosVitales extends StatelessWidget {
                 color: const Color(0xFFF07830),
                 hint: '37.0',
                 unidad: '°C',
-                rango: '30-45',
+                rango: rangoNormalTemperatura,
                 controlador: controladores[0],
                 decimal: true,
               ),
@@ -40,7 +48,7 @@ class SeccionSignosVitales extends StatelessWidget {
                 color: const Color(0xFFF43F5E),
                 hint: '80',
                 unidad: 'lpm',
-                rango: '20-250',
+                rango: grupo?.frecuenciaCardiaca.toString(),
                 controlador: controladores[1],
               ),
             ),
@@ -56,7 +64,7 @@ class SeccionSignosVitales extends StatelessWidget {
                 color: const Color(0xFF4EC4D4),
                 hint: '98',
                 unidad: '%',
-                rango: '50-100',
+                rango: rangoNormalSaturacion,
                 controlador: controladores[2],
               ),
             ),
@@ -68,7 +76,7 @@ class SeccionSignosVitales extends StatelessWidget {
                 color: const Color(0xFFA78BFA),
                 hint: '18',
                 unidad: 'rpm',
-                rango: '4-60',
+                rango: grupo?.frecuenciaRespiratoria.toString(),
                 controlador: controladores[3],
               ),
             ),

@@ -77,15 +77,31 @@ class ServicioNotificaciones {
     }
   }
 
+  AndroidFlutterLocalNotificationsPlugin? get _android => _plugin
+      .resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin
+      >();
+
   Future<bool> solicitarPermiso() async {
-    final android = _plugin
-        .resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin
-        >();
+    final android = _android;
     if (android != null) {
       await android.requestNotificationsPermission();
-      await android.requestExactAlarmsPermission();
+      if (await android.canScheduleExactNotifications() != true) {
+        await android.requestExactAlarmsPermission();
+      }
     }
+    return _solicitarPermisoIos();
+  }
+
+  Future<bool> solicitarPermisoAvisos() async {
+    final android = _android;
+    if (android != null) {
+      return await android.requestNotificationsPermission() ?? false;
+    }
+    return _solicitarPermisoIos();
+  }
+
+  Future<bool> _solicitarPermisoIos() async {
     final ios = _plugin
         .resolvePlatformSpecificImplementation<
           IOSFlutterLocalNotificationsPlugin
@@ -195,6 +211,7 @@ class ServicioNotificaciones {
     DateTimeComponents? repetir,
   }) async {
     log('Programando notificación $id para $momento');
+    final exactas = await _android?.canScheduleExactNotifications() ?? true;
     try {
       await _plugin.zonedSchedule(
         id: id,
@@ -221,7 +238,9 @@ class ServicioNotificaciones {
             presentSound: true,
           ),
         ),
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        androidScheduleMode: exactas
+            ? AndroidScheduleMode.exactAllowWhileIdle
+            : AndroidScheduleMode.inexactAllowWhileIdle,
         matchDateTimeComponents: repetir,
         payload: rutaAviso,
       );

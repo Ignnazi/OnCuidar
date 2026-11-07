@@ -122,7 +122,7 @@ class _OncuidarAppState extends ConsumerState<OncuidarApp>
     _aplicarPaleta();
     if (usuario != null) ref.watch(orquestadorSincronizacionProvider);
     return MaterialApp.router(
-      title: 'Oncuidar',
+      title: 'OnCuidar',
       debugShowCheckedModeBanner: false,
       theme: Tema.obtener(),
       routerConfig: router,
@@ -196,14 +196,14 @@ class _GateClaveState extends ConsumerState<_GateClave> {
       }
       if (e.codigoHttp >= 500) {
         return 'Hubo un error interno al restaurar tus datos.\n'
-            'Reintenta; si persiste, avísanos con el código del error.';
+            'Reintenta y, si persiste, avísanos con el código del error.';
       }
       return 'No se pudieron restaurar tus datos.\n'
           '(${e.codigoHttp})';
     }
     if (e is FormatException) {
       return 'Tus datos locales están dañados.\n'
-          'Se generará una copia nueva; reintenta para continuar.';
+          'Se generará una copia nueva. Reintenta para continuar.';
     }
     return 'No se pudieron restaurar tus datos.\n'
         'Reintenta y, si persiste, avísanos.';

@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:oncuidar/app/tema/paleta.dart';
 import 'package:oncuidar/caracteristicas/chat/dominio/conversacion.dart';
 import 'package:oncuidar/compartido/widgets/aviso_app.dart';
+import 'package:oncuidar/compartido/widgets/texto_estructurado.dart';
 import 'package:oncuidar/nucleo/utilidades/formato_fecha.dart';
 
 /// Avatar redondo del asistente.
@@ -130,7 +131,8 @@ class BurbujaMensaje extends StatelessWidget {
     final hora = mensaje.enviadoEn == null ? null : hora12(mensaje.enviadoEn!);
     final conExtras =
         !delUsuario && (mensaje.sugerenciaConsulta || alAbrirMaterial != null);
-    if (!conExtras) {
+    final estructurado = !delUsuario && mensaje.texto.contains('\n');
+    if (!conExtras && !estructurado) {
       return TextoConHora(
         texto: mensaje.texto,
         hora: hora,
@@ -144,7 +146,12 @@ class BurbujaMensaje extends StatelessWidget {
       children: [
         Align(
           alignment: Alignment.centerLeft,
-          child: Text(mensaje.texto, style: _estiloTexto(delUsuario)),
+          child: estructurado
+              ? TextoEstructurado(
+                  mensaje.texto,
+                  estilo: _estiloTexto(delUsuario),
+                )
+              : Text(mensaje.texto, style: _estiloTexto(delUsuario)),
         ),
         if (mensaje.sugerenciaConsulta) const _SugerenciaConsulta(),
         if (alAbrirMaterial != null)
@@ -167,12 +174,14 @@ class BurbujaMensaje extends StatelessWidget {
               ),
             ),
           ),
-        if (hora != null)
+        if (hora != null) ...[
+          const SizedBox(height: 4),
           Text(
             hora,
             key: const Key('horaMensajeChat'),
             style: _estiloHora(delUsuario),
           ),
+        ],
       ],
     );
   }
@@ -260,7 +269,7 @@ class _SugerenciaConsulta extends StatelessWidget {
           Expanded(
             child: Text(
               'Te sugiero comentárselo a su equipo médico si esto te '
-              'preocupa; ellos conocen mejor su caso.',
+              'preocupa. Ellos conocen mejor su caso.',
               style: GoogleFonts.nunito(
                 fontSize: 12.5,
                 color: Paleta.doradoOscuro,

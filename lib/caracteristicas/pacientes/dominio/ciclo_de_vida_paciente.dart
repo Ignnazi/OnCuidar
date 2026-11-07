@@ -47,6 +47,7 @@ class CicloDeVidaPaciente {
       await notificaciones.cancelarTodas();
       final activos = await pacientes.pacientesEnTiempoReal().first;
       final ahora = DateTime.now();
+      var permisoPedido = false;
       for (final paciente in activos) {
         try {
           final delPaciente = await recordatorios
@@ -56,6 +57,10 @@ class CicloDeVidaPaciente {
             if (!r.activo) continue;
             if (r.titulo.isEmpty) continue;
             if (!r.esRecurrente && r.fechaHora.isBefore(ahora)) continue;
+            if (!permisoPedido) {
+              permisoPedido = true;
+              await notificaciones.solicitarPermisoAvisos();
+            }
             await notificaciones.programar(
               id: ServicioNotificaciones.idSeguro(r.id),
               titulo: r.tituloAviso(

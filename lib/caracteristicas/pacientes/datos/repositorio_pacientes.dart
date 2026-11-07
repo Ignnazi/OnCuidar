@@ -1,3 +1,4 @@
+import 'package:oncuidar/caracteristicas/pacientes/dominio/fecha_nacimiento.dart';
 import 'package:oncuidar/caracteristicas/pacientes/dominio/paciente.dart';
 import 'package:oncuidar/nucleo/datos/base_datos_segura.dart';
 import 'package:oncuidar/nucleo/datos/rutas_api.dart';
@@ -51,6 +52,11 @@ class RepositorioPacientes {
       claveFormulario: 'edad',
       valor: datos['edad'],
       clave: 'edad_cifrada',
+    );
+    await campo(
+      claveFormulario: 'fechaNacimiento',
+      valor: datos['fechaNacimiento'],
+      clave: 'fecha_nacimiento_cifrada',
     );
     await campo(
       claveFormulario: 'diagnostico',
@@ -159,6 +165,12 @@ class RepositorioPacientes {
       plano: p.edad?.toString(),
       cifrado: 'edad_cifrada',
     );
+    final nacimiento = p.fechaNacimiento;
+    await bd.reemplazarPorCifrado(
+      data,
+      plano: nacimiento == null ? null : fechaNacimientoGuardada(nacimiento),
+      cifrado: 'fecha_nacimiento_cifrada',
+    );
     await bd.reemplazarPorCifrado(
       data,
       plano: p.diagnostico,
@@ -204,11 +216,16 @@ class RepositorioPacientes {
   ) async {
     final nombre = await bd.descifrarCampo(datos, 'nombre_cifrado');
     final edad = await bd.descifrarCampo(datos, 'edad_cifrada');
+    final nacimiento = await bd.descifrarCampo(
+      datos,
+      'fecha_nacimiento_cifrada',
+    );
     return Paciente(
       id: id,
       nombreCompleto: nombre ?? '',
       rut: await bd.descifrarCampo(datos, 'rut_cifrado'),
       edad: int.tryParse(edad ?? ''),
+      fechaNacimiento: DateTime.tryParse(nacimiento ?? ''),
       diagnostico: await bd.descifrarCampo(datos, 'diagnostico_cifrado'),
       tratamientoFase: await bd.descifrarCampo(
         datos,

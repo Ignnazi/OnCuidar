@@ -20,6 +20,26 @@ void main() {
       expect(pregunta?.id, 'fiebre');
     });
 
+    final casos = {
+      'le sangra la nariz, cómo hago el taponamiento': 'taponamiento-nasal',
+      'le salieron petequias': 'petequias',
+      'se puede bañar en la piscina con el cateter': 'cateter-bano',
+      'qué alimentos debe evitar': 'alimentos-evitar',
+      'tiene diarrea qué le doy': 'diarrea',
+      'tiene llagas en la boca': 'mucositis',
+      'puede tener perro': 'mascotas',
+      'se me olvidó darle la dosis del antibiótico': 'dosis-olvidada',
+      'cuándo le ponen las vacunas': 'vacunas',
+      'cómo sé si le duele si no habla': 'dolor-escalas',
+      'efectos de los corticoides en el humor': 'esteroides',
+      'la orina salió de color rojo': 'orina-color',
+    };
+    for (final caso in casos.entries) {
+      test('"${caso.key}" responde ${caso.value}', () {
+        expect(resolverPregunta(caso.key, preguntasFrecuentes)?.id, caso.value);
+      });
+    }
+
     test('sin coincidencias no inventa una respuesta', () {
       expect(resolverPregunta('xyz qwerty', preguntasFrecuentes), isNull);
       expect(resolverPregunta('   ', preguntasFrecuentes), isNull);

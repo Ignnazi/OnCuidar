@@ -117,7 +117,7 @@ class TarjetaSigno extends StatelessWidget {
           if (rango != null) ...[
             const SizedBox(height: 4),
             Text(
-              'Rango: $rango $unidad',
+              'Normal: $rango $unidad',
               style: GoogleFonts.nunito(
                 fontSize: 9.5,
                 fontWeight: FontWeight.w600,

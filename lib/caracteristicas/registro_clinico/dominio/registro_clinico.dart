@@ -119,4 +119,19 @@ class RegistroClinico {
   final NivelAlerta nivelAlerta;
 
   final String? mensajeAlerta;
+
+  List<String> get mensajes {
+    final texto = mensajeAlerta?.trim() ?? '';
+    if (texto.isEmpty) return const [];
+    return texto
+        .split('\n')
+        .map((m) => m.trim())
+        .where((m) => m.isNotEmpty && m != _sinPreocupaciones)
+        .toList();
+  }
 }
+
+const _sinPreocupaciones = 'Sin síntomas preocupantes';
+
+String? mensajeAlertaParaGuardar(List<String> mensajes) =>
+    mensajes.isEmpty ? null : mensajes.join('\n');

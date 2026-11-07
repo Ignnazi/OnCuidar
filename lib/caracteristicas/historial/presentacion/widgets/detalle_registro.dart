@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:oncuidar/app/tema/paleta.dart';
-import 'package:oncuidar/caracteristicas/registro_clinico/dominio/motor_reglas_clinicas.dart';
 import 'package:oncuidar/caracteristicas/registro_clinico/dominio/registro_clinico.dart';
 import 'package:oncuidar/compartido/config_alerta.dart';
 
@@ -14,10 +13,7 @@ class DetalleRegistro extends StatelessWidget {
   Widget build(BuildContext context) {
     final config = configAlerta(registro.nivelAlerta);
     final observaciones = registro.observaciones;
-    final motivos = MotorReglasClinicas.evaluar(
-      registro.signosVitales,
-      registro.sintomas,
-    ).mensajes.where((m) => m != 'Sin síntomas preocupantes').toList();
+    final motivos = registro.mensajes;
 
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),

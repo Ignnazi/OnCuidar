@@ -77,7 +77,7 @@ void main() {
         _envolver(_tarjeta(TextEditingController(), rango: '35-42')),
       );
 
-      expect(find.text('Rango: 35-42 °C'), findsOneWidget);
+      expect(find.text('Normal: 35-42 °C'), findsOneWidget);
     });
 
     testWidgets('sin decimales solo acepta dígitos', (tester) async {

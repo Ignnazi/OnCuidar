@@ -1,8 +1,12 @@
+import 'package:oncuidar/caracteristicas/pacientes/dominio/fecha_nacimiento.dart';
+
 class Paciente {
   final String id;
   final String nombreCompleto;
   final String? rut;
+
   final int? edad;
+  final DateTime? fechaNacimiento;
   final String? diagnostico;
   final String? tratamientoFase;
   final String? centroSaludNombre;
@@ -19,6 +23,7 @@ class Paciente {
     required this.nombreCompleto,
     this.rut,
     this.edad,
+    this.fechaNacimiento,
     this.diagnostico,
     this.tratamientoFase,
     this.centroSaludNombre,
@@ -29,4 +34,12 @@ class Paciente {
     required this.creadoEn,
     this.maximoRegistrosDia = 3,
   });
+
+  int? edadAl(DateTime hoy) {
+    final nacimiento = fechaNacimiento;
+    if (nacimiento != null) return edadEnAnios(nacimiento, hoy);
+    return edad;
+  }
+
+  int? get edadActual => edadAl(DateTime.now());
 }

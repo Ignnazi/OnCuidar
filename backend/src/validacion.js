@@ -6,7 +6,7 @@ class ErrorHttp extends Error {
 }
 
 const PROHIBIDOS = {
-  pacientes: ['nombreCompleto', 'rut', 'edad', 'diagnostico', 'tratamientoFase', 'centroSaludNombre',
+  pacientes: ['nombreCompleto', 'rut', 'edad', 'fechaNacimiento', 'diagnostico', 'tratamientoFase', 'centroSaludNombre',
     'centroSaludDireccion', 'centroSaludTelefono', 'contactoEmergenciaNombre', 'contactoEmergenciaTelefono'],
   registros: ['generalNotes', 'alertMessage', 'observaciones', 'mensajeAlerta', 'sintomas', 'signosVitales'],
   recordatorios: ['titulo', 'descripcion', 'tipo', 'fechaHora', 'diasRepeticion', 'recurrencia', 'completadoEn'],

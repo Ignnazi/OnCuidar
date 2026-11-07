@@ -21,14 +21,11 @@ class SelectorMultiSintoma extends StatefulWidget {
 }
 
 class _SelectorMultiSintomaState extends State<SelectorMultiSintoma> {
-  static final Set<String> _nombresEsas = {
-    for (final item in catalogoEsasR) item.nombre,
-  };
-
   final _consultaController = TextEditingController();
   final _agregarController = TextEditingController();
   String _consulta = '';
-  String _filtro = 'Generales';
+  String _filtro = gruposSintomas.first;
+  bool _agregando = false;
 
   @override
   void dispose() {
@@ -48,11 +45,7 @@ class _SelectorMultiSintomaState extends State<SelectorMultiSintoma> {
     } else if (_filtro == 'Escala') {
       nombres = [for (final item in catalogoEsasR) item.nombre];
     } else {
-      nombres = catalogoSintomasPediatricos
-          .where((item) => item.patologias.contains(_filtro))
-          .where((item) => !_nombresEsas.contains(item.nombre))
-          .map((item) => item.nombre)
-          .toList();
+      nombres = sintomasDelGrupo(_filtro);
     }
     final nombresCatalogo = catalogoUnificado
         .map((item) => item.nombre)
@@ -78,7 +71,7 @@ class _SelectorMultiSintomaState extends State<SelectorMultiSintoma> {
     }
     _agregarController.clear();
     FocusScope.of(context).unfocus();
-    setState(() {});
+    setState(() => _agregando = false);
   }
 
   Widget _fila(String nombre) {
@@ -104,13 +97,13 @@ class _SelectorMultiSintomaState extends State<SelectorMultiSintoma> {
     );
   }
 
-  Widget _chipPatologia(String patologia) {
-    final seleccionado = _filtro == patologia;
+  Widget _chipGrupo(String filtro) {
+    final seleccionado = _filtro == filtro;
     return ChoiceChip(
-      label: Text(patologia),
+      label: Text(filtro),
       selected: seleccionado,
       showCheckmark: false,
-      onSelected: (_) => setState(() => _filtro = patologia),
+      onSelected: (_) => setState(() => _filtro = filtro),
       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
       labelStyle: GoogleFonts.nunito(
         fontSize: 11.5,
@@ -124,6 +117,72 @@ class _SelectorMultiSintomaState extends State<SelectorMultiSintoma> {
       ),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       visualDensity: VisualDensity.compact,
+    );
+  }
+
+  Widget _botonAgregar() {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: TextButton.icon(
+        key: const Key('botonAgregarSintoma'),
+        onPressed: () => setState(() => _agregando = true),
+        icon: const Icon(Icons.add_circle_rounded, size: 20),
+        label: const Text('Agregar otro síntoma'),
+        style: TextButton.styleFrom(
+          foregroundColor: Paleta.doradoOscuro,
+          textStyle: GoogleFonts.nunito(
+            fontSize: 13,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _campoAgregar() {
+    return Row(
+      children: [
+        Expanded(
+          child: TextField(
+            key: const Key('campoAgregarSintoma'),
+            controller: _agregarController,
+            autofocus: true,
+            textInputAction: TextInputAction.done,
+            onSubmitted: (_) => _agregarPersonalizado(),
+            style: GoogleFonts.nunito(
+              fontSize: 13.5,
+              fontWeight: FontWeight.w700,
+              color: Paleta.textoPrincipal,
+            ),
+            decoration: entradaDorada(
+              hintText: 'Escribe el síntoma…',
+              hintStyle: GoogleFonts.nunito(
+                fontSize: 13,
+                color: Paleta.textoAyuda,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        IconButton(
+          onPressed: _agregarPersonalizado,
+          tooltip: 'Agregar síntoma',
+          style: IconButton.styleFrom(
+            backgroundColor: Paleta.doradoPrincipal,
+            foregroundColor: Paleta.sobreDorado,
+          ),
+          icon: const Icon(Icons.check_rounded),
+        ),
+        IconButton(
+          onPressed: () {
+            _agregarController.clear();
+            setState(() => _agregando = false);
+          },
+          tooltip: 'Cancelar',
+          color: Paleta.textoSecundario,
+          icon: const Icon(Icons.close_rounded),
+        ),
+      ],
     );
   }
 
@@ -202,47 +261,14 @@ class _SelectorMultiSintomaState extends State<SelectorMultiSintoma> {
               spacing: 6,
               runSpacing: 6,
               children: [
-                for (final patologia in patologiasFiltro)
-                  _chipPatologia(patologia),
+                for (final filtro in filtrosSintomas) _chipGrupo(filtro),
               ],
             ),
           ),
           const SizedBox(height: 8),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _agregarController,
-                    textInputAction: TextInputAction.done,
-                    onSubmitted: (_) => _agregarPersonalizado(),
-                    style: GoogleFonts.nunito(
-                      fontSize: 13.5,
-                      fontWeight: FontWeight.w700,
-                      color: Paleta.textoPrincipal,
-                    ),
-                    decoration: entradaDorada(
-                      hintText: 'Agregar síntoma…',
-                      hintStyle: GoogleFonts.nunito(
-                        fontSize: 13,
-                        color: Paleta.textoAyuda,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                IconButton(
-                  onPressed: _agregarPersonalizado,
-                  tooltip: 'Agregar síntoma',
-                  style: IconButton.styleFrom(
-                    backgroundColor: Paleta.doradoPrincipal,
-                    foregroundColor: Paleta.sobreDorado,
-                  ),
-                  icon: const Icon(Icons.add),
-                ),
-              ],
-            ),
+            child: _agregando ? _campoAgregar() : _botonAgregar(),
           ),
           const SizedBox(height: 4),
           Flexible(

@@ -88,7 +88,7 @@ class TarjetaMaterial extends StatelessWidget {
           onTap: alTocar,
           borderRadius: radio,
           excludeFromSemantics: true,
-          child: material.esVideo ? _tarjetaVideo() : _tarjetaConPortada(),
+          child: _tarjetaAncha(),
         ),
       ),
     );
@@ -102,7 +102,8 @@ class TarjetaMaterial extends StatelessWidget {
     return null;
   }
 
-  Widget _tarjetaVideo() {
+  Widget _tarjetaAncha() {
+    final estilo = estiloTipoMaterial(material.categoria);
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -113,8 +114,12 @@ class TarjetaMaterial extends StatelessWidget {
             key: const Key('miniaturaTarjetaMaterial'),
             fit: StackFit.expand,
             children: [
-              _imagen(BoxFit.cover, Alignment.center),
-              Center(child: _botonReproducir()),
+              ColoredBox(color: estilo.color.withValues(alpha: 0.08)),
+              _imagen(
+                BoxFit.cover,
+                material.esVideo ? Alignment.center : Alignment.topCenter,
+              ),
+              if (material.esVideo) Center(child: _botonReproducir()),
             ],
           ),
         ),
@@ -123,42 +128,6 @@ class TarjetaMaterial extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(16, 4, 6, 4),
           child: Row(
             children: [..._tipoYTema(expandir: true), _iconoFavorito()],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _tarjetaConPortada() {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _franjaTitulo(),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(14, 12, 6, 8),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _portada(),
-              const SizedBox(width: 14),
-              Expanded(
-                child: SizedBox(
-                  height: 108,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(children: _tipoYTema()),
-                      Align(
-                        alignment: Alignment.bottomRight,
-                        child: _iconoFavorito(),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
           ),
         ),
       ],
@@ -199,25 +168,6 @@ class TarjetaMaterial extends StatelessWidget {
           Flexible(child: EtiquetaTema(tema: material.tema)),
       ],
     ];
-  }
-
-  Widget _portada() {
-    final estilo = estiloTipoMaterial(material.categoria);
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(10),
-      child: SizedBox(
-        key: const Key('miniaturaTarjetaMaterial'),
-        width: 82,
-        height: 108,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            ColoredBox(color: estilo.color.withValues(alpha: 0.08)),
-            _imagen(BoxFit.cover, Alignment.topCenter),
-          ],
-        ),
-      ),
-    );
   }
 
   Widget _imagen(BoxFit ajuste, Alignment alineacion) {

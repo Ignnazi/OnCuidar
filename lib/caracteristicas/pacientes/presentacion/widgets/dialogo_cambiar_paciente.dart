@@ -227,7 +227,7 @@ bool _pacienteTieneDatosCompletos(Paciente p) {
   bool lleno(String? v) => v != null && v.trim().isNotEmpty;
   return lleno(p.nombreCompleto) &&
       lleno(p.rut) &&
-      p.edad != null &&
+      p.edadActual != null &&
       lleno(p.diagnostico) &&
       lleno(p.tratamientoFase) &&
       lleno(p.centroSaludNombre) &&

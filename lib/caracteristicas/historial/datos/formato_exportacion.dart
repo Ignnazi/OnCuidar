@@ -87,7 +87,8 @@ List<BloqueInfo> bloquesPacienteYCuidador(
         titulo: 'PACIENTE',
         filas: <FilaInfo>[
           ('Nombre', paciente.nombreCompleto),
-          if (paciente.edad != null) ('Edad', '${paciente.edad} años'),
+          if (paciente.edadActual != null)
+            ('Edad', '${paciente.edadActual} años'),
           if (_hay(paciente.diagnostico))
             ('Diagnóstico', paciente.diagnostico!),
           if (_hay(paciente.tratamientoFase))
