@@ -122,7 +122,7 @@ class _OncuidarAppState extends ConsumerState<OncuidarApp>
     _aplicarPaleta();
     if (usuario != null) ref.watch(orquestadorSincronizacionProvider);
     return MaterialApp.router(
-      title: 'Oncuidar',
+      title: 'OnCuidar',
       debugShowCheckedModeBanner: false,
       theme: Tema.obtener(),
       routerConfig: router,

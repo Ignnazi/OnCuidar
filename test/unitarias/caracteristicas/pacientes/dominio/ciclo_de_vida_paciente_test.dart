@@ -67,6 +67,13 @@ class RecordatoriosFalsos extends RepositorioRecordatorios {
 
 class NotificacionesFalsas implements ServicioNotificaciones {
   final programados = <String>[];
+  final orden = <String>[];
+
+  @override
+  Future<bool> solicitarPermisoAvisos() async {
+    orden.add('permiso');
+    return true;
+  }
 
   @override
   Future<void> cancelarTodas() async => programados.clear();
@@ -80,7 +87,10 @@ class NotificacionesFalsas implements ServicioNotificaciones {
     List<String>? diasRepeticion,
     bool mensual = false,
     String? idPaciente,
-  }) async => programados.add(cuerpo);
+  }) async {
+    orden.add('programar $cuerpo');
+    programados.add(cuerpo);
+  }
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
@@ -156,4 +166,34 @@ void main() {
       expect(notificaciones.programados, ['Activo', 'Semanal']);
     },
   );
+
+  test('pide el permiso de avisos antes de programar los guardados', () async {
+    pacientes.activos = [
+      Paciente(id: 'p1', nombreCompleto: 'Tomás', creadoEn: DateTime(2026)),
+    ];
+    final futuro = DateTime.now().add(const Duration(days: 1));
+    recordatorios.lista = [
+      _recordatorio('Uno', fechaHora: futuro),
+      _recordatorio('Dos', fechaHora: futuro),
+    ];
+
+    await ciclo.reagendarNotificaciones();
+    expect(notificaciones.orden, ['permiso', 'programar Uno', 'programar Dos']);
+  });
+
+  test('no pide permiso si no hay avisos que programar', () async {
+    pacientes.activos = [
+      Paciente(id: 'p1', nombreCompleto: 'Tomás', creadoEn: DateTime(2026)),
+    ];
+    recordatorios.lista = [
+      _recordatorio(
+        'Pausado',
+        fechaHora: DateTime.now().add(const Duration(days: 1)),
+        activo: false,
+      ),
+    ];
+
+    await ciclo.reagendarNotificaciones();
+    expect(notificaciones.orden, isEmpty);
+  });
 }

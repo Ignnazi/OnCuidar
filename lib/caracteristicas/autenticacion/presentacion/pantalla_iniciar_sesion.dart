@@ -81,7 +81,7 @@ class _IniciarSesionState extends ConsumerState<IniciarSesion> {
         CodigoErrorSesion.demasiadosIntentos =>
           'Demasiados intentos. Intenta de nuevo más tarde.',
         CodigoErrorSesion.sinRed || CodigoErrorSesion.tiempoAgotado =>
-          'Sin conexión. Verifica tu internet e intenta de nuevo.',
+          'No pudimos conectar con el servidor. Intenta de nuevo en un momento.',
         _ => 'Error al iniciar sesión. Intenta de nuevo.',
       };
       AvisoApp.alerta(context, mensaje);
