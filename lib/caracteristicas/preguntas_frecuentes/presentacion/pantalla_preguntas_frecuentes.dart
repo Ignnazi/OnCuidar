@@ -8,6 +8,7 @@ import 'package:oncuidar/caracteristicas/preguntas_frecuentes/dominio/catalogo_p
 import 'package:oncuidar/caracteristicas/preguntas_frecuentes/dominio/pregunta_base.dart';
 import 'package:oncuidar/compartido/widgets/buscador.dart';
 import 'package:oncuidar/compartido/widgets/encabezado_gradiente.dart';
+import 'package:oncuidar/compartido/widgets/texto_estructurado.dart';
 
 class FaqScreen extends StatefulWidget {
   const FaqScreen({super.key});
@@ -29,11 +30,13 @@ class _FaqScreenState extends State<FaqScreen> {
     super.dispose();
   }
 
-  List<String> get _categorias => ['Todas', ...categoriasDePreguntas()];
+  static final _preguntas = preguntasMasFrecuentes();
+
+  List<String> get _categorias => ['Todas', ...categoriasDe(_preguntas)];
 
   List<PreguntaBase> get _preguntasFiltradas {
     final termino = normalizarTexto(_terminoBusqueda);
-    return preguntasFrecuentes.where((pregunta) {
+    return _preguntas.where((pregunta) {
       if (_categoriaActiva != 'Todas' &&
           pregunta.categoria != _categoriaActiva) {
         return false;
@@ -310,14 +313,18 @@ class _FaqScreenState extends State<FaqScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          pregunta.respuesta,
-                          style: GoogleFonts.nunito(
-                            fontSize: 13,
-                            color: Paleta.textoTerciario,
-                            height: 1.6,
+                        TextoEstructurado(pregunta.respuesta),
+                        if (pregunta.fuente != null) ...[
+                          const SizedBox(height: 8),
+                          Text(
+                            'Fuente: ${pregunta.fuente}',
+                            style: GoogleFonts.nunito(
+                              fontSize: 11.5,
+                              fontStyle: FontStyle.italic,
+                              color: Paleta.textoAyuda,
+                            ),
                           ),
-                        ),
+                        ],
                         if (pregunta.contenidoRelacionadoId != null)
                           _EnlaceMaterialRelacionado(pregunta: pregunta),
                       ],

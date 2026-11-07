@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -39,6 +40,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   final _focoBusqueda = FocusNode();
   final _scroll = ScrollController();
   late final _chat = ControladorChat(ref);
+  final _sugerenciasIniciales = preguntasIniciales(Random());
 
   bool _avisoGuardadoMostrado = false;
   bool _escribiendo = false;
@@ -375,11 +377,17 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         if (!_buscando && _escribiendo) const BurbujaEscribiendo(),
         if (_muestraSeguimiento)
           SugerenciasSeguimiento(
-            preguntas: _chat.preguntasNoUsadas,
+            preguntas: sugerenciasDeSeguimiento(
+              _chat.preguntasNoUsadas,
+              ref.watch(chatActivoProvider).categoria,
+            ),
             alElegir: _enviar,
           ),
         if (_muestraSugerenciasIniciales)
-          PreguntasSugeridas(preguntas: preguntasFrecuentes, alElegir: _enviar),
+          PreguntasSugeridas(
+            preguntas: _sugerenciasIniciales,
+            alElegir: _enviar,
+          ),
       ],
     );
   }
