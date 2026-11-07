@@ -133,7 +133,7 @@ class _RegistroState extends ConsumerState<Registro> {
       CampoEtiquetado(
         etiqueta: 'Contraseña',
         controlador: f.contrasena,
-        textoAyuda: 'Mínimo 6 caracteres',
+        textoAyuda: 'Mínimo $minimoContrasena caracteres',
         icono: Icons.lock_outlined,
         oculto: _ocultarContrasena,
         iconoSufijo: BotonVerContrasena(

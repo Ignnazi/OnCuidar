@@ -72,6 +72,7 @@ class SincronizacionEstado {
 
 const _tamanoLoteDescargas = 3;
 const _duracionMensajeLista = Duration(seconds: 3);
+const _duracionMensajeConErrores = Duration(seconds: 6);
 const _esperaMaximaConexion = Duration(minutes: 5);
 const _maximoEsperasSinRed = 5;
 
@@ -140,9 +141,7 @@ class SincronizacionNotifier extends Notifier<SincronizacionEstado> {
     _liberarEspera();
     if (state.fase == FaseDescarga.pausada && _enCurso) {
       state = state.copia(fase: FaseDescarga.descargando);
-    } else if (state.fase == FaseDescarga.conErrores &&
-        !_enCurso &&
-        _porReintentar.isNotEmpty) {
+    } else if (!_enCurso && _porReintentar.isNotEmpty) {
       unawaited(_reintentarPendientes());
     }
   }
@@ -324,13 +323,14 @@ class SincronizacionNotifier extends Notifier<SincronizacionEstado> {
       fase: fallidas.isEmpty ? FaseDescarga.lista : FaseDescarga.conErrores,
       porcentaje: fallidas.isEmpty ? 100 : state.porcentaje,
     );
-    if (fallidas.isEmpty) {
-      _temporizadorOcultar = Timer(_duracionMensajeLista, () {
+    _temporizadorOcultar = Timer(
+      fallidas.isEmpty ? _duracionMensajeLista : _duracionMensajeConErrores,
+      () {
         if (generacion == _generacion) {
           state = state.copia(fase: FaseDescarga.ninguna);
         }
-      });
-    }
+      },
+    );
   }
 }
 

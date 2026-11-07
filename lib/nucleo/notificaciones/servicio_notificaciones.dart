@@ -20,6 +20,28 @@ class ServicioNotificaciones {
 
   static const rutaAviso = '/recordatorios';
 
+  // En la pantalla bloqueada Android oculta el contenido del aviso
+  static const detallesAviso = NotificationDetails(
+    android: AndroidNotificationDetails(
+      'recordatorios_channel',
+      'Recordatorios',
+      channelDescription: 'Avisos de medicación, mediciones y citas médicas',
+      importance: Importance.high,
+      priority: Priority.high,
+      channelShowBadge: true,
+      category: AndroidNotificationCategory.reminder,
+      icon: '@drawable/ic_notificacion',
+      color: Color(0xFFD99A16),
+      largeIcon: DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
+      visibility: NotificationVisibility.private,
+    ),
+    iOS: DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+    ),
+  );
+
   void Function(String? payload)? alTocar;
 
   String? _payloadLanzamiento;
@@ -218,26 +240,7 @@ class ServicioNotificaciones {
         title: titulo,
         body: cuerpo,
         scheduledDate: momento,
-        notificationDetails: const NotificationDetails(
-          android: AndroidNotificationDetails(
-            'recordatorios_channel',
-            'Recordatorios',
-            channelDescription:
-                'Avisos de medicación, mediciones y citas médicas',
-            importance: Importance.high,
-            priority: Priority.high,
-            channelShowBadge: true,
-            category: AndroidNotificationCategory.reminder,
-            icon: '@drawable/ic_notificacion',
-            color: Color(0xFFD99A16),
-            largeIcon: DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
-          ),
-          iOS: DarwinNotificationDetails(
-            presentAlert: true,
-            presentBadge: true,
-            presentSound: true,
-          ),
-        ),
+        notificationDetails: detallesAviso,
         androidScheduleMode: exactas
             ? AndroidScheduleMode.exactAllowWhileIdle
             : AndroidScheduleMode.inexactAllowWhileIdle,

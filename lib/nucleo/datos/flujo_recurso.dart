@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:oncuidar/nucleo/red/cliente_api.dart';
 import 'package:oncuidar/nucleo/sincronizacion/cola_escrituras.dart';
 
 String rutaSinQuery(String ruta) {
@@ -159,14 +160,29 @@ class FlujoRecurso<T> {
       try {
         await guardarCache(json);
       } catch (_) {}
-    } catch (_) {
+    } catch (e, pila) {
       try {
         json = await leerCache();
       } catch (_) {}
+      if (json == null && !_esSinConexion(e)) {
+        _emitirError(e, pila);
+        return;
+      }
       json ??= vacio;
     }
     if (_cerrado) return;
     await _emitir(await aplicarPendientes(json));
+  }
+
+  // El token vencido lo maneja el cierre de sesión.
+  bool _esSinConexion(Object e) =>
+      e is TimeoutException ||
+      (e is ExcepcionApi && (e.esDeRed || e.esTokenInvalido));
+
+  void _emitirError(Object e, StackTrace pila) {
+    if (_cerrado) return;
+    _ultimaHuella = null;
+    _controlador.addError(e, pila);
   }
 
   Future<void> _emitir(dynamic json) async {
@@ -179,7 +195,7 @@ class FlujoRecurso<T> {
       _ultimaHuella = huella;
       _controlador.add(valor);
     } catch (e, pila) {
-      if (!_cerrado) _controlador.addError(e, pila);
+      _emitirError(e, pila);
     }
   }
 }

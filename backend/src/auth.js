@@ -45,4 +45,7 @@ function limitarIntentos() {
   };
 }
 
-module.exports = { firmarToken, requiereToken, limitarIntentos };
+// Solo al crear o cambiar la contrasena, el login no la revisa
+const MIN_CONTRASENA = 8;
+
+module.exports = { firmarToken, requiereToken, limitarIntentos, MIN_CONTRASENA };

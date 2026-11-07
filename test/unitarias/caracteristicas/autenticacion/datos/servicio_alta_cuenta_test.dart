@@ -24,6 +24,7 @@ class SesionFalsa extends ServicioSesion {
 
   ExcepcionSesion? errorAlRegistrar;
   bool cuentaEliminada = false;
+  String? contrasenaAlEliminar;
 
   @override
   Future<SesionUsuario> registrar(String correo, String contrasena) async {
@@ -32,7 +33,10 @@ class SesionFalsa extends ServicioSesion {
   }
 
   @override
-  Future<void> eliminarCuenta() async => cuentaEliminada = true;
+  Future<void> eliminarCuenta(String contrasena) async {
+    cuentaEliminada = true;
+    contrasenaAlEliminar = contrasena;
+  }
 }
 
 class PacientesFalsos extends RepositorioPacientes {
@@ -96,6 +100,18 @@ void main() {
     pacientes.falla = true;
     expect(await registro.registrar(_datos), isA<RegistroFallido>());
     expect(sesion.cuentaEliminada, isTrue);
+    expect(sesion.contrasenaAlEliminar, 'secreta1');
+  });
+
+  test('una contraseña débil pide al menos 8 caracteres', () async {
+    sesion.errorAlRegistrar = const ExcepcionSesion(
+      CodigoErrorSesion.contrasenaDebil,
+    );
+    final resultado = await registro.registrar(_datos);
+    expect(
+      (resultado as RegistroFallido).mensaje,
+      'La contraseña es muy débil. Usa al menos 8 caracteres.',
+    );
   });
 
   test('un correo ya registrado muestra un mensaje claro', () async {

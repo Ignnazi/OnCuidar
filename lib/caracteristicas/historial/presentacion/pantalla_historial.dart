@@ -154,10 +154,10 @@ class _HistorialScreenState extends ConsumerState<HistorialScreen> {
     }
 
     if (async.hasError) {
-      return EstadoVacio(
+      return const EstadoVacio(
         Icons.error_outline,
         'Error al cargar registros',
-        subtitulo: '${async.error}',
+        subtitulo: 'No se pudieron cargar los datos. Intenta de nuevo.',
       );
     }
 

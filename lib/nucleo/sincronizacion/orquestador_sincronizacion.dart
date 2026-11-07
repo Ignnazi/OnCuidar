@@ -15,6 +15,9 @@ class OrquestadorSincronizacion {
     this.retardoMaximo = const Duration(minutes: 1),
   });
 
+  // Errores del servidor antes de pasar una escritura a fallidas
+  static const maximoIntentos = 10;
+
   final ColaEscrituras _cola;
   final BaseDatosSegura _base;
   final ServicioConectividad _conectividad;
@@ -49,6 +52,10 @@ class OrquestadorSincronizacion {
     _suscripcionRed?.cancel();
     _suscripcionEncolados?.cancel();
   }
+
+  bool _esDeConexion(Object error) =>
+      error is TimeoutException ||
+      (error is ExcepcionApi && (error.esDeRed || error.esTiempoAgotado));
 
   bool _esPermanente(Object error) {
     if (error is ArgumentError) return true;
@@ -89,11 +96,22 @@ class OrquestadorSincronizacion {
         await _cola.quitar(uid, escritura.id);
       } catch (error) {
         if (error is ExcepcionApi && error.esTokenInvalido) return;
+        // El paciente ya se eliminó, no hay nada que avisar.
+        if (error is ExcepcionApi && error.codigoHttp == 410) {
+          await _cola.quitar(uid, escritura.id);
+          continue;
+        }
         if (_esPermanente(error)) {
           await _cola.moverAFallidas(uid, escritura.id);
           continue;
         }
-        await _cola.registrarIntento(uid, escritura.id);
+        if (!_esDeConexion(error)) {
+          final intentos = await _cola.registrarIntento(uid, escritura.id);
+          if (intentos >= maximoIntentos) {
+            await _cola.moverAFallidas(uid, escritura.id);
+            continue;
+          }
+        }
         _programarReintento();
         return;
       }

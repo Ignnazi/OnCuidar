@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:oncuidar/nucleo/almacen/almacen_secreto.dart';
 import 'package:oncuidar/nucleo/cifrado/servicio_cifrado.dart';
@@ -24,10 +26,12 @@ class BaseFalsa extends BaseDatosSegura {
   final recibidas = <String>[];
   Object? error;
   Future<void> Function(EscrituraPendiente)? alRecibir;
+  void Function(EscrituraPendiente)? aplicarAntes;
 
   @override
   Future<void> aplicarEscrituraPendiente(EscrituraPendiente escritura) async {
     if (error != null) throw error!;
+    aplicarAntes?.call(escritura);
     recibidas.add(escritura.id);
     await alRecibir?.call(escritura);
   }
@@ -90,7 +94,7 @@ void main() {
     base.error = const ExcepcionApi.sinRed();
     await orquestador.drenar();
     final pendientes = await cola.pendientes('u1');
-    expect(pendientes.single.intentos, 1);
+    expect(pendientes.single.intentos, 0);
 
     base.error = null;
     await orquestador.drenar();
@@ -160,4 +164,49 @@ void main() {
       expect(await cola.pendientes('u1'), isEmpty);
     },
   );
+
+  test('un tiempo agotado repetido nunca descarta el registro', () async {
+    await encolar(['e1']);
+    base.error = TimeoutException('lento');
+    for (var i = 0; i < OrquestadorSincronizacion.maximoIntentos + 2; i++) {
+      await orquestador.drenar();
+    }
+    expect(await cola.resumen('u1'), const ResumenCola(pendientes: 1));
+  });
+
+  test(
+    'un error del servidor que se repite pasa a fallidas y la cola sigue',
+    () async {
+      await encolar(['e1', 'e2']);
+      var llamadas = 0;
+      base.aplicarAntes = (e) {
+        if (e.id == 'e1') {
+          llamadas++;
+          throw const ExcepcionApi(500, 'Error interno');
+        }
+      };
+      for (var i = 0; i < OrquestadorSincronizacion.maximoIntentos - 1; i++) {
+        await orquestador.drenar();
+      }
+      expect(await cola.resumen('u1'), const ResumenCola(pendientes: 2));
+      expect(base.recibidas, isEmpty);
+
+      await orquestador.drenar();
+      expect(llamadas, OrquestadorSincronizacion.maximoIntentos);
+      expect(await cola.resumen('u1'), const ResumenCola(fallidas: 1));
+      expect(base.recibidas, ['e2']);
+    },
+  );
+
+  test('lo de un paciente ya eliminado se descarta sin avisar', () async {
+    await encolar(['e1', 'e2']);
+    base.aplicarAntes = (e) {
+      if (e.id == 'e1') {
+        throw const ExcepcionApi(410, 'El paciente fue eliminado');
+      }
+    };
+    await orquestador.drenar();
+    expect(await cola.resumen('u1'), ResumenCola.vacio);
+    expect(base.recibidas, ['e2']);
+  });
 }

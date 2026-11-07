@@ -29,7 +29,8 @@ class RepositorioRegistrosClinicos {
       'fecha': registro.fecha.toUtc().toIso8601String(),
       'creadoEn': registro.creadoEn.toUtc().toIso8601String(),
       'tipoRegistro': registro.tipoRegistro,
-      'nivelAlerta': registro.nivelAlerta.name,
+      // null borra el valor en claro que dejaron versiones anteriores
+      'nivelAlerta': null,
       'versionEncriptacion': 3,
     };
     bd.ponerCifrado(
@@ -72,6 +73,11 @@ class RepositorioRegistrosClinicos {
       datos,
       plano: registro.mensajeAlerta,
       cifrado: 'mensaje_alerta_cifrado',
+    );
+    await bd.reemplazarPorCifrado(
+      datos,
+      plano: registro.nivelAlerta.name,
+      cifrado: 'nivel_alerta_cifrado',
     );
     await bd.escribir(
       RutasApi.registro(idPaciente, registro.id),
@@ -208,7 +214,10 @@ class RepositorioRegistrosClinicos {
       'contenido_registro_cifrado',
     );
 
-    final nivelRaw = datos['nivelAlerta'] as String?;
+    // los registros antiguos traen el nivel en claro
+    final nivelRaw =
+        await bd.descifrarCampo(datos, 'nivel_alerta_cifrado') ??
+        datos['nivelAlerta'] as String?;
     final nivel = NivelAlerta.values.firstWhere(
       (v) => v.name == nivelRaw,
       orElse: () => NivelAlerta.normal,

@@ -40,7 +40,8 @@ async function asegurarMiniaturas() {
 
 async function cargarMaterial() {
   const lista = JSON.parse(fs.readFileSync(ARCHIVO, 'utf8'));
-  for (const m of lista) {
+  const ids = lista.map((m) => m.id ?? generarId(m.titulo));
+  for (const [i, m] of lista.entries()) {
     await db.consulta(
       `INSERT INTO material_educativo
          (id, titulo, categoria, tema, cuerpo, url_imagen, url_archivo, url_miniatura, tipo_archivo, tamano_bytes)
@@ -49,26 +50,24 @@ async function cargarMaterial() {
          tema = EXCLUDED.tema, cuerpo = EXCLUDED.cuerpo, url_imagen = EXCLUDED.url_imagen,
          url_archivo = EXCLUDED.url_archivo, url_miniatura = EXCLUDED.url_miniatura,
          tipo_archivo = EXCLUDED.tipo_archivo, tamano_bytes = EXCLUDED.tamano_bytes`,
-      [m.id ?? generarId(m.titulo), m.titulo, m.categoria ?? null, m.tema ?? null, m.cuerpo ?? null,
+      [ids[i], m.titulo, m.categoria ?? null, m.tema ?? null, m.cuerpo ?? null,
         m.urlImagen ?? null, m.urlArchivo ?? null, m.urlMiniatura ?? null, m.tipoArchivo ?? null,
         m.tamanoBytes ?? null],
     );
   }
+  // Se quita lo que ya no está en el JSON
+  const { rowCount } = await db.consulta('DELETE FROM material_educativo WHERE NOT (id = ANY($1))', [ids]);
+  if (rowCount > 0) console.log(`[material] ${rowCount} materiales retirados`);
   await asegurarMiniaturas();
   return lista.length;
 }
 
-async function cargarSiVacia() {
-  const { rows } = await db.consulta('SELECT count(*)::int AS n FROM material_educativo');
-  if (rows[0].n === 0) {
-    const n = await cargarMaterial();
-    console.log(`[material] ${n} materiales cargados`);
-  } else {
-    await asegurarMiniaturas();
-  }
+async function sincronizarMaterial() {
+  const n = await cargarMaterial();
+  console.log(`[material] ${n} materiales sincronizados`);
 }
 
-module.exports = { cargarMaterial, cargarSiVacia };
+module.exports = { cargarMaterial, sincronizarMaterial, generarId };
 
 if (require.main === module) {
   cargarMaterial()

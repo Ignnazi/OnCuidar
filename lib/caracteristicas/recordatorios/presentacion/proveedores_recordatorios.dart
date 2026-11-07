@@ -8,6 +8,9 @@ final recordatoriosProvider = StreamProvider.autoDispose<List<Recordatorio>>((
 ) {
   final pacienteAsync = ref.watch(pacienteActivoProvider);
   if (pacienteAsync is AsyncLoading) return const Stream.empty();
+  if (pacienteAsync is AsyncError && !pacienteAsync.hasValue) {
+    return Stream.error(pacienteAsync.error!, pacienteAsync.stackTrace);
+  }
   final paciente = pacienteAsync.value;
   if (paciente == null) return Stream.value(const []);
   return ref
