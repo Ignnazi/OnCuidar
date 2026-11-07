@@ -9,6 +9,8 @@ import 'package:oncuidar/caracteristicas/autenticacion/dominio/validaciones_regi
 import 'package:oncuidar/caracteristicas/autenticacion/presentacion/formulario_registro.dart';
 import 'package:oncuidar/caracteristicas/autenticacion/presentacion/widgets/botones_acceso.dart';
 import 'package:oncuidar/caracteristicas/autenticacion/presentacion/widgets/campos_registro.dart';
+import 'package:oncuidar/caracteristicas/pacientes/dominio/fecha_nacimiento.dart';
+import 'package:oncuidar/caracteristicas/pacientes/presentacion/widgets/boton_fecha_nacimiento.dart';
 import 'package:oncuidar/compartido/widgets/aviso_app.dart';
 import 'package:oncuidar/compartido/widgets/aviso_sin_conexion.dart';
 import 'package:oncuidar/compartido/widgets/campos_formulario.dart';
@@ -173,13 +175,14 @@ class _RegistroState extends ConsumerState<Registro> {
       ),
       CampoRut(controlador: f.rut),
       CampoEtiquetado(
-        etiqueta: 'Edad',
-        controlador: f.edad,
-        textoAyuda: 'Años',
+        etiqueta: 'Fecha de nacimiento',
+        controlador: f.fechaNacimiento,
+        textoAyuda: 'dd/mm/aaaa',
         icono: Icons.cake_outlined,
-        tipoTeclado: TextInputType.number,
+        tipoTeclado: TextInputType.datetime,
         accionTeclado: TextInputAction.next,
-        validador: validarEdad,
+        iconoSufijo: BotonFechaNacimiento(controlador: f.fechaNacimiento),
+        validador: validarFechaNacimiento,
       ),
       CampoEtiquetado(
         etiqueta: 'Diagnóstico',

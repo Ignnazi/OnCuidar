@@ -234,39 +234,55 @@ void main() {
     });
 
     testWidgets(
-      'el video lleva la miniatura arriba y guías e infografías la portada a la izquierda',
+      'todos los tipos llevan la imagen panorámica arriba y el título debajo',
       (tester) async {
-        Rect rect(Finder f) => tester.getRect(f);
+        for (final categoria in ['Videos', 'Infografías', 'Guías']) {
+          await tester.pumpWidget(
+            _tarjeta(
+              _material(
+                id: categoria,
+                categoria: categoria,
+                urlMiniatura: _urlMiniatura,
+              ),
+            ),
+          );
+          await tester.pumpAndSettle();
+          final miniatura = tester.getRect(
+            find.byKey(const Key('miniaturaTarjetaMaterial')),
+          );
+          final titulo = tester.getRect(find.text('Material de prueba'));
+          final etiqueta = tester.getRect(
+            find.byKey(const Key('etiquetaTema')),
+          );
+          expect(
+            miniatura.width / miniatura.height,
+            closeTo(2.2, 0.01),
+            reason: categoria,
+          );
+          expect(titulo.top, greaterThan(miniatura.bottom), reason: categoria);
+          expect(etiqueta.top, greaterThan(titulo.bottom), reason: categoria);
+        }
+      },
+    );
 
-        await tester.pumpWidget(
-          _tarjeta(_material(id: 'v', categoria: 'Videos')),
-        );
-        var miniatura = rect(find.byKey(const Key('miniaturaTarjetaMaterial')));
-        var titulo = rect(find.text('Material de prueba'));
-        expect(titulo.top, greaterThan(miniatura.bottom), reason: 'video');
-
+    testWidgets(
+      'infografías y guías muestran la parte de arriba de la imagen',
+      (tester) async {
         for (final categoria in ['Infografías', 'Guías']) {
           await tester.pumpWidget(
-            _tarjeta(_material(id: categoria, categoria: categoria)),
+            _tarjeta(
+              _material(
+                id: categoria,
+                categoria: categoria,
+                urlMiniatura: _urlMiniatura,
+              ),
+            ),
           );
-          miniatura = rect(find.byKey(const Key('miniaturaTarjetaMaterial')));
-          titulo = rect(find.text('Material de prueba'));
-          final etiqueta = rect(find.byKey(const Key('etiquetaTema')));
-          expect(
-            miniatura.top,
-            greaterThanOrEqualTo(titulo.bottom),
-            reason: categoria,
+          await tester.pumpAndSettle();
+          final imagen = tester.widget<ImagenCacheada>(
+            find.byType(ImagenCacheada),
           );
-          expect(
-            etiqueta.left,
-            greaterThanOrEqualTo(miniatura.right),
-            reason: categoria,
-          );
-          expect(
-            miniatura.height,
-            greaterThan(miniatura.width),
-            reason: categoria,
-          );
+          expect(imagen.alineacion, Alignment.topCenter, reason: categoria);
         }
       },
     );

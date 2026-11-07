@@ -2,7 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:oncuidar/caracteristicas/pacientes/datos/repositorio_pacientes.dart';
+import 'package:oncuidar/caracteristicas/pacientes/dominio/fecha_nacimiento.dart';
 import 'package:oncuidar/caracteristicas/pacientes/dominio/paciente.dart';
+import 'package:oncuidar/caracteristicas/pacientes/presentacion/widgets/boton_fecha_nacimiento.dart';
 import 'package:oncuidar/compartido/widgets/aviso_app.dart';
 import 'package:oncuidar/compartido/widgets/boton_principal.dart';
 import 'package:oncuidar/compartido/widgets/campos_formulario.dart';
@@ -43,7 +45,7 @@ class _DialogoPacienteState extends State<_DialogoPaciente> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nombreController;
   late final TextEditingController _rutController;
-  late final TextEditingController _edadController;
+  late final TextEditingController _nacimientoController;
   late final TextEditingController _diagnosticoController;
   late final TextEditingController _faseController;
   late final TextEditingController _centroNombreController;
@@ -62,8 +64,9 @@ class _DialogoPacienteState extends State<_DialogoPaciente> {
       text: paciente?.nombreCompleto ?? '',
     );
     _rutController = TextEditingController(text: paciente?.rut ?? '');
-    _edadController = TextEditingController(
-      text: paciente?.edad?.toString() ?? '',
+    final nacimiento = paciente?.fechaNacimiento;
+    _nacimientoController = TextEditingController(
+      text: nacimiento == null ? '' : formatearFechaNacimiento(nacimiento),
     );
     _diagnosticoController = TextEditingController(
       text: paciente?.diagnostico ?? '',
@@ -93,7 +96,7 @@ class _DialogoPacienteState extends State<_DialogoPaciente> {
   void dispose() {
     _nombreController.dispose();
     _rutController.dispose();
-    _edadController.dispose();
+    _nacimientoController.dispose();
     _diagnosticoController.dispose();
     _faseController.dispose();
     _centroNombreController.dispose();
@@ -119,10 +122,12 @@ class _DialogoPacienteState extends State<_DialogoPaciente> {
     if (!_formKey.currentState!.validate()) return;
     final aviso = AvisoApp.capturar(context);
     final nav = Navigator.of(context);
+    final nacimiento = leerFechaNacimiento(_nacimientoController.text)!;
     final datos = <String, dynamic>{
       'nombreCompleto': _nombreController.text.trim(),
       'rut': _rutController.text.trim(),
-      'edad': int.tryParse(_edadController.text.trim()),
+      'fechaNacimiento': fechaNacimientoGuardada(nacimiento),
+      'edad': edadEnAnios(nacimiento, DateTime.now()),
       'diagnostico': _diagnosticoController.text.trim(),
       'tratamientoFase': _faseController.text.trim(),
       'centroSaludNombre': _centroNombreController.text.trim(),
@@ -163,6 +168,9 @@ class _DialogoPacienteState extends State<_DialogoPaciente> {
             nombreCompleto: datos['nombreCompleto'] as String,
             rut: datos['rut'] as String?,
             edad: datos['edad'] as int?,
+            fechaNacimiento: DateTime.tryParse(
+              datos['fechaNacimiento'] as String,
+            ),
             diagnostico: datos['diagnostico'] as String?,
             tratamientoFase: datos['tratamientoFase'] as String?,
             centroSaludNombre: datos['centroSaludNombre'] as String?,
@@ -223,16 +231,15 @@ class _DialogoPacienteState extends State<_DialogoPaciente> {
             ),
             const SizedBox(height: 12),
             CampoFormulario(
-              controlador: _edadController,
-              textoAyuda: 'Edad *',
+              controlador: _nacimientoController,
+              textoAyuda: 'Fecha de nacimiento (dd/mm/aaaa) *',
               icono: Icons.cake_outlined,
-              tipoTeclado: TextInputType.number,
+              tipoTeclado: TextInputType.datetime,
               accionTeclado: TextInputAction.next,
-              validador: (v) {
-                final valor = v?.trim() ?? '';
-                if (valor.isEmpty) return 'Ingresa la edad';
-                return int.tryParse(valor) == null ? 'Ingresa un número' : null;
-              },
+              iconoSufijo: BotonFechaNacimiento(
+                controlador: _nacimientoController,
+              ),
+              validador: validarFechaNacimiento,
             ),
             const SizedBox(height: 12),
             CampoFormulario(

@@ -30,7 +30,7 @@ void main() {
     await escribir(tester, campo('Confirmar contraseña'), 'secreta1');
     await escribir(tester, campo('Nombre del paciente'), 'Tomás Pérez');
     await escribir(tester, campo('RUT del paciente'), '11.111.111-1');
-    await escribir(tester, campo('Edad'), '8');
+    await escribir(tester, campo('Fecha de nacimiento'), '10/03/2018');
     await escribir(tester, campo('Diagnóstico'), 'Leucemia');
     await elegir(tester, 'Fase de tratamiento', 'Tratamiento');
     await escribir(tester, campo('Centro de salud'), 'Hospital Sótero del Río');

@@ -65,12 +65,4 @@ void main() {
       expect(validarConfirmacion('secreto123', 'secreto123'), isNull);
     });
   });
-
-  group('Edad', () {
-    test('fuera de 0 a 120 o no numérica se rechaza', () {
-      expect(validarEdad('130'), 'Edad no válida');
-      expect(validarEdad('diez'), 'Edad no válida');
-      expect(validarEdad('8'), isNull);
-    });
-  });
 }

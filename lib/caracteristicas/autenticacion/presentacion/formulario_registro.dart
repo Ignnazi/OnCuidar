@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:oncuidar/caracteristicas/autenticacion/datos/servicio_alta_cuenta.dart';
+import 'package:oncuidar/caracteristicas/pacientes/dominio/fecha_nacimiento.dart';
 import 'package:oncuidar/caracteristicas/pacientes/dominio/paciente.dart';
 
 class FormularioRegistro {
@@ -15,7 +16,7 @@ class FormularioRegistro {
   // Paciente
   final nombrePaciente = TextEditingController();
   final rut = TextEditingController();
-  final edad = TextEditingController();
+  final fechaNacimiento = TextEditingController();
   final diagnostico = TextEditingController();
   final contactoEmergenciaNombre = TextEditingController();
 
@@ -40,7 +41,7 @@ class FormularioRegistro {
     confirmar,
     nombrePaciente,
     rut,
-    edad,
+    fechaNacimiento,
     diagnostico,
     contactoEmergenciaNombre,
     centroNombre,
@@ -70,7 +71,8 @@ class FormularioRegistro {
         id: 'auto',
         nombreCompleto: nombrePaciente.text.trim(),
         rut: rut.text.trim(),
-        edad: int.tryParse(edad.text.trim()),
+        fechaNacimiento: leerFechaNacimiento(fechaNacimiento.text),
+        edad: _edadDe(fechaNacimiento.text),
         diagnostico: diagnostico.text.trim(),
         tratamientoFase: faseTratamiento == 'Otro'
             ? faseOtro.text.trim()
@@ -84,4 +86,9 @@ class FormularioRegistro {
       ),
     );
   }
+}
+
+int? _edadDe(String texto) {
+  final nacimiento = leerFechaNacimiento(texto);
+  return nacimiento == null ? null : edadEnAnios(nacimiento, DateTime.now());
 }

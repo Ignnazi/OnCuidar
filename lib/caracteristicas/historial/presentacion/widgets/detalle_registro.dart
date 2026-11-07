@@ -1,26 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:oncuidar/app/tema/paleta.dart';
-import 'package:oncuidar/caracteristicas/pacientes/presentacion/proveedores_pacientes.dart';
-import 'package:oncuidar/caracteristicas/registro_clinico/dominio/motor_reglas_clinicas.dart';
 import 'package:oncuidar/caracteristicas/registro_clinico/dominio/registro_clinico.dart';
 import 'package:oncuidar/compartido/config_alerta.dart';
 
-class DetalleRegistro extends ConsumerWidget {
+class DetalleRegistro extends StatelessWidget {
   const DetalleRegistro({super.key, required this.registro});
 
   final RegistroClinico registro;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final config = configAlerta(registro.nivelAlerta);
     final observaciones = registro.observaciones;
-    final motivos = MotorReglasClinicas.evaluar(
-      registro.signosVitales,
-      registro.sintomas,
-      edad: ref.watch(pacienteActivoProvider).value?.edad,
-    ).mensajes.where((m) => m != 'Sin síntomas preocupantes').toList();
+    final motivos = registro.mensajes;
 
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),

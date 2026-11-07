@@ -34,13 +34,6 @@ String? validarConfirmacion(String? v, String contrasena) {
   return null;
 }
 
-String? validarEdad(String? v) {
-  if (v == null || v.trim().isEmpty) return 'Ingresa la edad';
-  final edad = int.tryParse(v.trim());
-  if (edad == null || edad < 0 || edad > 120) return 'Edad no válida';
-  return null;
-}
-
 String? validarRutPaciente(String? v) {
   final valor = (v ?? '').trim();
   if (valor.isEmpty) return 'Ingresa el RUT del paciente';
