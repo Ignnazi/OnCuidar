@@ -9,6 +9,7 @@ const camposClinicosEnClaro = {
   'descripcion',
   'observaciones',
   'mensajeAlerta',
+  'nivelAlerta',
   'sintomas',
   'signosVitales',
   'generalNotes',
