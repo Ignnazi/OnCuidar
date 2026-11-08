@@ -61,6 +61,7 @@ class EstadoVisorConZoom extends State<VisorConZoom>
   double _factor = 1;
   Timer? _temporizador;
   bool _asentando = false;
+  bool _tocando = false;
 
   @override
   void initState() {
@@ -93,14 +94,28 @@ class EstadoVisorConZoom extends State<VisorConZoom>
     final t = _transformacion;
     if (t == null) return;
     widget.alMover?.call(t.value, _zona, _factor);
-    if (_asentando) return;
+    if (_asentando || _tocando) return;
+    _programarAsentar();
+  }
+
+  void _programarAsentar() {
     _temporizador?.cancel();
     _temporizador = Timer(_esperaNitidez, _asentar);
   }
 
+  void _alEmpezarGesto() {
+    _tocando = true;
+    _temporizador?.cancel();
+  }
+
+  void _alTerminarGesto() {
+    _tocando = false;
+    _programarAsentar();
+  }
+
   void _asentar() {
     final t = _transformacion;
-    if (!mounted || t == null || _animacion.isAnimating) return;
+    if (!mounted || t == null || _tocando || _animacion.isAnimating) return;
     final estirado = escalaDe(t.value);
     if ((estirado - 1).abs() < 0.001) return;
     final traslado = t.value.getTranslation();
@@ -194,6 +209,9 @@ class EstadoVisorConZoom extends State<VisorConZoom>
                   key: widget.claveVisor,
                   transformationController: _transformacion,
                   constrained: false,
+                  // Rehacer la escala con los dedos apoyados desfasa el gesto
+                  onInteractionStart: (_) => _alEmpezarGesto(),
+                  onInteractionEnd: (_) => _alTerminarGesto(),
                   minScale: minimo / _factor,
                   maxScale: widget.zoomMaximo / _factor,
                   child: ConstrainedBox(

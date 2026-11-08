@@ -1,6 +1,7 @@
 import 'package:oncuidar/caracteristicas/pacientes/dominio/paciente.dart';
 import 'package:oncuidar/caracteristicas/registro_clinico/dominio/registro_clinico.dart';
 import 'package:oncuidar/nucleo/utilidades/formato_fecha.dart';
+import 'package:oncuidar/nucleo/utilidades/rut.dart';
 
 /// Nombre legible del nivel de alerta.
 String etiquetaEstado(NivelAlerta nivel) => switch (nivel) {
@@ -75,18 +76,52 @@ typedef FilaInfo = (String etiqueta, String valor);
 
 typedef BloqueInfo = ({String titulo, List<FilaInfo> filas});
 
+typedef DatosCuidador = ({
+  String? nombre,
+  String? relacion,
+  String? telefono,
+  String? correo,
+  String? direccion,
+});
+
 bool _hay(String? texto) => texto != null && texto.trim().isNotEmpty;
+
+DatosCuidador cuidadorParaExportar(Map<String, dynamic>? datos) => (
+  nombre: datos?['nombre'] as String?,
+  relacion: datos?['relacion'] as String?,
+  telefono: datos?['telefono'] as String?,
+  correo: datos?['correo'] as String?,
+  direccion: datos?['direccion'] as String?,
+);
+
+List<FilaInfo> _filasCuidador(DatosCuidador? cuidador) {
+  if (cuidador == null) return const [];
+  return <FilaInfo>[
+    for (final (etiqueta, valor) in <(String, String?)>[
+      ('Nombre', cuidador.nombre),
+      ('Parentesco', cuidador.relacion),
+      ('Teléfono', cuidador.telefono),
+      ('Correo', cuidador.correo),
+      ('Dirección', cuidador.direccion),
+    ])
+      if (_hay(valor)) (etiqueta, valor!.trim()),
+  ];
+}
 
 List<BloqueInfo> bloquesPacienteYCuidador(
   Paciente? paciente,
-  String? nombreCuidador,
+  DatosCuidador? cuidador,
 ) {
+  final filasCuidador = _filasCuidador(cuidador);
   return [
     if (paciente != null)
       (
         titulo: 'PACIENTE',
         filas: <FilaInfo>[
           ('Nombre', paciente.nombreCompleto),
+          if (_hay(paciente.rut)) ('RUT', formatearRut(paciente.rut!)),
+          if (paciente.fechaNacimiento != null)
+            ('Nacimiento', fechacorta(paciente.fechaNacimiento!)),
           if (paciente.edadActual != null)
             ('Edad', '${paciente.edadActual} años'),
           if (_hay(paciente.diagnostico))
@@ -95,11 +130,7 @@ List<BloqueInfo> bloquesPacienteYCuidador(
             ('Fase', paciente.tratamientoFase!),
         ],
       ),
-    if (_hay(nombreCuidador))
-      (
-        titulo: 'CUIDADOR',
-        filas: <FilaInfo>[('Nombre', nombreCuidador!.trim())],
-      ),
+    if (filasCuidador.isNotEmpty) (titulo: 'CUIDADOR', filas: filasCuidador),
   ];
 }
 

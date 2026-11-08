@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:oncuidar/caracteristicas/historial/datos/exportador_excel.dart';
 import 'package:oncuidar/caracteristicas/historial/datos/exportador_pdf.dart';
+import 'package:oncuidar/caracteristicas/historial/datos/formato_exportacion.dart';
 import 'package:oncuidar/caracteristicas/historial/dominio/filtro_historial.dart';
 import 'package:oncuidar/caracteristicas/pacientes/dominio/paciente.dart';
 import 'package:oncuidar/caracteristicas/registro_clinico/datos/proveedores_registro_clinico.dart';
@@ -64,7 +65,7 @@ class ControladorHistorial {
     FormatoExportacion formato, {
     required List<RegistroClinico> registros,
     required Paciente? paciente,
-    required String nombreCuidador,
+    required DatosCuidador cuidador,
     required FiltroHistorial filtro,
     DateTime? generadoEn,
   }) async {
@@ -73,7 +74,7 @@ class ControladorHistorial {
       FormatoExportacion.pdf => await generarPdfHistorial(
         registros: registros,
         paciente: paciente,
-        nombreCuidador: nombreCuidador,
+        cuidador: cuidador,
         fechaInicio: filtro.inicio,
         fechaFin: filtro.fin,
         generadoEn: momento,
@@ -81,7 +82,7 @@ class ControladorHistorial {
       FormatoExportacion.excel => generarExcelHistorial(
         registros: registros,
         paciente: paciente,
-        nombreCuidador: nombreCuidador,
+        cuidador: cuidador,
         fechaInicio: filtro.inicio,
         fechaFin: filtro.fin,
         generadoEn: momento,

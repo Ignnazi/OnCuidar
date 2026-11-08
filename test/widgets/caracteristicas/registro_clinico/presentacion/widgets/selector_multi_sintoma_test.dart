@@ -46,4 +46,19 @@ void main() {
     expect(alternados, ['Picazón']);
     expect(find.byKey(const Key('campoAgregarSintoma')), findsNothing);
   });
+
+  testWidgets('el + muestra el campo sin abrir el teclado solo', (
+    tester,
+  ) async {
+    await _montar(tester);
+    await tester.tap(find.byKey(const Key('botonAgregarSintoma')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('campoAgregarSintoma')), findsOneWidget);
+    expect(tester.testTextInput.isVisible, isFalse);
+
+    await tester.tap(find.byKey(const Key('campoAgregarSintoma')));
+    await tester.pump();
+    expect(tester.testTextInput.isVisible, isTrue);
+  });
 }

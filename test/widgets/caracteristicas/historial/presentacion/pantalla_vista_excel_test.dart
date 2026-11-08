@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:oncuidar/caracteristicas/historial/datos/formato_exportacion.dart';
 import 'package:oncuidar/caracteristicas/historial/presentacion/pantalla_vista_excel.dart';
 import 'package:oncuidar/caracteristicas/pacientes/dominio/paciente.dart';
 import 'package:oncuidar/caracteristicas/registro_clinico/dominio/registro_clinico.dart';
@@ -34,7 +35,7 @@ DatosHojaExcel _datos({
       contactoEmergenciaNombre: 'María Test',
       creadoEn: DateTime(2026, 1, 1),
     ),
-    nombreCuidador: 'Ana Torres',
+    cuidador: cuidadorParaExportar({'nombre': 'Ana Torres'}),
     fechaInicio: inicio,
     fechaFin: fin,
     generadoEn: DateTime(2026, 10, 8, 20, 15),

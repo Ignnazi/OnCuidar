@@ -214,6 +214,7 @@ class _DialogoPacienteState extends State<_DialogoPaciente> {
               controlador: _nombreController,
               textoAyuda: 'Nombre completo *',
               icono: Icons.badge_outlined,
+              accionTeclado: TextInputAction.next,
               validador: (v) =>
                   (v == null || v.trim().isEmpty) ? 'Ingresa el nombre' : null,
             ),

@@ -16,7 +16,7 @@ class DatosHojaExcel {
   const DatosHojaExcel({
     required this.registros,
     required this.paciente,
-    required this.nombreCuidador,
+    required this.cuidador,
     required this.fechaInicio,
     required this.fechaFin,
     required this.generadoEn,
@@ -24,7 +24,7 @@ class DatosHojaExcel {
 
   final List<RegistroClinico> registros;
   final Paciente? paciente;
-  final String? nombreCuidador;
+  final DatosCuidador? cuidador;
   final DateTime? fechaInicio;
   final DateTime? fechaFin;
   final DateTime generadoEn;
@@ -165,10 +165,7 @@ List<_Fila> _construirFilas(DatosHojaExcel datos) {
     )
     ..add(hueco);
 
-  final izquierda = bloquesPacienteYCuidador(
-    datos.paciente,
-    datos.nombreCuidador,
-  );
+  final izquierda = bloquesPacienteYCuidador(datos.paciente, datos.cuidador);
   final derecha = bloquesCentroYContacto(datos.paciente);
   for (var i = 0; i < math.max(izquierda.length, derecha.length); i++) {
     final bloqueIzq = i < izquierda.length ? izquierda[i] : null;

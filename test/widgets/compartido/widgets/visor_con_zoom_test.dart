@@ -57,6 +57,59 @@ void main() {
     expect(total(tester), greaterThan(1.5));
   });
 
+  testWidgets('una pausa con los dedos apoyados no hace saltar el zoom', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(400, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: VisorConZoom(
+            constructor: (zona, factor) => Container(
+              key: const Key('contenido'),
+              width: zona.width * factor,
+              height: zona.height * 2 * factor,
+              color: Colors.teal,
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final contenido = find.byKey(const Key('contenido'));
+    const centro = Offset(200, 400);
+    final a = await tester.startGesture(centro - const Offset(40, 0));
+    final b = await tester.startGesture(centro + const Offset(40, 0));
+    await tester.pump();
+    for (var i = 1; i <= 10; i++) {
+      final d = 40 + 40 * i / 10;
+      await a.moveTo(centro - Offset(d, 0));
+      await b.moveTo(centro + Offset(d, 0));
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+    final antes = tester.getRect(contenido);
+    await tester.pump(const Duration(milliseconds: 300));
+    await a.moveTo(centro - const Offset(81, 0));
+    await b.moveTo(centro + const Offset(81, 0));
+    await tester.pump(const Duration(milliseconds: 16));
+    final despues = tester.getRect(contenido);
+    expect(despues.width / antes.width, closeTo(81 / 80, 0.05));
+    expect((despues.center - antes.center).distance, lessThan(8));
+    final escala = total(tester);
+    final soltado = tester.getRect(contenido);
+    await a.up();
+    await b.up();
+    await tester.pumpAndSettle();
+    expect(total(tester), closeTo(escala, 0.01));
+    expect(
+      (tester.getRect(contenido).center - soltado.center).distance,
+      lessThan(2),
+    );
+  });
+
   testWidgets('juntar los dedos aleja', (tester) async {
     await abrir(tester, inicial: 2);
     await pellizco(tester, desde: 120, hasta: 40);

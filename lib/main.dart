@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:oncuidar/app/cerrar_teclado_al_tocar_fuera.dart';
 import 'package:oncuidar/app/enrutador/destino_aviso.dart';
 import 'package:oncuidar/app/enrutador/enrutador.dart';
 import 'package:oncuidar/app/tema/fundido_de_tema.dart';
@@ -128,21 +129,23 @@ class _OncuidarAppState extends ConsumerState<OncuidarApp>
       debugShowCheckedModeBanner: false,
       theme: Tema.obtener(),
       routerConfig: router,
-      builder: (context, child) => MediaQuery(
-        data: MediaQuery.of(context).copyWith(
-          textScaler: TextScaler.linear(
-            MediaQuery.textScalerOf(context).scale(1) * escalaTexto,
-          ),
-        ),
-        child: Stack(
-          children: [
-            FundidoDeTema(
-              oscuro: Paleta.esOscura,
-              child: child ?? const SizedBox.shrink(),
+      builder: (context, child) => CerrarTecladoAlTocarFuera(
+        child: MediaQuery(
+          data: MediaQuery.of(context).copyWith(
+            textScaler: TextScaler.linear(
+              MediaQuery.textScalerOf(context).scale(1) * escalaTexto,
             ),
-            if (usuario != null && !desbloqueado)
-              const Positioned.fill(child: _GateClave()),
-          ],
+          ),
+          child: Stack(
+            children: [
+              FundidoDeTema(
+                oscuro: Paleta.esOscura,
+                child: child ?? const SizedBox.shrink(),
+              ),
+              if (usuario != null && !desbloqueado)
+                const Positioned.fill(child: _GateClave()),
+            ],
+          ),
         ),
       ),
     );

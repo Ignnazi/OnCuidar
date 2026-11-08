@@ -146,7 +146,6 @@ class _SelectorMultiSintomaState extends State<SelectorMultiSintoma> {
           child: TextField(
             key: const Key('campoAgregarSintoma'),
             controller: _agregarController,
-            autofocus: true,
             textInputAction: TextInputAction.done,
             onSubmitted: (_) => _agregarPersonalizado(),
             style: GoogleFonts.nunito(

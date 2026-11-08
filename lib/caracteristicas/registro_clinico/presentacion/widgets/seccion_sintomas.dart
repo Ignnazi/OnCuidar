@@ -28,6 +28,8 @@ class SeccionSintomas extends StatelessWidget {
   final VoidCallback onCambioOtro;
 
   Future<void> _abrirSelector(BuildContext context) async {
+    // Sin esto el campo que tenía el foco lo recupera al cerrar la hoja
+    FocusManager.instance.primaryFocus?.unfocus();
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,

@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:oncuidar/app/tema/paleta.dart';
 import 'package:oncuidar/caracteristicas/biblioteca/presentacion/pantalla_visor_pdf.dart';
 import 'package:oncuidar/caracteristicas/historial/datos/archivo_exportacion.dart';
+import 'package:oncuidar/caracteristicas/historial/datos/formato_exportacion.dart';
 import 'package:oncuidar/caracteristicas/historial/dominio/filtro_historial.dart';
 import 'package:oncuidar/caracteristicas/historial/presentacion/controlador_historial.dart';
 import 'package:oncuidar/caracteristicas/historial/presentacion/pantalla_vista_excel.dart';
@@ -243,13 +244,13 @@ class _HistorialScreenState extends ConsumerState<HistorialScreen> {
         _filtro,
         _filtradosActuales,
       );
-      final nombreCuidador = await _nombreCuidador();
+      final cuidador = await _cuidador();
       final generadoEn = DateTime.now();
       final bytes = await _controlador.generar(
         formato,
         registros: registros,
         paciente: paciente,
-        nombreCuidador: nombreCuidador,
+        cuidador: cuidador,
         filtro: _filtro,
         generadoEn: generadoEn,
       );
@@ -260,7 +261,7 @@ class _HistorialScreenState extends ConsumerState<HistorialScreen> {
         DatosHojaExcel(
           registros: registros,
           paciente: paciente,
-          nombreCuidador: nombreCuidador,
+          cuidador: cuidador,
           fechaInicio: _filtro.inicio,
           fechaFin: _filtro.fin,
           generadoEn: generadoEn,
@@ -278,12 +279,11 @@ class _HistorialScreenState extends ConsumerState<HistorialScreen> {
     }
   }
 
-  Future<String> _nombreCuidador() async {
+  Future<DatosCuidador> _cuidador() async {
     try {
-      final cuidador = await ref.read(cuidadorProvider.future);
-      return (cuidador?['nombre'] as String?) ?? '';
+      return cuidadorParaExportar(await ref.read(cuidadorProvider.future));
     } catch (_) {
-      return '';
+      return cuidadorParaExportar(null);
     }
   }
 
