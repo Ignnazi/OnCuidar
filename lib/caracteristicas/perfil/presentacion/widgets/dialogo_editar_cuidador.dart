@@ -153,6 +153,7 @@ class _DialogoEditarCuidadorState extends State<_DialogoEditarCuidador> {
                 controlador: _nombreController,
                 textoAyuda: 'Nombre completo *',
                 icono: Icons.badge_outlined,
+                accionTeclado: TextInputAction.next,
                 validador: (v) => (v == null || v.trim().isEmpty)
                     ? 'Ingresa tu nombre'
                     : null,
@@ -162,6 +163,7 @@ class _DialogoEditarCuidadorState extends State<_DialogoEditarCuidador> {
                 controlador: _relacionController,
                 textoAyuda: 'Parentesco (madre, padre, tía…) *',
                 icono: Icons.family_restroom_outlined,
+                accionTeclado: TextInputAction.next,
                 validador: (v) => (v == null || v.trim().isEmpty)
                     ? 'Ingresa el parentesco'
                     : null,

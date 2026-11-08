@@ -6,6 +6,7 @@ import 'package:excel/excel.dart' as xlsx;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:oncuidar/caracteristicas/historial/datos/exportador_excel.dart';
 import 'package:oncuidar/caracteristicas/historial/datos/exportador_pdf.dart';
+import 'package:oncuidar/caracteristicas/historial/datos/formato_exportacion.dart';
 import 'package:oncuidar/caracteristicas/pacientes/dominio/paciente.dart';
 import 'package:oncuidar/caracteristicas/registro_clinico/dominio/registro_clinico.dart';
 
@@ -68,7 +69,7 @@ void main() {
     final bytes = await generarPdfHistorial(
       registros: [_registroConSignos('registro-1')],
       paciente: _paciente(),
-      nombreCuidador: 'Ana Torres',
+      cuidador: cuidadorParaExportar({'nombre': 'Ana Torres'}),
       fechaInicio: DateTime(2026, 9, 1),
       fechaFin: DateTime(2026, 9, 18),
       generadoEn: DateTime(2026, 9, 18, 20, 54),
@@ -81,7 +82,7 @@ void main() {
   test('el PDF crece al agregar más registros', () async {
     final baseParametros = (
       paciente: _paciente(),
-      nombreCuidador: 'Ana Torres',
+      cuidador: cuidadorParaExportar({'nombre': 'Ana Torres'}),
       fechaInicio: DateTime(2026, 9, 1),
       fechaFin: DateTime(2026, 9, 18),
       generadoEn: DateTime(2026, 9, 18, 20, 54),
@@ -90,7 +91,7 @@ void main() {
     final uno = await generarPdfHistorial(
       registros: [_registroConSignos('registro-1')],
       paciente: baseParametros.paciente,
-      nombreCuidador: baseParametros.nombreCuidador,
+      cuidador: baseParametros.cuidador,
       fechaInicio: baseParametros.fechaInicio,
       fechaFin: baseParametros.fechaFin,
       generadoEn: baseParametros.generadoEn,
@@ -101,7 +102,7 @@ void main() {
         _registroConSignos('registro-2'),
       ],
       paciente: baseParametros.paciente,
-      nombreCuidador: baseParametros.nombreCuidador,
+      cuidador: baseParametros.cuidador,
       fechaInicio: baseParametros.fechaInicio,
       fechaFin: baseParametros.fechaFin,
       generadoEn: baseParametros.generadoEn,
@@ -118,7 +119,7 @@ void main() {
     final bytes = await generarPdfHistorial(
       registros: const [],
       paciente: _paciente(),
-      nombreCuidador: 'Ana Torres',
+      cuidador: cuidadorParaExportar({'nombre': 'Ana Torres'}),
       fechaInicio: null,
       fechaFin: null,
       generadoEn: DateTime(2026, 9, 18, 20, 54),
@@ -132,7 +133,7 @@ void main() {
     final bytes = generarExcelHistorial(
       registros: [_registroConSignos('registro-1')],
       paciente: _paciente(),
-      nombreCuidador: 'Ana Torres',
+      cuidador: cuidadorParaExportar({'nombre': 'Ana Torres'}),
       fechaInicio: DateTime(2026, 9, 1),
       fechaFin: DateTime(2026, 9, 18),
       generadoEn: DateTime(2026, 9, 18, 20, 54),
@@ -154,11 +155,37 @@ void main() {
     expect(contenido, isNot(contains('Sheet1')));
   });
 
+  test('el Excel muestra todos los datos del cuidador', () {
+    final bytes = generarExcelHistorial(
+      registros: const [],
+      paciente: _paciente(),
+      cuidador: cuidadorParaExportar({
+        'nombre': 'Ana Torres',
+        'relacion': 'Madre',
+        'telefono': '+56 9 1234 5678',
+        'correo': 'ana@correo.cl',
+        'direccion': 'Av. Siempre Viva 123',
+      }),
+      generadoEn: DateTime(2026, 9, 18, 20, 54),
+    );
+
+    final contenido = _textoXml(bytes);
+    for (final dato in [
+      'Ana Torres',
+      'Madre',
+      '+56 9 1234 5678',
+      'ana@correo.cl',
+      'Av. Siempre Viva 123',
+    ]) {
+      expect(contenido, contains(dato));
+    }
+  });
+
   test('el Excel genera sin crashear con lista vacía', () {
     final bytes = generarExcelHistorial(
       registros: const [],
       paciente: null,
-      nombreCuidador: '',
+      cuidador: cuidadorParaExportar(null),
       fechaInicio: null,
       fechaFin: null,
       generadoEn: DateTime(2026, 9, 18, 20, 54),
@@ -172,7 +199,7 @@ void main() {
     final bytes = generarExcelHistorial(
       registros: [_registroConSignos('r1')],
       paciente: _paciente(),
-      nombreCuidador: 'Ana',
+      cuidador: cuidadorParaExportar({'nombre': 'Ana'}),
       fechaInicio: null,
       fechaFin: null,
       generadoEn: DateTime(2026, 9, 18, 20, 54),

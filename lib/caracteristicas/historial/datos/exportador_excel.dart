@@ -59,7 +59,7 @@ int _escribirBloque(
 Uint8List generarExcelHistorial({
   required List<RegistroClinico> registros,
   required Paciente? paciente,
-  String? nombreCuidador,
+  DatosCuidador? cuidador,
   DateTime? fechaInicio,
   DateTime? fechaFin,
   required DateTime generadoEn,
@@ -142,7 +142,7 @@ Uint8List generarExcelHistorial({
   hoja.setRowHeight(fila, 8);
   fila++;
 
-  final izquierda = bloquesPacienteYCuidador(paciente, nombreCuidador);
+  final izquierda = bloquesPacienteYCuidador(paciente, cuidador);
   final derecha = bloquesCentroYContacto(paciente);
   for (var i = 0; i < math.max(izquierda.length, derecha.length); i++) {
     var ocupadas = 0;

@@ -161,6 +161,7 @@ class _DialogoRecordatorioState extends State<_DialogoRecordatorio> {
               key: const Key('campoTituloRecordatorio'),
               controller: widget.tituloCtrl,
               maxLines: 1,
+              textInputAction: TextInputAction.next,
               style: GoogleFonts.nunito(
                 fontSize: 14,
                 color: Paleta.textoPrincipal,

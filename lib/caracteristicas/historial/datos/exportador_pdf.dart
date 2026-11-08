@@ -342,13 +342,13 @@ pw.Widget _tablaRegistros(List<RegistroClinico> registros) {
 Future<Uint8List> generarPdfHistorial({
   required List<RegistroClinico> registros,
   required Paciente? paciente,
-  String? nombreCuidador,
+  DatosCuidador? cuidador,
   DateTime? fechaInicio,
   DateTime? fechaFin,
   required DateTime generadoEn,
   bool comprimir = true,
 }) async {
-  final izquierda = bloquesPacienteYCuidador(paciente, nombreCuidador);
+  final izquierda = bloquesPacienteYCuidador(paciente, cuidador);
   final derecha = bloquesCentroYContacto(paciente);
   final documento = pw.Document(compress: comprimir);
 
