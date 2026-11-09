@@ -86,6 +86,8 @@ class OrquestadorSincronizacion {
     if (!await _conectividad.estaEnLinea()) return;
     while (_uidActual() == uid) {
       final pendientes = await _cola.pendientes(uid);
+      // Sin otra espera hasta leer el token, así no sale con otra cuenta
+      if (_uidActual() != uid) return;
       if (pendientes.isEmpty) {
         _reintentosSeguidos = 0;
         return;

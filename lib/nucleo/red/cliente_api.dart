@@ -34,7 +34,8 @@ class ExcepcionApi implements Exception {
   final bool esTokenInvalido;
   final bool esTiempoAgotado;
 
-  static const _permanentes = {400, 401, 403, 404, 409, 410, 422};
+  // 413 no mejora reintentando
+  static const _permanentes = {400, 401, 403, 404, 409, 410, 413, 422};
 
   bool get esPermanente => !esDeRed && _permanentes.contains(codigoHttp);
 
@@ -119,7 +120,10 @@ class ClienteApi {
         : 'Error ${respuesta.statusCode}';
     final tokenInvalido =
         respuesta.statusCode == 401 && _mensajesToken.contains(mensaje);
-    if (tokenInvalido && token != null) alSesionVencida?.call();
+    // Un 401 de una sesión anterior no cierra la actual
+    if (tokenInvalido && token != null && token == obtenerToken()) {
+      alSesionVencida?.call();
+    }
     throw ExcepcionApi(
       respuesta.statusCode,
       mensaje,

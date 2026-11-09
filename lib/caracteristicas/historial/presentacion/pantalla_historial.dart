@@ -92,6 +92,7 @@ class _HistorialScreenState extends ConsumerState<HistorialScreen> {
         visibles.last.creadoEn,
       );
       if (!mounted) return;
+      if (ref.read(pacienteActivoProvider).value?.id != paciente.id) return;
       setState(() {
         _cargados.addAll(siguiente);
         if (siguiente.length < ControladorHistorial.tamanoPagina) {
@@ -112,6 +113,18 @@ class _HistorialScreenState extends ConsumerState<HistorialScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // La pantalla sigue viva al cambiar de paciente desde otra pestaña
+    ref.listen(pacienteActivoProvider.select((p) => p.value?.id), (
+      antes,
+      ahora,
+    ) {
+      if (antes == ahora) return;
+      setState(() {
+        _cargados.clear();
+        _noHayMas = false;
+        _expandidoId = null;
+      });
+    });
     return PantallaConEncabezado(
       alRegresar: _regresar,
       encabezado: EncabezadoGradiente(
@@ -239,11 +252,20 @@ class _HistorialScreenState extends ConsumerState<HistorialScreen> {
     setState(() => _exportando = true);
     try {
       final paciente = ref.read(pacienteActivoProvider).value;
+      var parcial = false;
       final registros = await _controlador.registrosParaExportar(
         paciente,
         _filtro,
         _filtradosActuales,
+        alUsarRespaldo: () => parcial = true,
       );
+      if (parcial && mounted) {
+        _snack(
+          'No se pudo descargar todo el rango. El archivo solo incluye '
+          'los registros cargados en pantalla.',
+          tono: TonoAviso.alerta,
+        );
+      }
       final cuidador = await _cuidador();
       final generadoEn = DateTime.now();
       final bytes = await _controlador.generar(

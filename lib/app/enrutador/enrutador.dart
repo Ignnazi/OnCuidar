@@ -52,7 +52,8 @@ GoRoute _rutaFaq() {
 GoRoute _rutaRecordatorios() {
   return GoRoute(
     path: '/recordatorios',
-    builder: (context, state) => const RecordatoriosScreen(),
+    builder: (context, state) =>
+        RecordatoriosScreen(idPaciente: state.uri.queryParameters['paciente']),
   );
 }
 

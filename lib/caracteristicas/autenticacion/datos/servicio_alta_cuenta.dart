@@ -69,7 +69,7 @@ class ServicioRegistro {
   Future<void> _viaApi(String email) async {
     await _api.post('/correo-respaldo', {
       'correo': email,
-    }, const Duration(seconds: 5));
+    }, const Duration(seconds: 20));
   }
 
   Future<ResultadoRegistro> registrar(DatosRegistro datos) async {
@@ -89,10 +89,6 @@ class ServicioRegistro {
           if (respaldo != null && respaldo.isNotEmpty)
             'correo_respaldo': respaldo,
         });
-        if (respaldo != null && respaldo.isNotEmpty) {
-          await _registrarCorreoRespaldo(respaldo.trim().toLowerCase());
-        }
-
         await _repositorioPacientes.crearPaciente(datos.paciente);
       } catch (_) {
         try {
@@ -101,6 +97,13 @@ class ServicioRegistro {
         rethrow;
       }
 
+      // Si el correo de respaldo falla, la cuenta queda y se puede reenviar
+      final respaldo = datos.correoRespaldo;
+      if (respaldo != null && respaldo.isNotEmpty) {
+        try {
+          await _registrarCorreoRespaldo(respaldo.trim().toLowerCase());
+        } catch (_) {}
+      }
       return RegistroExitoso();
     } on ExcepcionSesion catch (e) {
       return RegistroFallido(_mensajePorCodigo(e.codigo));

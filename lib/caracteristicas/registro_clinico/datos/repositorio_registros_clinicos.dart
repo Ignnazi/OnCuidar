@@ -136,10 +136,21 @@ class RepositorioRegistrosClinicos {
         'hasta=${Uri.encodeQueryComponent(hasta.toUtc().toIso8601String())}',
     ];
     if (params.isEmpty) params.add('desde=1970-01-01T00:00:00.000Z');
-    final json = await bd.leer(
-      '${RutasApi.registros(idPaciente)}?${params.join('&')}&limite=5000',
-    );
-    return _descifrarLista(json as List, idPaciente);
+    final ruta =
+        '${RutasApi.registros(idPaciente)}?${params.join('&')}&limite=5000';
+    final json = await bd.conPendientes(ruta, await bd.leer(ruta));
+    final lista = [
+      // Los pendientes de la cola no vienen filtrados por fecha
+      for (final r in await _descifrarLista(json as List, idPaciente))
+        if ((desde == null || !r.fecha.isBefore(desde)) &&
+            (hasta == null || r.fecha.isBefore(hasta)))
+          r,
+    ];
+    // Mismo orden que el servidor, con los pendientes incluidos
+    return lista..sort((a, b) {
+      final porFecha = a.fecha.compareTo(b.fecha);
+      return porFecha != 0 ? porFecha : a.id.compareTo(b.id);
+    });
   }
 
   Future<List<RegistroClinico>> _descifrarLista(

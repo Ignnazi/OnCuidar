@@ -26,13 +26,15 @@ async function verificarContrasena(uid, contrasena) {
   return bcrypt.compare(contrasena, rows[0].contrasena_hash);
 }
 
-async function enviarRestablecimiento(usuarioId, destino) {
+async function enviarRestablecimiento(usuarioId, destino, { esperarEnvio = true } = {}) {
   const token = crypto.randomBytes(32).toString('hex');
   await db.consulta(
     "INSERT INTO tokens_restablecer (token_hash, usuario_id, expira_en) VALUES ($1, $2, now() + interval '1 hour')",
     [sha256(token), usuarioId],
   );
-  await correo.enviarEnlace(destino, `${config.urlPublica}/api/auth/restablecer?token=${token}`);
+  const envio = correo.enviarEnlace(destino, `${config.urlPublica}/api/auth/restablecer?token=${token}`);
+  if (esperarEnvio) return envio;
+  envio.catch((e) => console.error('[recuperar-contrasena]', e.message));
 }
 
 async function crearTokenCorreo(cliente, usuarioId, tipo, { correoNuevo = null, respaldoHash = null } = {}) {
@@ -125,7 +127,7 @@ router.post('/auth/cambiar-correo', requiereToken, async (req, res) => {
   res.json({ ok: true, pendiente: true });
 });
 
-router.delete('/cuenta', requiereToken, async (req, res) => {
+router.delete('/cuenta', requiereToken, limitarIntentos(), async (req, res) => {
   const { contrasena } = cuerpoObjeto(req);
   if (!(await verificarContrasena(req.uid, contrasena))) throw new ErrorHttp(401, 'Contraseña incorrecta');
   await db.consulta('DELETE FROM usuarios WHERE id = $1', [req.uid]);
@@ -137,7 +139,8 @@ router.post('/auth/recuperar-contrasena', async (req, res) => {
   if (correoValido(c)) {
     try {
       const { rows } = await db.consulta('SELECT id, correo FROM usuarios WHERE correo = $1', [normalizarCorreo(c)]);
-      if (rows[0]) await enviarRestablecimiento(rows[0].id, rows[0].correo);
+      // Sin esperar el correo, así un SMTP lento no hace fallar a la app
+      if (rows[0]) await enviarRestablecimiento(rows[0].id, rows[0].correo, { esperarEnvio: false });
     } catch (e) {
       console.error('[recuperar-contrasena]', e.message);
     }
@@ -149,16 +152,18 @@ router.post('/auth/restablecer-contrasena', async (req, res) => {
   const { token, contrasena } = cuerpoObjeto(req);
   exigirContrasena(contrasena);
   if (typeof token !== 'string') throw new ErrorHttp(400, 'Enlace inválido o vencido');
-  const { rows } = await db.consulta(
-    `UPDATE tokens_restablecer SET usado = true
-     WHERE token_hash = $1 AND usado = false AND expira_en > now() RETURNING usuario_id`,
-    [sha256(token)],
-  );
-  if (!rows[0]) throw new ErrorHttp(400, 'Enlace inválido o vencido');
-  await db.consulta('UPDATE usuarios SET contrasena_hash = $1 WHERE id = $2', [
-    await bcrypt.hash(contrasena, 10), rows[0].usuario_id,
-  ]);
-  await db.consulta('UPDATE tokens_restablecer SET usado = true WHERE usuario_id = $1', [rows[0].usuario_id]);
+  const hash = await bcrypt.hash(contrasena, 10);
+  // En una transacción para no gastar el enlace si falla el cambio
+  await db.transaccion(async (cl) => {
+    const { rows } = await cl.query(
+      `UPDATE tokens_restablecer SET usado = true
+       WHERE token_hash = $1 AND usado = false AND expira_en > now() RETURNING usuario_id`,
+      [sha256(token)],
+    );
+    if (!rows[0]) throw new ErrorHttp(400, 'Enlace inválido o vencido');
+    await cl.query('UPDATE usuarios SET contrasena_hash = $1 WHERE id = $2', [hash, rows[0].usuario_id]);
+    await cl.query('UPDATE tokens_restablecer SET usado = true WHERE usuario_id = $1', [rows[0].usuario_id]);
+  });
   res.json({ ok: true });
 });
 

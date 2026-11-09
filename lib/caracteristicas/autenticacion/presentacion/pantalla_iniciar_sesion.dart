@@ -53,8 +53,12 @@ class _IniciarSesionState extends ConsumerState<IniciarSesion> {
           .read(servicioSesionProvider)
           .iniciarSesion(_correoController.text, _contrasenaController.text);
 
-      await ref.read(servicioCifradoProvider).asegurarClave(sesion.uid);
-      ref.read(bloqueoCifradoProvider.notifier).fijarDesbloqueado(true);
+      try {
+        await ref.read(servicioCifradoProvider).asegurarClave(sesion.uid);
+        ref.read(bloqueoCifradoProvider.notifier).fijarDesbloqueado(true);
+      } catch (_) {
+        // La pantalla de bloqueo muestra el motivo y permite reintentar
+      }
       unawaited(
         ref
             .read(sincronizacionBibliotecaProvider.notifier)

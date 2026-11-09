@@ -30,8 +30,14 @@ async function requiereToken(req, res, next) {
 // Limite por IP en memoria
 function limitarIntentos() {
   const contadores = new Map();
+  let ultimaLimpieza = Date.now();
   return (req, res, next) => {
     const ahora = Date.now();
+    // Se borran las IP vencidas para que el mapa no crezca sin fin
+    if (ahora - ultimaLimpieza > config.ventanaAuthMs) {
+      for (const [ip, v] of contadores) if (v.vence < ahora) contadores.delete(ip);
+      ultimaLimpieza = ahora;
+    }
     let c = contadores.get(req.ip);
     if (!c || c.vence < ahora) {
       c = { cuenta: 0, vence: ahora + config.ventanaAuthMs };

@@ -116,6 +116,12 @@ describe('pacientes y recordatorios', () => {
     expect((await get(a, 'pacientes?archivados=false')).body.map((p) => p.id)).not.toContain('arch');
   });
 
+  test('un entero fuera de rango responde 400', async () => {
+    const r = await put(a, 'pacientes/grande', { maximoRegistrosDia: 1e12 });
+    expect(r.status).toBe(400);
+    expect(r.body.error).toBe('maximoRegistrosDia debe ser un entero');
+  });
+
   test('cascada al borrar paciente', async () => {
     await put(a, 'pacientes/casc', {});
     await put(a, 'pacientes/casc/registros/r1', { cifrados: {} });

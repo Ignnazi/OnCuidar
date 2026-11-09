@@ -7,6 +7,10 @@ import 'package:oncuidar/nucleo/almacen/almacen_secreto.dart';
 import 'package:oncuidar/nucleo/cifrado/servicio_cifrado.dart';
 import 'package:oncuidar/nucleo/datos/base_datos_segura.dart';
 import 'package:oncuidar/nucleo/red/cliente_api.dart';
+import 'package:oncuidar/nucleo/sincronizacion/cola_escrituras.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../../../ayudas/offline.dart';
 
 class ApiFalsa extends ClienteApi {
   ApiFalsa() : super(urlBase: 'http://localhost', obtenerToken: () => null);
@@ -90,5 +94,35 @@ void main() {
       'cifrados': <String, dynamic>{},
     };
     expect(await leerNivel(antiguo), NivelAlerta.alerta);
+  });
+
+  test('el rango para exportar incluye lo que sigue en la cola', () async {
+    SharedPreferences.setMockInitialValues({});
+    final red = ConectividadFalsa(enLinea: false);
+    final conCola = BaseDatosSegura(
+      api: api,
+      uidPrueba: 'u1',
+      cifrado: bd.cifrado,
+      cola: ColaEscrituras(),
+      conectividad: red,
+    );
+    final repoConCola = RepositorioRegistrosClinicos(conCola);
+    await repoConCola.guardarRegistroClinico('p1', registro);
+    red.fijar(true);
+    api.respuesta = [
+      {
+        'id': 'r0',
+        'pacienteId': 'p1',
+        'fecha': '2026-11-01T10:00:00.000Z',
+        'creadoEn': '2026-11-01T10:00:00.000Z',
+        'tipoRegistro': 'programado',
+        'cifrados': <String, dynamic>{},
+      },
+    ];
+
+    final lista = await repoConCola.registrosClinicosEnRango('p1');
+
+    expect(lista.map((r) => r.id), ['r0', 'r1']);
+    expect(lista.last.nivelAlerta, NivelAlerta.critico);
   });
 }
