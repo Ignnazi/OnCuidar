@@ -148,7 +148,7 @@ describe('recuperacion de contrasena', () => {
     expect(enviar.mock.calls[0][0]).toBe(u.correo);
   });
 
-  test('el token restablece la contrasena una sola vez', async () => {
+  test('PI-05 el token restablece la contrasena una sola vez', async () => {
     const u = await crearUsuario();
     const enviar = jest.spyOn(correo, 'enviarEnlace').mockResolvedValue();
     await request(app).post('/api/auth/recuperar-contrasena').send({ correo: u.correo });

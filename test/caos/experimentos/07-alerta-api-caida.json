@@ -1,0 +1,75 @@
+{
+  "version": "1.0.0",
+  "title": "07 - La caida de la API dispara la alerta del monitoreo",
+  "description": "Detiene la API igual que el experimento 01, que Docker no vuelve a levantar solo. Antes de la falla la API responde y no hay alerta. Despues de cuatro minutos la API sigue caida y Prometheus debe haber disparado la alerta ServicioCaido, que avisa por correo al equipo. Si la API cae y no hay alerta, el experimento falla.",
+  "tags": [
+    "docker",
+    "api",
+    "monitoreo"
+  ],
+  "steady-state-hypothesis": {
+    "title": "El monitoreo refleja el estado real de la API",
+    "probes": [
+      {
+        "type": "probe",
+        "name": "alerta_coincide_con_la_api",
+        "tolerance": 0,
+        "provider": {
+          "type": "process",
+          "path": "python",
+          "arguments": [
+            "test/caos/alerta_coherente.py"
+          ],
+          "timeout": 60
+        }
+      }
+    ]
+  },
+  "method": [
+    {
+      "type": "action",
+      "name": "matar_contenedor_api",
+      "provider": {
+        "type": "process",
+        "path": "docker",
+        "arguments": [
+          "compose",
+          "kill",
+          "api"
+        ],
+        "timeout": 60
+      }
+    },
+    {
+      "type": "action",
+      "name": "esperar_4_minutos_a_que_venza_el_plazo_de_la_alerta",
+      "provider": {
+        "type": "process",
+        "path": "powershell",
+        "arguments": [
+          "-NoProfile",
+          "-Command",
+          "Start-Sleep -Seconds 240"
+        ],
+        "timeout": 300
+      }
+    }
+  ],
+  "rollbacks": [
+    {
+      "type": "action",
+      "name": "asegurar_stack_arriba",
+      "provider": {
+        "type": "process",
+        "path": "docker",
+        "arguments": [
+          "compose",
+          "up",
+          "-d",
+          "--wait"
+        ],
+        "timeout": 180
+      }
+    }
+  ]
+}

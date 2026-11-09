@@ -10,6 +10,8 @@ import 'package:oncuidar/nucleo/datos/base_datos_segura.dart';
 import 'package:oncuidar/nucleo/red/cliente_api.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../ayudas/offline.dart';
+
 const _claveCache = 'oncuidar.flujo.u1./pacientes';
 
 BaseDatosSegura _base(ClienteApi api) => BaseDatosSegura(
@@ -147,9 +149,9 @@ void main() {
       final datos = <dynamic>[];
       final errores = <Object>[];
       final sub = _flujo(base).listen(datos.add, onError: errores.add);
-      await Future<void>.delayed(const Duration(milliseconds: 60));
+      await esperarHasta(() async => errores.isNotEmpty);
       fallar = false;
-      await Future<void>.delayed(const Duration(milliseconds: 80));
+      await esperarHasta(() async => datos.isNotEmpty);
       await sub.cancel();
 
       expect(errores, isNotEmpty);

@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:cryptography/cryptography.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:oncuidar/nucleo/almacen/almacen_secreto.dart';
 import 'package:oncuidar/nucleo/cifrado/servicio_cifrado.dart';
@@ -26,11 +27,16 @@ void main() {
     expect(await cifrado.descifrar('u1', valor), texto);
   });
 
-  test('el texto cifrado no deja ver el texto original', () async {
-    final valor = await cifrado.cifrar('u1', 'Leucemia linfoblástica');
-    expect(valor, isNot(contains('Leucemia')));
-    expect(valor.split('.'), hasLength(3));
-  });
+  test(
+    'PU-05 el texto cifrado no deja ver el original y se recupera con la clave',
+    tags: 'criticos',
+    () async {
+      final valor = await cifrado.cifrar('u1', 'Leucemia linfoblástica');
+      expect(valor, isNot(contains('Leucemia')));
+      expect(valor.split('.'), hasLength(3));
+      expect(await cifrado.descifrar('u1', valor), 'Leucemia linfoblástica');
+    },
+  );
 
   test('el mismo texto cifrado dos veces da resultados distintos', () async {
     final a = await cifrado.cifrar('u1', 'dato');
@@ -46,10 +52,21 @@ void main() {
     expect(() => cifrado.descifrar('u1', valor), throwsStateError);
   });
 
-  test('la clave de un usuario no sirve para otro', () async {
-    expect(cifrado.tieneClave('u2'), isFalse);
-    expect(() => cifrado.cifrar('u2', 'dato'), throwsStateError);
-  });
+  test(
+    'PU-06 la clave de un usuario no sirve para otro',
+    tags: 'criticos',
+    () async {
+      final deU1 = await cifrado.cifrar('u1', 'Leucemia linfoblástica');
+      final claveDeU2 = base64.encode(List<int>.generate(32, (i) => 255 - i));
+      await cifrado.fijarClave('u2', claveDeU2);
+
+      await expectLater(
+        cifrado.descifrar('u2', deU1),
+        throwsA(isA<SecretBoxAuthenticationError>()),
+      );
+      await expectLater(cifrado.cifrar('u1', 'dato'), throwsStateError);
+    },
+  );
 
   test('un texto cifrado alterado no se puede descifrar', () async {
     final partes = (await cifrado.cifrar('u1', 'dato')).split('.');

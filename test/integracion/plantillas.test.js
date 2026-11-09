@@ -108,7 +108,10 @@ describe('paginas web', () => {
     const enviar = jest.spyOn(correo, 'enviarEnlace').mockResolvedValue();
     const email = `p-${unico()}@prueba.cl`;
     await request(app).post('/api/auth/registro').send({ correo: email, contrasena: 'secreta1' });
-    await new Promise((r) => setTimeout(r, 200));
+    // El correo sale sin esperar la respuesta, se espera hasta que llegue
+    for (let i = 0; i < 100 && !enviar.mock.calls.some((c) => c[0] === email); i++) {
+      await new Promise((r) => setTimeout(r, 20));
+    }
     const llamada = enviar.mock.calls.find((c) => c[0] === email);
     enviar.mockRestore();
     const url = new URL(llamada[1]);

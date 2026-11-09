@@ -11,7 +11,7 @@ EvaluacionAlerta _signos(SignosVitales signos, {int? edad}) =>
 
 void main() {
   group('temperatura', () {
-    test('38 °C o más es febril y urgente', () {
+    test('PU-01 38 °C o más es febril y urgente', tags: 'criticos', () {
       final resultado = _signos(const SignosVitales(temperatura: 38));
       expect(resultado.nivel, NivelAlerta.critico);
       expect(
@@ -21,9 +21,9 @@ void main() {
     });
 
     test('entre 37,5 y 37,9 °C es subfebril y da alerta', () {
-      final resultado = _signos(const SignosVitales(temperatura: 37.6));
+      final resultado = _signos(const SignosVitales(temperatura: 37.5));
       expect(resultado.nivel, NivelAlerta.alerta);
-      expect(resultado.mensajes, contains('Subfebril (37.6°C)'));
+      expect(resultado.mensajes, contains('Subfebril (37.5°C)'));
     });
 
     test('entre 36 y 37,4 °C es afebril', () {
@@ -151,7 +151,7 @@ void main() {
       );
     });
 
-    test('95 % o menos da alerta', () {
+    test('PU-02 95 % o menos da alerta', tags: 'criticos', () {
       final resultado = _signos(const SignosVitales(saturacionOxigeno: 95));
       expect(resultado.nivel, NivelAlerta.alerta);
       expect(resultado.mensajes, contains('Saturación de O₂ baja (95%)'));
@@ -223,7 +223,7 @@ void main() {
       ]);
     });
 
-    test('10 se marca como insoportable', () {
+    test('PU-03 10 se marca como insoportable', tags: 'criticos', () {
       final resultado = MotorReglasClinicas.evaluar(null, [
         _sintoma('Disnea', 10),
       ]);
@@ -256,13 +256,17 @@ void main() {
     });
   });
 
-  test('un signo urgente no baja por un síntoma moderado', () {
-    final resultado = MotorReglasClinicas.evaluar(
-      const SignosVitales(temperatura: 38.5),
-      [_sintoma('Náuseas', 5)],
-    );
-    expect(resultado.nivel, NivelAlerta.critico);
-  });
+  test(
+    'PU-04 un signo urgente no baja por un síntoma moderado',
+    tags: 'criticos',
+    () {
+      final resultado = MotorReglasClinicas.evaluar(
+        const SignosVitales(temperatura: 38.5),
+        [_sintoma('Náuseas', 5)],
+      );
+      expect(resultado.nivel, NivelAlerta.critico);
+    },
+  );
 
   test('sin datos no hay nada preocupante', () {
     final resultado = MotorReglasClinicas.evaluar(null, const []);
@@ -284,6 +288,62 @@ void main() {
         GrupoEdad.desdeEdad(15).frecuenciaRespiratoria.toString(),
         '12-20',
       );
+    });
+  });
+
+  // Cada caso prueba el borde de una regla y el valor del otro lado
+  group('valores límite', () {
+    test('35 °C exacto es hipotermia leve y 34,9 °C ya es urgente', () {
+      final borde = _signos(const SignosVitales(temperatura: 35));
+      expect(borde.nivel, NivelAlerta.alerta);
+      expect(borde.mensajes, contains('Hipotermia leve (35.0°C)'));
+      final bajo = _signos(const SignosVitales(temperatura: 34.9));
+      expect(bajo.nivel, NivelAlerta.critico);
+      expect(bajo.mensajes, contains('Hipotermia (34.9°C)'));
+    });
+
+    test('en menores de 2 años 35,5 °C es leve y 35,4 °C ya es urgente', () {
+      final borde = _signos(const SignosVitales(temperatura: 35.5), edad: 1);
+      expect(borde.nivel, NivelAlerta.alerta);
+      final bajo = _signos(const SignosVitales(temperatura: 35.4), edad: 1);
+      expect(bajo.nivel, NivelAlerta.critico);
+      expect(bajo.mensajes, contains('Hipotermia en menor de 2 años (35.4°C)'));
+    });
+
+    test('saturación de 90 % da alerta y 89 % ya es urgente', () {
+      final borde = _signos(const SignosVitales(saturacionOxigeno: 90));
+      expect(borde.nivel, NivelAlerta.alerta);
+      expect(borde.mensajes, contains('Saturación de O₂ baja (90%)'));
+      final bajo = _signos(const SignosVitales(saturacionOxigeno: 89));
+      expect(bajo.nivel, NivelAlerta.critico);
+    });
+
+    test('61 respiraciones por minuto es urgente y 60 no', () {
+      final borde = _signos(const SignosVitales(frecuenciaRespiratoria: 60));
+      expect(borde.nivel, NivelAlerta.normal);
+      final alto = _signos(const SignosVitales(frecuenciaRespiratoria: 61));
+      expect(alto.nivel, NivelAlerta.critico);
+      expect(alto.mensajes, contains('Respiración muy rápida (61 rpm)'));
+    });
+
+    test('un síntoma con intensidad 7 ya es severo y con 6 sigue moderado', () {
+      final severo = MotorReglasClinicas.evaluar(null, [_sintoma('Dolor', 7)]);
+      expect(severo.nivel, NivelAlerta.critico);
+      expect(severo.mensajes.first, contains('intensidad 7/10 (severo)'));
+      final moderado = MotorReglasClinicas.evaluar(null, [
+        _sintoma('Dolor', 6),
+      ]);
+      expect(moderado.nivel, NivelAlerta.alerta);
+    });
+
+    test('un síntoma con intensidad 4 ya es moderado y con 3 sigue leve', () {
+      final moderado = MotorReglasClinicas.evaluar(null, [
+        _sintoma('Fatiga', 4),
+      ]);
+      expect(moderado.nivel, NivelAlerta.alerta);
+      final leve = MotorReglasClinicas.evaluar(null, [_sintoma('Fatiga', 3)]);
+      expect(leve.nivel, NivelAlerta.normal);
+      expect(leve.mensajes, ['1 síntoma leve registrado']);
     });
   });
 }
