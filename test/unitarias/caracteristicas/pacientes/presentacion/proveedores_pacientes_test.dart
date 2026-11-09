@@ -44,4 +44,21 @@ void main() {
     addTearDown(despues.dispose);
     expect(despues.read(idPacienteSeleccionadoProvider), isNull);
   });
+
+  test('lo guardado no pisa al paciente elegido al arrancar', () async {
+    SharedPreferences.setMockInitialValues({
+      'selected_patient_id': 'paciente-viejo',
+    });
+    final contenedor = ProviderContainer();
+    addTearDown(contenedor.dispose);
+    contenedor.read(idPacienteSeleccionadoProvider);
+    await contenedor
+        .read(idPacienteSeleccionadoProvider.notifier)
+        .seleccionar('paciente-del-aviso');
+    await pumpEventQueue();
+    expect(
+      contenedor.read(idPacienteSeleccionadoProvider),
+      'paciente-del-aviso',
+    );
+  });
 }

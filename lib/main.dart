@@ -11,6 +11,8 @@ import 'package:oncuidar/app/tema/repintar.dart';
 import 'package:oncuidar/app/tema/tema.dart';
 import 'package:oncuidar/caracteristicas/configuracion/presentacion/proveedores_configuracion.dart';
 import 'package:oncuidar/caracteristicas/historial/datos/archivo_exportacion.dart';
+import 'package:oncuidar/caracteristicas/pacientes/datos/proveedores_pacientes.dart';
+import 'package:oncuidar/caracteristicas/pacientes/dominio/ciclo_de_vida_paciente.dart';
 import 'package:oncuidar/nucleo/almacen/almacen_secreto_seguro.dart';
 import 'package:oncuidar/nucleo/notificaciones/silencio_avisos.dart';
 import 'package:oncuidar/nucleo/proveedores.dart';
@@ -87,6 +89,21 @@ class _OncuidarAppState extends ConsumerState<OncuidarApp>
   @override
   void didChangePlatformBrightness() {
     if (mounted) setState(() {});
+  }
+
+  DateTime? _ultimoReagendado;
+
+  // Los mensuales de los días 29 a 31 se programan por un año
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState estado) {
+    if (estado != AppLifecycleState.resumed) return;
+    if (ref.read(servicioSesionProvider).actual == null) return;
+    if (!ref.read(bloqueoCifradoProvider)) return;
+    final ahora = DateTime.now();
+    final ultimo = _ultimoReagendado;
+    if (ultimo != null && ahora.difference(ultimo).inHours < 24) return;
+    _ultimoReagendado = ahora;
+    reagendarAvisosEnSegundoPlano(ref.read(cicloDeVidaPacienteProvider));
   }
 
   void _aplicarPaleta() {
@@ -169,7 +186,8 @@ class _GateClaveState extends ConsumerState<_GateClave> {
     _restaurar();
   }
 
-  Future<void> _restaurar() async {
+  // El primer intento corre junto al inicio de sesión, que ya navega
+  Future<void> _restaurar({bool reintento = false}) async {
     if (!mounted) return;
     setState(() {
       _cargando = true;
@@ -179,6 +197,17 @@ class _GateClaveState extends ConsumerState<_GateClave> {
       final uid = ref.read(servicioSesionProvider).actual!.uid;
       await ref.read(servicioCifradoProvider).asegurarClave(uid);
       ref.read(bloqueoCifradoProvider.notifier).fijarDesbloqueado(true);
+      if (!reintento) return;
+      reagendarAvisosEnSegundoPlano(ref.read(cicloDeVidaPacienteProvider));
+      // Si quedó en el inicio de sesión, entra a la app
+      const accesos = {
+        '/bienvenida',
+        '/iniciar-sesion',
+        '/crear-cuenta',
+        '/recuperar-acceso',
+      };
+      final ruta = router.routerDelegate.currentConfiguration.uri.path;
+      if (accesos.contains(ruta)) router.go(EstadoArranque.consumirDestino());
     } catch (e, pila) {
       debugPrint('Error restaurando clave: $e\n$pila');
       if (mounted) {
@@ -237,7 +266,7 @@ class _GateClaveState extends ConsumerState<_GateClave> {
                     ),
                     const SizedBox(height: 24),
                     FilledButton.icon(
-                      onPressed: _restaurar,
+                      onPressed: () => _restaurar(reintento: true),
                       icon: const Icon(Icons.refresh),
                       label: const Text('Reintentar'),
                     ),

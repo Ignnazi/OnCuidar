@@ -37,6 +37,18 @@ class BaseFalsa extends BaseDatosSegura {
   }
 }
 
+/// Cola que cambia la sesión mientras se leen los pendientes
+class ColaQueCambiaSesion extends ColaEscrituras {
+  void Function()? alLeer;
+
+  @override
+  Future<List<EscrituraPendiente>> pendientes(String uid) async {
+    final lista = await super.pendientes(uid);
+    alLeer?.call();
+    return lista;
+  }
+}
+
 void main() {
   late ColaEscrituras cola;
   late BaseFalsa base;
@@ -72,22 +84,34 @@ void main() {
     expect(await cola.pendientes('u1'), isEmpty);
   });
 
-  test('sin conexión no envía nada y al volver la red sí', () async {
-    red.fijar(false);
-    await encolar(['e1']);
-    await orquestador.drenar();
-    expect(base.recibidas, isEmpty);
+  test(
+    'PU-07 sin conexión no envía nada y al volver la red sí',
+    tags: 'criticos',
+    () async {
+      red.fijar(false);
+      await encolar(['e1']);
+      orquestador.iniciar();
+      await pumpEventQueue();
+      expect(base.recibidas, isEmpty);
 
-    red.fijar(true);
-    await orquestador.drenar();
-    expect(base.recibidas, ['e1']);
-  });
+      // Nadie llama a drenar, el envío lo dispara la red al volver
+      red.fijar(true);
+      await esperarHasta(() async => base.recibidas.isNotEmpty);
+      expect(base.recibidas, ['e1']);
+      expect(await cola.pendientes('u1'), isEmpty);
+    },
+  );
 
-  test('dos sincronizaciones a la vez no envían dos veces lo mismo', () async {
-    await encolar(['e1', 'e2']);
-    await Future.wait([orquestador.drenar(), orquestador.drenar()]);
-    expect(base.recibidas, ['e1', 'e2']);
-  });
+  test(
+    'PU-08 dos sincronizaciones a la vez no envían dos veces lo mismo',
+    tags: 'criticos',
+    () async {
+      await encolar(['e1', 'e2']);
+      await Future.wait([orquestador.drenar(), orquestador.drenar()]);
+      expect(base.recibidas, ['e1', 'e2']);
+      expect(await cola.pendientes('u1'), isEmpty);
+    },
+  );
 
   test('un error de red deja la escritura pendiente para reintentar', () async {
     await encolar(['e1']);
@@ -208,5 +232,25 @@ void main() {
     await orquestador.drenar();
     expect(await cola.resumen('u1'), ResumenCola.vacio);
     expect(base.recibidas, ['e2']);
+  });
+
+  test('si cambia la sesión mientras lee la cola no envía nada', () async {
+    var uid = 'u1';
+    final colaCambiante = ColaQueCambiaSesion();
+    final otro = OrquestadorSincronizacion(
+      cola: colaCambiante,
+      base: base,
+      conectividad: red,
+      uidActual: () => uid,
+      retardoBase: const Duration(hours: 1),
+    );
+    addTearDown(otro.dispose);
+    await colaCambiante.encolar('u1', escrituraDe(id: 'e1'));
+    colaCambiante.alLeer = () => uid = 'u2';
+
+    await otro.drenar();
+
+    expect(base.recibidas, isEmpty);
+    expect((await colaCambiante.pendientes('u1')).map((e) => e.id), ['e1']);
   });
 }

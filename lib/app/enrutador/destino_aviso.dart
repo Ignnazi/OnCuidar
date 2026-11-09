@@ -16,7 +16,9 @@ class EstadoArranque {
     destinoPendiente = null;
   }
 
+  // Tras iniciar sesión o crear la cuenta los avisos vuelven a navegar
   static String consumirDestino() {
+    completado = true;
     final destino = destinoInternoSeguro(destinoPendiente) ?? '/dashboard';
     destinoPendiente = null;
     return destino;

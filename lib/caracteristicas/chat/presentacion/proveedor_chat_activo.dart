@@ -23,10 +23,19 @@ class ChatActivoEstado {
   final List<MensajeConversacion> mensajes;
 }
 
+// Global para que no se repita aunque el proveedor se reconstruya
+int _ultimaGeneracion = 0;
+
 class ChatActivoNotifier extends Notifier<ChatActivoEstado> {
+  int _generacion = 0;
+
+  // Cambia cada vez que se abre otra conversación
+  int get generacion => _generacion;
+
   @override
   ChatActivoEstado build() {
     ref.watch(uidSesionProvider);
+    _generacion = ++_ultimaGeneracion;
     return const ChatActivoEstado();
   }
 
@@ -65,6 +74,7 @@ class ChatActivoNotifier extends Notifier<ChatActivoEstado> {
     String? categoria,
     required List<MensajeConversacion> mensajes,
   }) {
+    _generacion = ++_ultimaGeneracion;
     state = ChatActivoEstado(
       conversacionId: id,
       titulo: titulo,
@@ -76,6 +86,7 @@ class ChatActivoNotifier extends Notifier<ChatActivoEstado> {
 
   void nueva({String? nombre}) {
     final nombreLimpio = nombre?.trim();
+    _generacion = ++_ultimaGeneracion;
     state = ChatActivoEstado(
       titulo: (nombreLimpio == null || nombreLimpio.isEmpty)
           ? null
@@ -115,6 +126,12 @@ class ChatActivoNotifier extends Notifier<ChatActivoEstado> {
       mensajes: state.mensajes,
     );
     _persistirId();
+  }
+
+  // Solo si sigue abierta la misma conversación
+  void fijarIdSiSigue(int generacion, String id) {
+    if (!ref.mounted || _generacion != generacion) return;
+    fijarId(id);
   }
 
   void fijarTitulo(String titulo) {

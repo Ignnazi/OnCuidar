@@ -31,7 +31,9 @@ Las esperas se hacen con `powershell Start-Sleep` porque `time.sleep` con `type:
 
 ## Experimentos
 
-| # | Falla | Qué se verifica | Resultado (26 de octubre) |
+Los experimentos 01 a 06 se corrieron el 26 de octubre y el 07 el 9 de noviembre.
+
+| # | Falla | Qué se verifica | Resultado |
 |---|---|---|---|
 | 01 | `docker compose kill api` | Si Docker vuelve a levantar la API | No se levanta. Docker trata el kill como parada manual e ignora `restart: unless-stopped` |
 | 02 | `pg_ctl stop -m immediate` dentro de la base | Si la base se reinicia sola y la API vuelve a consultarla | Docker reinicia la base y la API responde 200 sin intervención |
@@ -39,11 +41,11 @@ Las esperas se hacen con `powershell Start-Sleep` porque `time.sleep` con `type:
 | 04 | `kill -9` al proceso de Node dentro de la API | Si Docker reinicia la API tras una caída interna | Docker reinicia el contenedor y la API responde 200 |
 | 05 | `docker compose kill db` y luego `up` | Si la API falla rápido y se recupera | Responde 500 en 4 segundos con la base caída y 200 cuando vuelve |
 | 06 | Toxiproxy con 800 ms de demora y cortes en el 30% de las conexiones | Si 30 registros llegan una sola vez y en orden | Llegan los 30 sin duplicados ni pérdidas, con 13 reintentos por cortes |
-| 07 | 3000 toques al azar con el monkey de Android | Si la app sigue abierta | Pendiente de ejecutar |
+| 07 | `docker compose kill api` y cuatro minutos de espera | Si el monitoreo dispara la alerta de servicio caído | Prometheus dispara la alerta ServicioCaido y llega el aviso por correo |
 
-El experimento 06 usa test/caos/docker-compose.caos.yml y el cliente test/caos/cliente_registros.js, que reintenta cada registro igual que la cola de la app. El 07 necesita `adb` en el PATH y la app instalada en un emulador o teléfono.
+El experimento 06 usa test/caos/docker-compose.caos.yml y el cliente test/caos/cliente_registros.js, que reintenta cada registro igual que la cola de la app. El 07 usa test/caos/alerta_coherente.py, que compara si la API responde con el estado de la alerta en Prometheus.
 
-Los experimentos 01 y 03 muestran límites de Docker y no fallas de la app. Para cubrirlos haría falta un orquestador o un monitor externo.
+Los experimentos 01 y 03 muestran límites de Docker y no fallas de la app. Docker no vuelve a levantar la API en esos casos, así que se cubren con la alerta del monitoreo, y el experimento 07 comprueba que esa alerta se dispara.
 
 Lo que salió de estas pruebas:
 

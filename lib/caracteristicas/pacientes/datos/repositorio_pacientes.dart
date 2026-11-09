@@ -2,6 +2,7 @@ import 'package:oncuidar/caracteristicas/pacientes/dominio/fecha_nacimiento.dart
 import 'package:oncuidar/caracteristicas/pacientes/dominio/paciente.dart';
 import 'package:oncuidar/nucleo/datos/base_datos_segura.dart';
 import 'package:oncuidar/nucleo/datos/rutas_api.dart';
+import 'package:oncuidar/nucleo/red/cliente_api.dart';
 import 'package:oncuidar/nucleo/sincronizacion/cola_escrituras.dart';
 import 'package:uuid/uuid.dart';
 
@@ -123,7 +124,17 @@ class RepositorioPacientes {
   Future<void> eliminarPaciente(String idPaciente) async {
     final cola = bd.cola;
     if (cola != null) await cola.quitarDePaciente(bd.uid, idPaciente);
-    await bd.borrar(RutasApi.paciente(idPaciente), idPaciente);
+    try {
+      await bd.borrar(RutasApi.paciente(idPaciente), idPaciente);
+    } on ExcepcionApi catch (e) {
+      // Nunca llegó al servidor, basta con quitarlo de aquí
+      if (e.codigoHttp != 404) rethrow;
+      await bd.reflejarEnCache(
+        RutasApi.paciente(idPaciente),
+        const {},
+        OperacionPendiente.borrar,
+      );
+    }
   }
 
   Stream<List<Paciente>> pacientesArchivadosEnTiempoReal() =>

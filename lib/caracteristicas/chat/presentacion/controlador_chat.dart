@@ -14,8 +14,12 @@ class ControladorChat {
 
   final WidgetRef _ref;
   Future<void> _colaGuardado = Future<void>.value();
+  final _idsCreados = <int, String>{};
+  final _eliminadas = <String>{};
 
   ChatActivoNotifier get _activo => _ref.read(chatActivoProvider.notifier);
+
+  int get generacion => _activo.generacion;
 
   List<MensajeConversacion> get mensajes =>
       _ref.read(chatActivoProvider).mensajes;
@@ -101,6 +105,11 @@ class ControladorChat {
 
   void nueva(String? nombre) => _activo.nueva(nombre: nombre);
 
+  // Un guardado pendiente no debe volver a crear lo que se eliminó
+  void marcarEliminada(String id) => _eliminadas.add(id);
+
+  void desmarcarEliminada(String id) => _eliminadas.remove(id);
+
   bool esActiva(String id) =>
       id == _ref.read(chatActivoProvider).conversacionId;
 
@@ -124,32 +133,48 @@ class ControladorChat {
     required bool Function() sigueAbierta,
     required VoidCallback alFallar,
   }) {
+    // Se guarda lo que había al encolar, aunque luego se cambie de chat
+    final generacion = this.generacion;
+    final mensajes = _mensajesAGuardar;
+    final id = _ref.read(chatActivoProvider).conversacionId;
+    final titulo = _nombrePorDefecto();
     _colaGuardado = _colaGuardado.then(
-      (_) => _persistir(sigueAbierta: sigueAbierta, alFallar: alFallar),
+      (_) => _persistir(
+        generacion: generacion,
+        mensajes: mensajes,
+        id: id,
+        titulo: titulo,
+        sigueAbierta: sigueAbierta,
+        alFallar: alFallar,
+      ),
     );
   }
 
   Future<void> _persistir({
+    required int generacion,
+    required List<MensajeConversacion> mensajes,
+    required String? id,
+    required String titulo,
     required bool Function() sigueAbierta,
     required VoidCallback alFallar,
   }) async {
     if (!sigueAbierta()) return;
-    final mensajes = _mensajesAGuardar;
     if (mensajes.isEmpty) return;
     try {
       final repositorio = _ref.read(repositorioConversacionesProvider);
-      final activo = _ref.read(chatActivoProvider);
-      if (activo.conversacionId == null) {
-        final id = await repositorio.crearConversacion(
-          titulo: _nombrePorDefecto(),
+      // Se toma antes de esperar, la pantalla puede cerrarse entretanto
+      final activo = _activo;
+      final existente = id ?? _idsCreados[generacion];
+      if (existente != null && _eliminadas.contains(existente)) return;
+      if (existente == null) {
+        final nuevo = await repositorio.crearConversacion(
+          titulo: titulo,
           mensajes: mensajes,
         );
-        _activo.fijarId(id);
+        _idsCreados[generacion] = nuevo;
+        activo.fijarIdSiSigue(generacion, nuevo);
       } else {
-        await repositorio.actualizarConversacion(
-          activo.conversacionId!,
-          mensajes: mensajes,
-        );
+        await repositorio.actualizarConversacion(existente, mensajes: mensajes);
       }
     } catch (e, pila) {
       debugPrint('No se pudo persistir la conversación: $e\n$pila');

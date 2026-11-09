@@ -18,6 +18,8 @@ Future<void> mostrarHojaConversaciones(
   required ValueChanged<Conversacion> alEliminar,
   required ValueChanged<String?> alCrearNueva,
   void Function(String id, String titulo)? alRenombrar,
+  ValueChanged<String>? alIniciarEliminar,
+  ValueChanged<String>? alFallarEliminar,
 }) {
   return showModalBottomSheet<void>(
     context: context,
@@ -30,6 +32,8 @@ Future<void> mostrarHojaConversaciones(
         alEliminar: alEliminar,
         alCrearNueva: alCrearNueva,
         alRenombrar: alRenombrar,
+        alIniciarEliminar: alIniciarEliminar,
+        alFallarEliminar: alFallarEliminar,
       ),
     ),
   );
@@ -41,12 +45,16 @@ class _HojaConversaciones extends ConsumerStatefulWidget {
     required this.alEliminar,
     required this.alCrearNueva,
     this.alRenombrar,
+    this.alIniciarEliminar,
+    this.alFallarEliminar,
   });
 
   final ValueChanged<Conversacion> alEntrar;
   final ValueChanged<Conversacion> alEliminar;
   final ValueChanged<String?> alCrearNueva;
   final void Function(String id, String titulo)? alRenombrar;
+  final ValueChanged<String>? alIniciarEliminar;
+  final ValueChanged<String>? alFallarEliminar;
 
   @override
   ConsumerState<_HojaConversaciones> createState() =>
@@ -122,6 +130,7 @@ class _HojaConversacionesState extends ConsumerState<_HojaConversaciones> {
       colorConfirmar: Paleta.error,
     );
     if (confirmado != true || !mounted) return;
+    widget.alIniciarEliminar?.call(conversacion.id);
     try {
       await ref
           .read(repositorioConversacionesProvider)
@@ -130,6 +139,7 @@ class _HojaConversacionesState extends ConsumerState<_HojaConversaciones> {
       _mostrarSnackbar(aviso, 'La conversación fue eliminada.');
       widget.alEliminar(conversacion);
     } catch (_) {
+      widget.alFallarEliminar?.call(conversacion.id);
       if (!mounted) return;
       _mostrarSnackbar(
         aviso,

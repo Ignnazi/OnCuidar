@@ -9,7 +9,7 @@ const put = (ruta, cuerpo) => request(app).put(`/api/${ruta}`).set(con(u)).send(
 const borrar = (ruta) => request(app).delete(`/api/${ruta}`).set(con(u));
 
 describe('paciente eliminado', () => {
-  test('un PUT posterior responde 410 y no lo vuelve a crear', async () => {
+  test('PI-04 un PUT posterior responde 410 y no lo vuelve a crear', async () => {
     expect((await put('pacientes/pb1', { cifrados: { nombre_cifrado: 'x' } })).status).toBe(200);
     expect((await borrar('pacientes/pb1')).status).toBe(200);
 

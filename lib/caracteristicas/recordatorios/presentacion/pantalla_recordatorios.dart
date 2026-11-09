@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -19,9 +21,16 @@ import 'package:oncuidar/compartido/widgets/encabezado_gradiente.dart';
 import 'package:oncuidar/nucleo/cifrado/servicio_cifrado.dart';
 
 class RecordatoriosScreen extends ConsumerStatefulWidget {
-  const RecordatoriosScreen({super.key, this.abrirNuevo = false});
+  const RecordatoriosScreen({
+    super.key,
+    this.abrirNuevo = false,
+    this.idPaciente,
+  });
 
   final bool abrirNuevo;
+
+  // Paciente del aviso que se tocó
+  final String? idPaciente;
 
   @override
   ConsumerState<RecordatoriosScreen> createState() =>
@@ -38,9 +47,33 @@ class _RecordatoriosScreenState extends ConsumerState<RecordatoriosScreen> {
 
   bool get _silenciadas => _silenciadasTodas || _silenciadoPaciente;
 
+  void _seleccionarPacienteDelAviso() {
+    final idPaciente = widget.idPaciente;
+    if (idPaciente == null) return;
+    // Riverpod no permite cambiar un proveedor durante la construcción
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      unawaited(
+        ref
+            .read(idPacienteSeleccionadoProvider.notifier)
+            .seleccionar(idPaciente),
+      );
+    });
+  }
+
+  // Con la pantalla ya abierta el enrutador la reutiliza
+  @override
+  void didUpdateWidget(covariant RecordatoriosScreen anterior) {
+    super.didUpdateWidget(anterior);
+    if (widget.idPaciente != anterior.idPaciente) {
+      _seleccionarPacienteDelAviso();
+    }
+  }
+
   @override
   void initState() {
     super.initState();
+    _seleccionarPacienteDelAviso();
     _cargarEstadoSilencio();
     if (widget.abrirNuevo) {
       WidgetsBinding.instance.addPostFrameCallback((_) {

@@ -10,6 +10,15 @@ const {
 const router = express.Router();
 router.use('/pacientes', requiereToken);
 
+// Mismo rango que el selector de la app
+function topeDiario(valor) {
+  const n = enteroOpcional(valor, 'maximoRegistrosDia');
+  if (n !== undefined && (n < 1 || n > 10)) {
+    throw new ErrorHttp(400, 'maximoRegistrosDia debe estar entre 1 y 10');
+  }
+  return n;
+}
+
 const pacienteAJson = (p) => ({
   id: p.id,
   notificacionesActivas: p.notificaciones_activas,
@@ -88,7 +97,7 @@ router.put('/pacientes/:id', async (req, res) => {
     claves: { usuario_id: req.uid, id },
     campos: {
       notificaciones_activas: booleanoOpcional(cuerpo.notificacionesActivas, 'notificacionesActivas'),
-      maximo_registros_dia: enteroOpcional(cuerpo.maximoRegistrosDia, 'maximoRegistrosDia'),
+      maximo_registros_dia: topeDiario(cuerpo.maximoRegistrosDia),
       archivado: booleanoOpcional(cuerpo.archivado, 'archivado'),
       creado_en: fechaOpcional(cuerpo.creadoEn, 'creadoEn'),
       version_encriptacion: enteroOpcional(cuerpo.versionEncriptacion, 'versionEncriptacion'),

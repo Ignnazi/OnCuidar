@@ -91,6 +91,7 @@ class FlujoRecurso<T> {
     required this.convertir,
     required this.vacio,
     this.intervalo = const Duration(seconds: 10),
+    this.estado,
   }) {
     _controlador = StreamController<T>(onListen: _iniciar, onCancel: _detener);
   }
@@ -104,6 +105,9 @@ class FlujoRecurso<T> {
 
   final dynamic vacio;
   final Duration intervalo;
+
+  // Si cambia, se vuelve a convertir aunque el JSON sea igual
+  final String Function()? estado;
 
   late final StreamController<T> _controlador;
   StreamSubscription<void>? _suscripcionCambios;
@@ -187,7 +191,7 @@ class FlujoRecurso<T> {
 
   Future<void> _emitir(dynamic json) async {
     if (_cerrado) return;
-    final huella = jsonEncode(json);
+    final huella = '${estado?.call()}|${jsonEncode(json)}';
     if (huella == _ultimaHuella) return;
     try {
       final valor = await convertir(json);

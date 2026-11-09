@@ -229,10 +229,21 @@ class _RegistroClinicoScreenState extends ConsumerState<RegistroClinicoScreen> {
       valorInicial: paciente.maximoRegistrosDia,
     );
     if (valor == null || !mounted) return;
-    await ref.read(repositorioPacientesProvider).actualizarPaciente(
-      paciente.id,
-      {'maximo_registros_dia': valor},
-    );
+    try {
+      await ref.read(repositorioPacientesProvider).actualizarPaciente(
+        paciente.id,
+        {'maximo_registros_dia': valor},
+      );
+    } catch (_) {
+      if (mounted) {
+        _mostrarSnack(
+          'No se pudo cambiar el tope. Inténtalo de nuevo.',
+          tono: TonoAviso.alerta,
+          icono: Icons.error_outline,
+        );
+      }
+      return;
+    }
     if (mounted) {
       _mostrarSnack(
         'El tope se actualizó a $valor.',

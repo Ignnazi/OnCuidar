@@ -18,6 +18,8 @@ final pacientesArchivadosProvider = StreamProvider.autoDispose<List<Paciente>>((
 });
 
 class PacienteSeleccionadoNotifier extends Notifier<String?> {
+  bool _elegido = false;
+
   @override
   String? build() {
     _cargarDelPrefs();
@@ -28,13 +30,15 @@ class PacienteSeleccionadoNotifier extends Notifier<String?> {
     try {
       final prefs = await SharedPreferences.getInstance();
       final guardado = prefs.getString(_clavePacienteSeleccionado);
-      if (guardado != null) state = guardado;
+      // Lo guardado no pisa una selección hecha mientras se leía
+      if (guardado != null && !_elegido) state = guardado;
     } catch (_) {
       // Si falla, se sigue igual.
     }
   }
 
   Future<void> seleccionar(String? idPaciente) async {
+    _elegido = true;
     state = idPaciente;
     try {
       final prefs = await SharedPreferences.getInstance();

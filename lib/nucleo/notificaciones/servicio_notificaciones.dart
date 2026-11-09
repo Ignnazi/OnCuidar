@@ -20,6 +20,11 @@ class ServicioNotificaciones {
 
   static const rutaAviso = '/recordatorios';
 
+  // Al tocar el aviso se abre el paciente que lo generó
+  static String rutaAvisoDe(String? idPaciente) => idPaciente == null
+      ? rutaAviso
+      : '$rutaAviso?paciente=${Uri.encodeQueryComponent(idPaciente)}';
+
   // En la pantalla bloqueada Android oculta el contenido del aviso
   static const detallesAviso = NotificationDetails(
     android: AndroidNotificationDetails(
@@ -169,6 +174,7 @@ class ServicioNotificaciones {
       final ahora = tz.TZDateTime.now(tz.local);
       if (fechaHora.day <= 28) {
         await _programarUna(
+          payload: rutaAvisoDe(idPaciente),
           id: id,
           titulo: titulo,
           cuerpo: cuerpo,
@@ -181,6 +187,7 @@ class ServicioNotificaciones {
       final momentos = proximasMensuales(ahora, fechaHora, _mesesProgramados);
       for (var i = 0; i < momentos.length; i++) {
         await _programarUna(
+          payload: rutaAvisoDe(idPaciente),
           id: _idMensual(id, i),
           titulo: titulo,
           cuerpo: cuerpo,
@@ -204,6 +211,7 @@ class ServicioNotificaciones {
               .toList(),
         );
         await _programarUna(
+          payload: rutaAvisoDe(idPaciente),
           id: _idRepetido(id, diaSemana),
           titulo: titulo,
           cuerpo: cuerpo,
@@ -218,6 +226,7 @@ class ServicioNotificaciones {
     final momento = momentoUnaVez(tz.TZDateTime.now(tz.local), fechaHora);
     if (momento == null) return;
     await _programarUna(
+      payload: rutaAvisoDe(idPaciente),
       id: id,
       titulo: titulo,
       cuerpo: cuerpo,
@@ -226,6 +235,7 @@ class ServicioNotificaciones {
   }
 
   Future<void> _programarUna({
+    required String payload,
     required int id,
     required String titulo,
     required String cuerpo,
@@ -245,7 +255,7 @@ class ServicioNotificaciones {
             ? AndroidScheduleMode.exactAllowWhileIdle
             : AndroidScheduleMode.inexactAllowWhileIdle,
         matchDateTimeComponents: repetir,
-        payload: rutaAviso,
+        payload: payload,
       );
     } catch (e) {
       log('Error programando notificación $id: $e');

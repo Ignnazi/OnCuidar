@@ -103,6 +103,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     }
     setState(() => _escribiendo = true);
     final respuesta = _chat.preguntar(texto);
+    final generacion = _chat.generacion;
     _controladorTexto.clear();
     _focoEntrada.unfocus();
     _encolarGuardado();
@@ -113,6 +114,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           return;
         }
         setState(() => _escribiendo = false);
+        // La respuesta no se pasa a otra conversación
+        if (_chat.generacion != generacion) return;
         _chat.responder(respuesta, consulta: texto);
         _irAlFinal();
         _encolarGuardado();
@@ -143,6 +146,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       alEliminar: _alEliminarConversacion,
       alCrearNueva: _nuevaConversacion,
       alRenombrar: _chat.renombrarActiva,
+      alIniciarEliminar: _chat.marcarEliminada,
+      alFallarEliminar: _chat.desmarcarEliminada,
     );
   }
 

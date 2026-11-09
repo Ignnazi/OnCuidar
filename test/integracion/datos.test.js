@@ -13,11 +13,11 @@ const put = (u, ruta, cuerpo) => request(app).put(`/api/${ruta}`).set(con(u)).se
 const get = (u, ruta) => request(app).get(`/api/${ruta}`).set(con(u));
 
 describe('aislamiento entre usuarios', () => {
-  test('B no ve ni toca datos de A', async () => {
-    await put(a, 'pacientes/pa', { cifrados: { nombre_cifrado: 'x' } });
-    await put(a, 'pacientes/pa/registros/r1', { cifrados: { datos_cifrados: 'y' } });
-    await put(a, 'pacientes/pa/recordatorios/rc1', { cifrados: { datos_cifrados: 'z' } });
-    await put(a, 'conversaciones/c1', { cifrados: { datos_cifrados: 'w' } });
+  test('PI-01 B no ve ni toca datos de A', async () => {
+    expect((await put(a, 'pacientes/pa', { cifrados: { nombre_cifrado: 'x' } })).status).toBe(200);
+    expect((await put(a, 'pacientes/pa/registros/r1', { cifrados: { datos_cifrados: 'y' } })).status).toBe(200);
+    expect((await put(a, 'pacientes/pa/recordatorios/rc1', { cifrados: { datos_cifrados: 'z' } })).status).toBe(200);
+    expect((await put(a, 'conversaciones/c1', { cifrados: { datos_cifrados: 'w' } })).status).toBe(200);
 
     expect((await get(b, 'pacientes')).body).toEqual([]);
     expect((await get(b, 'pacientes/pa/registros')).status).toBe(404);
@@ -51,7 +51,7 @@ describe('campos clinicos en claro', () => {
     ['conversaciones/c9', { mensajes: [] }],
     ['cuidador', { nombre: 'Maria' }],
     ['cuidador', { correo_respaldo: 'a@b.cl' }],
-  ])('rechaza %s con %j', async (ruta, cuerpo) => {
+  ])('PI-02 rechaza en claro %s con %j', async (ruta, cuerpo) => {
     const r = await put(a, ruta, cuerpo);
     expect(r.status).toBe(400);
     expect(r.body.error).toBeTruthy();
@@ -72,19 +72,21 @@ describe('registros clinicos', () => {
     expect(ok.status).toBe(200);
   });
 
-  test('upsert idempotente y merge con null que borra la clave', async () => {
+  test('PI-03 upsert idempotente y merge con null que borra la clave', async () => {
     const cuerpo = {
       fecha: '2026-01-05T10:00:00.000Z', creadoEn: '2026-01-05T10:00:00.000Z', tipoRegistro: 'diario',
       nivelAlerta: 'verde', versionEncriptacion: 2, cifrados: { datos_cifrados: 'AAA', nota_cifrada: 'BBB' },
     };
-    const r1 = await put(a, 'pacientes/pa/registros/idem', cuerpo);
-    const r2 = await put(a, 'pacientes/pa/registros/idem', cuerpo);
+    // Paciente propio para no depender de otra prueba
+    expect((await put(a, 'pacientes/pi3', {})).status).toBe(200);
+    const r1 = await put(a, 'pacientes/pi3/registros/idem', cuerpo);
+    const r2 = await put(a, 'pacientes/pi3/registros/idem', cuerpo);
     expect(r1.status).toBe(200);
     expect(r2.body).toEqual(r1.body);
     expect(r1.body.fecha).toBe('2026-01-05T10:00:00.000Z');
-    expect((await get(a, 'pacientes/pa/registros?limite=100')).body.filter((x) => x.id === 'idem')).toHaveLength(1);
+    expect((await get(a, 'pacientes/pi3/registros?limite=100')).body.filter((x) => x.id === 'idem')).toHaveLength(1);
 
-    const m = await put(a, 'pacientes/pa/registros/idem', { cifrados: { nota_cifrada: null, otra_cifrada: 'CCC' } });
+    const m = await put(a, 'pacientes/pi3/registros/idem', { cifrados: { nota_cifrada: null, otra_cifrada: 'CCC' } });
     expect(m.body.cifrados).toEqual({ datos_cifrados: 'AAA', otra_cifrada: 'CCC' });
     expect(m.body.nivelAlerta).toBe('verde');
   });
@@ -114,6 +116,12 @@ describe('pacientes y recordatorios', () => {
     expect(r.body.maximoRegistrosDia).toBe(3);
     expect((await get(a, 'pacientes?archivados=true')).body.map((p) => p.id)).toEqual(['arch']);
     expect((await get(a, 'pacientes?archivados=false')).body.map((p) => p.id)).not.toContain('arch');
+  });
+
+  test('un entero fuera de rango responde 400', async () => {
+    const r = await put(a, 'pacientes/grande', { maximoRegistrosDia: 1e12 });
+    expect(r.status).toBe(400);
+    expect(r.body.error).toBe('maximoRegistrosDia debe ser un entero');
   });
 
   test('cascada al borrar paciente', async () => {

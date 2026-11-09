@@ -170,16 +170,14 @@ class _PerfilCuidadorState extends ConsumerState<PerfilCuidador> {
                 };
               });
             }
+            // Se recarga después de guardar para no traer los datos viejos
+            await repositorio.actualizarCuidador(
+              nombre: nombre,
+              telefono: telefono,
+              relacion: relacion,
+              direccion: direccion,
+            );
             ref.invalidate(cuidadorProvider);
-            unawaited(_cargar());
-            await repositorio
-                .actualizarCuidador(
-                  nombre: nombre,
-                  telefono: telefono,
-                  relacion: relacion,
-                  direccion: direccion,
-                )
-                .timeout(const Duration(seconds: 3));
             unawaited(_cargar());
           },
     );

@@ -89,6 +89,7 @@ class BaseDatosSegura {
       convertir: convertir,
       vacio: vacio,
       intervalo: intervaloConsulta,
+      estado: () => cifrado.tieneClave(dueno) ? 'con_clave' : 'sin_clave',
     ).stream;
   }
 
@@ -113,6 +114,10 @@ class BaseDatosSegura {
     }
     return resultado;
   }
+
+  // Suma lo que sigue en la cola a una lectura directa
+  Future<dynamic> conPendientes(String ruta, dynamic json) =>
+      _aplicarPendientes(uid, ruta, json);
 
   Future<dynamic> leerConCache(String ruta) async {
     final dueno = uid;
@@ -169,11 +174,12 @@ class BaseDatosSegura {
   Future<void> reflejarEnCache(
     String ruta,
     Map<String, dynamic> datos,
-    OperacionPendiente operacion,
-  ) async {
+    OperacionPendiente operacion, {
+    String? dueno,
+  }) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final prefijo = _prefijoCache(uid);
+      final prefijo = _prefijoCache(dueno ?? uid);
       final cuerpo = Map<String, dynamic>.from(
         CodecPayload.codificar(datos) as Map,
       );
@@ -201,11 +207,12 @@ class BaseDatosSegura {
     String ruta,
     Map<String, dynamic> datos,
     OperacionPendiente operacion,
-    String? idPaciente,
-  ) {
+    String? idPaciente, {
+    String? dueno,
+  }) {
     final ahora = DateTime.now();
     return cola!.encolar(
-      uid,
+      dueno ?? uid,
       EscrituraPendiente(
         id: '${ahora.microsecondsSinceEpoch}_${ruta.split('/').last}',
         ruta: ruta,
@@ -228,22 +235,27 @@ class BaseDatosSegura {
       notificarCambio();
       return;
     }
+    // Si la sesión cambia mientras espera, queda en la cola de quien escribió
+    final dueno = uid;
     if (!await conectividad!.estaEnLinea() ||
-        (await cola!.pendientes(uid)).isNotEmpty) {
-      await encolar(ruta, datos, operacion, idPaciente);
-      await reflejarEnCache(ruta, datos, operacion);
+        (await cola!.pendientes(dueno)).isNotEmpty ||
+        !tieneIdentidad() ||
+        uid != dueno) {
+      await encolar(ruta, datos, operacion, idPaciente, dueno: dueno);
+      await reflejarEnCache(ruta, datos, operacion, dueno: dueno);
       return;
     }
     try {
       await aplicar(ruta, datos, operacion).timeout(limiteEscritura);
       notificarCambio();
     } on TimeoutException {
-      await encolar(ruta, datos, operacion, idPaciente);
-      await reflejarEnCache(ruta, datos, operacion);
+      await encolar(ruta, datos, operacion, idPaciente, dueno: dueno);
+      await reflejarEnCache(ruta, datos, operacion, dueno: dueno);
     } on ExcepcionApi catch (e) {
-      if (!e.esDeRed) rethrow;
-      await encolar(ruta, datos, operacion, idPaciente);
-      await reflejarEnCache(ruta, datos, operacion);
+      // Un error del servidor se reintenta desde la cola
+      if (e.esPermanente) rethrow;
+      await encolar(ruta, datos, operacion, idPaciente, dueno: dueno);
+      await reflejarEnCache(ruta, datos, operacion, dueno: dueno);
     }
   }
 

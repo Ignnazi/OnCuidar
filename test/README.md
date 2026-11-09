@@ -9,9 +9,9 @@ Las pruebas están ordenadas según los niveles de prueba de ISTQB (componente, 
 | `integracion/` | Integración | | API y base de datos juntas: autenticación, aislamiento entre usuarios y datos cifrados |
 | `sistema/` | Sistema | Integration | La app completa en un emulador contra la API en Docker |
 | `aceptacion/` | Aceptación | | Matriz de trazabilidad y certificación manual sobre el APK |
-| `caos/` | Prueba no funcional de resiliencia | | Caídas de contenedores, red lenta y toques al azar |
+| `caos/` | Prueba no funcional de resiliencia | | Caídas de contenedores, red lenta y alerta de servicio caído |
 
-Dentro de `unitarias/` y `widgets/` las carpetas son espejo de `lib/`, así que la prueba de cada archivo se encuentra en la misma ruta. `ayudas/` tiene utilidades compartidas.
+Dentro de `unitarias/` y `widgets/` las carpetas siguen la estructura de `lib/` por área, así que las pruebas de cada parte de la app están en la ruta equivalente. `ayudas/` tiene utilidades compartidas.
 
 ## Cómo correrlas
 
@@ -23,10 +23,17 @@ cd backend && npm test
 
 `flutter test` corre las unitarias y las de widgets. También se puede correr una sola categoría, por ejemplo `flutter test test/unitarias`.
 
-Las de sistema necesitan el servidor arriba (`docker compose up -d`) y un emulador Android de 64 bits o un teléfono conectado. `flutter test` las salta por defecto:
+Las de sistema usan `integration_test` y necesitan el servidor arriba y un teléfono o emulador conectado, por eso `flutter test` las salta. El mismo recorrido se verifica a mano sobre el APK, según `aceptacion/certificacion.md`.
+
+Las de caos se explican en `caos/README.md`.
+
+## Casos del informe
+
+Los casos que se citan en el anexo de pruebas del informe se listan en `aceptacion/casos_criticos.md`. Los de unidad (PU) e integración (PI) llevan el identificador en el nombre de la prueba. Los de sistema (PS) aparecen en la columna Caso de `aceptacion/certificacion.md`, y los de resiliencia (PC-01 a PC-07) son los experimentos 01 a 07 de `caos/`.
+
+Los de unidad e integración se pueden correr solos, con la base de pruebas arriba para los segundos:
 
 ```
-flutter test test/sistema -d emulator-5554 --run-skipped
+flutter test --tags criticos
+cd backend && npx jest --runInBand -t "PI-"
 ```
-
-Las de caos se explican en caos/README.md.

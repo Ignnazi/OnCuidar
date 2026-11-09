@@ -42,8 +42,9 @@ class ControladorHistorial {
   Future<List<RegistroClinico>> registrosParaExportar(
     Paciente? paciente,
     FiltroHistorial filtro,
-    List<RegistroClinico> Function() respaldo,
-  ) async {
+    List<RegistroClinico> Function() respaldo, {
+    void Function()? alUsarRespaldo,
+  }) async {
     if (paciente == null) return respaldo();
     final (desde, hasta) = filtro.limites();
     try {
@@ -57,6 +58,7 @@ class ControladorHistorial {
           if (filtro.admite(r)) r,
       ];
     } catch (_) {
+      alUsarRespaldo?.call();
       return respaldo();
     }
   }

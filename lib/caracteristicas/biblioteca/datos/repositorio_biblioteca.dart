@@ -42,11 +42,6 @@ class RepositorioBiblioteca {
     );
   }
 
-  Future<void> alternarFavorito(String materialId) async {
-    final actuales = await _idsFavoritosGuardados();
-    await fijarFavorito(materialId, favorito: !actuales.contains(materialId));
-  }
-
   Future<void> fijarFavorito(String materialId, {required bool favorito}) {
     return bd.escribir(
       RutasApi.favorito(materialId),
@@ -55,14 +50,6 @@ class RepositorioBiblioteca {
           ? OperacionPendiente.guardar
           : OperacionPendiente.borrar,
     );
-  }
-
-  Future<List<String>> _idsFavoritosGuardados() async {
-    try {
-      return _idsDe(await bd.leerConCache(RutasApi.favoritos));
-    } catch (_) {
-      return const [];
-    }
   }
 
   List<String> _idsDe(dynamic json) {

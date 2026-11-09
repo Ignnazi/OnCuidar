@@ -23,11 +23,15 @@ void main() {
     expect(ids(await cola.pendientes('u1')), ['e1', 'e2', 'e3']);
   });
 
-  test('las escrituras siguen ahí al volver a abrir la app', () async {
-    await cola.encolar('u1', escrituraDe(id: 'e1'));
-    final otraSesion = ColaEscrituras();
-    expect(ids(await otraSesion.pendientes('u1')), ['e1']);
-  });
+  test(
+    'PU-09 las escrituras siguen ahí al volver a abrir la app',
+    tags: 'criticos',
+    () async {
+      await cola.encolar('u1', escrituraDe(id: 'e1'));
+      final otraSesion = ColaEscrituras();
+      expect(ids(await otraSesion.pendientes('u1')), ['e1']);
+    },
+  );
 
   test('cada usuario tiene su propia cola', () async {
     await cola.encolar('u1', escrituraDe(id: 'e1'));

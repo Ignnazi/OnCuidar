@@ -17,6 +17,10 @@ async function enviarEnlace(destino, enlace, tipo = 'restablecer') {
     port: config.smtp.puerto,
     secure: config.smtp.puerto === 465,
     auth: config.smtp.usuario ? { user: config.smtp.usuario, pass: config.smtp.clave } : undefined,
+    // Sin esto un SMTP lento deja la petición colgada por minutos
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 15000,
   });
   await transporte.sendMail({
     from: config.smtp.remitente,

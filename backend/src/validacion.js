@@ -66,7 +66,10 @@ function booleanoOpcional(valor, nombre) {
 
 function enteroOpcional(valor, nombre) {
   if (valor === undefined) return undefined;
-  if (!Number.isInteger(valor)) throw new ErrorHttp(400, `${nombre} debe ser un entero`);
+  // Rango de integer en Postgres
+  if (!Number.isInteger(valor) || valor < -2147483648 || valor > 2147483647) {
+    throw new ErrorHttp(400, `${nombre} debe ser un entero`);
+  }
   return valor;
 }
 
